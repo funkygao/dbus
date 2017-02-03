@@ -22,7 +22,7 @@ var (
 	Globals func() *GlobalConfigStruct
 )
 
-// Struct for holding global pipeline config values.
+// GlobalConfigStruct is the struct for holding global pipeline config values.
 type GlobalConfigStruct struct {
 	*log.Logger
 

@@ -15,16 +15,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Engine is the pipeline engine of the data bus system which manages the core loop.
 type Engine struct {
 	sync.RWMutex
 
 	*conf.Conf
 
 	// REST exporter
-	listener   net.Listener
-	httpServer *http.Server
-	httpRouter *mux.Router
-	httpPaths  []string
+	httpListener net.Listener
+	httpServer   *http.Server
+	httpRouter   *mux.Router
+	httpPaths    []string
 
 	projects map[string]*ConfProject
 

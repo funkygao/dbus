@@ -2,25 +2,28 @@ package plugins
 
 import (
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/plugins/mysqlbinlog"
 	conf "github.com/funkygao/jsconf"
 )
 
-type MockInput struct {
+type MysqlbinlogInput struct {
 	stopChan chan struct{}
+	ident    string
 
-	ident string
+	binlogStream *mysqlbinlog.MysqlBinlog
 }
 
-func (this *MockInput) Init(config *conf.Conf) {
+func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
-
 	this.ident = config.String("ident", "")
 	if this.ident == "" {
 		panic("empty ident")
 	}
+
+	this.binlogStream = mysqlbinlog.New()
 }
 
-func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	for {
 		select {
 		case <-this.stopChan:
@@ -31,9 +34,6 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				break
 			}
 
-			pack.Reset()
-			pack.Ident = this.ident
-			pack.Payload = []byte("hello world")
 			r.Inject(pack)
 		}
 	}
@@ -41,12 +41,12 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	return nil
 }
 
-func (this *MockInput) Stop() {
+func (this *MysqlbinlogInput) Stop() {
 	close(this.stopChan)
 }
 
 func init() {
-	engine.RegisterPlugin("MockInput", func() engine.Plugin {
-		return new(MockInput)
+	engine.RegisterPlugin("MysqlbinlogInput", func() engine.Plugin {
+		return new(MysqlbinlogInput)
 	})
 }

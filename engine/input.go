@@ -40,7 +40,7 @@ type iRunner struct {
 
 func (this *iRunner) Inject(pack *PipelinePack) {
 	if pack.Ident == "" {
-		Globals().Fatalf("empty Ident: %s", *pack)
+		//Globals().Fatalf("empty Ident: %+v", *pack)
 	}
 
 	pack.Input = true

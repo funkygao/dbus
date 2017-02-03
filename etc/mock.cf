@@ -1,0 +1,21 @@
+{
+    projects: [
+        {
+            name: "mock"
+        }
+    ]
+
+    plugins: [
+        {
+            name: "MockInput"
+            ident: "mock"
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: false
+            match:  ["mock", ]
+        }
+    ]
+
+}

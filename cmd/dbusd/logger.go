@@ -22,7 +22,7 @@ func newLogger() *log.Logger {
 		logOptions |= log.Lmicroseconds
 	}
 
-	prefix := fmt.Sprintf("[%d]", os.Getpid())
+	prefix := fmt.Sprintf("[%d] ", os.Getpid())
 	log.SetOutput(logWriter)
 	log.SetFlags(logOptions)
 	log.SetPrefix(prefix)

@@ -25,11 +25,11 @@ func (this *Engine) launchHttpServ() {
 		}).Methods("GET")
 
 	var err error
-	this.listener, err = net.Listen("tcp", this.httpServer.Addr)
+	this.httpListener, err = net.Listen("tcp", this.httpServer.Addr)
 	if err != nil {
 		panic(err)
 	}
-	go this.httpServer.Serve(this.listener)
+	go this.httpServer.Serve(this.httpListener)
 
 	Globals().Printf("Listening on http://%s", this.httpServer.Addr)
 }
@@ -170,8 +170,8 @@ func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (
 }
 
 func (this *Engine) stopHttpServ() {
-	if this.listener != nil {
-		this.listener.Close()
+	if this.httpListener != nil {
+		this.httpListener.Close()
 
 		globals := Globals()
 		if globals.Verbose {

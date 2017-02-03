@@ -25,7 +25,7 @@ func (this *Matcher) InChan() chan *PipelinePack {
 
 func (this *Matcher) match(pack *PipelinePack) bool {
 	if pack.Ident == "" {
-		errmsg := fmt.Sprintf("Pack with empty ident: %s", *pack)
+		errmsg := fmt.Sprintf("Pack with empty ident: %+v", *pack)
 		panic(errmsg)
 	}
 
