@@ -16,8 +16,9 @@ func (this *Engine) ServeForever() {
 		outputsWg = new(sync.WaitGroup)
 		filtersWg = new(sync.WaitGroup)
 		inputsWg  = new(sync.WaitGroup)
-		globals   = Globals()
-		err       error
+
+		globals = Globals()
+		err     error
 	)
 
 	// setup signal handler first to avoid race condition
@@ -50,9 +51,9 @@ func (this *Engine) ServeForever() {
 	}
 
 	// setup the diagnostic trackers
-	inputPackTracker := NewDiagnosticTracker("inputPackTracker")
+	inputPackTracker := newDiagnosticTracker("inputPackTracker")
 	this.diagnosticTrackers[inputPackTracker.PoolName] = inputPackTracker
-	filterPackTracker := NewDiagnosticTracker("filterPackTracker")
+	filterPackTracker := newDiagnosticTracker("filterPackTracker")
 	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
 
 	if globals.Verbose {

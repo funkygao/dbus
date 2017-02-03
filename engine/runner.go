@@ -22,7 +22,7 @@ type FilterOutputRunner interface {
 	PluginRunner
 
 	InChan() chan *PipelinePack
-	Matcher() *Matcher
+	Matcher() *matcher
 }
 
 // Base for all runners
@@ -37,7 +37,7 @@ type pRunnerBase struct {
 type foRunner struct {
 	pRunnerBase
 
-	matcher   *Matcher
+	matcher   *matcher
 	inChan    chan *PipelinePack
 	leakCount int
 }
@@ -71,7 +71,7 @@ func NewFORunner(name string, plugin Plugin, pluginCommons *pluginCommons) (this
 	return
 }
 
-func (this *foRunner) Matcher() *Matcher {
+func (this *foRunner) Matcher() *matcher {
 	return this.matcher
 }
 

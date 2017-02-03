@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-// A diagnostic tracker for the pipeline packs pool
-type DiagnosticTracker struct {
+// diagnosticTracker is a diagnostic tracker for the pipeline packs pool.
+type diagnosticTracker struct {
 	PoolName string
 
 	// All the packs in a recycle pool
@@ -14,16 +14,16 @@ type DiagnosticTracker struct {
 	stopChan chan interface{}
 }
 
-func NewDiagnosticTracker(poolName string) *DiagnosticTracker {
-	return &DiagnosticTracker{packs: make([]*PipelinePack, 0, Globals().RecyclePoolSize),
+func newDiagnosticTracker(poolName string) *diagnosticTracker {
+	return &diagnosticTracker{packs: make([]*PipelinePack, 0, Globals().RecyclePoolSize),
 		PoolName: poolName, stopChan: make(chan interface{})}
 }
 
-func (this *DiagnosticTracker) AddPack(pack *PipelinePack) {
+func (this *diagnosticTracker) AddPack(pack *PipelinePack) {
 	this.packs = append(this.packs, pack)
 }
 
-func (this *DiagnosticTracker) Run(interval int) {
+func (this *diagnosticTracker) Run(interval int) {
 	var (
 		pack           *PipelinePack
 		earliestAccess time.Time
@@ -89,7 +89,7 @@ func (this *DiagnosticTracker) Run(interval int) {
 	}
 }
 
-func (this *DiagnosticTracker) Stop() {
+func (this *diagnosticTracker) Stop() {
 	globals := Globals()
 	if globals.Verbose {
 		globals.Printf("Diagnostic[%s] stopped", this.PoolName)

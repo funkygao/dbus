@@ -47,9 +47,7 @@ func (this *GlobalConfigStruct) Shutdown() {
 }
 
 func (this *GlobalConfigStruct) Kill(sig os.Signal) {
-	go func(s os.Signal) {
-		this.sigChan <- s
-	}(sig)
+	this.sigChan <- sig
 }
 
 func DefaultGlobals() *GlobalConfigStruct {

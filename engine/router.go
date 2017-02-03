@@ -61,30 +61,30 @@ type messageRouter struct {
 
 	stats routerStats
 
-	removeFilterMatcher chan *Matcher
-	removeOutputMatcher chan *Matcher
+	removeFilterMatcher chan *matcher
+	removeOutputMatcher chan *matcher
 
-	filterMatchers []*Matcher
-	outputMatchers []*Matcher
+	filterMatchers []*matcher
+	outputMatchers []*matcher
 }
 
-func NewMessageRouter() (this *messageRouter) {
+func newMessageRouter() (this *messageRouter) {
 	this = new(messageRouter)
 	this.hub = make(chan *PipelinePack, Globals().PluginChanSize)
 	this.stats = routerStats{}
-	this.removeFilterMatcher = make(chan *Matcher)
-	this.removeOutputMatcher = make(chan *Matcher)
-	this.filterMatchers = make([]*Matcher, 0, 10)
-	this.outputMatchers = make([]*Matcher, 0, 10)
+	this.removeFilterMatcher = make(chan *matcher)
+	this.removeOutputMatcher = make(chan *matcher)
+	this.filterMatchers = make([]*matcher, 0, 10)
+	this.outputMatchers = make([]*matcher, 0, 10)
 
 	return
 }
 
-func (this *messageRouter) addFilterMatcher(matcher *Matcher) {
+func (this *messageRouter) addFilterMatcher(matcher *matcher) {
 	this.filterMatchers = append(this.filterMatchers, matcher)
 }
 
-func (this *messageRouter) addOutputMatcher(matcher *Matcher) {
+func (this *messageRouter) addOutputMatcher(matcher *matcher) {
 	this.outputMatchers = append(this.outputMatchers, matcher)
 }
 
@@ -118,7 +118,7 @@ func (this *messageRouter) Start() {
 		ok         = true
 		pack       *PipelinePack
 		ticker     *time.Ticker
-		matcher    *Matcher
+		matcher    *matcher
 		foundMatch bool
 	)
 
@@ -172,7 +172,7 @@ LOOP:
 			// We have to dispatch to Output then Filter to avoid that case
 			for _, matcher = range this.outputMatchers {
 				// a pack can match several Output
-				if matcher != nil && matcher.match(pack) {
+				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
 					pack.incRef()
@@ -186,7 +186,7 @@ LOOP:
 			// and the router will dec ref count only once
 			for _, matcher = range this.filterMatchers {
 				// a pack can match several Filter
-				if matcher != nil && matcher.match(pack) {
+				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
 					pack.incRef()
@@ -211,7 +211,7 @@ LOOP:
 	}
 }
 
-func (this *messageRouter) removeMatcher(matcher *Matcher, matchers []*Matcher) {
+func (this *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
 	globals := Globals()
 	for idx, m := range matchers {
 		if m == matcher {

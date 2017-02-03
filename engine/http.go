@@ -16,7 +16,10 @@ import (
 
 func (this *Engine) launchHttpServ() {
 	this.httpRouter = mux.NewRouter()
-	this.httpServer = &http.Server{Addr: this.String("http_addr", "127.0.0.1:9876"), Handler: this.httpRouter}
+	this.httpServer = &http.Server{
+		Addr:    this.String("http_addr", "127.0.0.1:9876"),
+		Handler: this.httpRouter,
+	}
 
 	this.RegisterHttpApi("/admin/{cmd}",
 		func(w http.ResponseWriter, req *http.Request,
@@ -157,8 +160,7 @@ func (this *Engine) RegisterHttpApi(path string,
 	return this.httpRouter.HandleFunc(path, wrappedFunc)
 }
 
-func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{},
-	error) {
+func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&params)

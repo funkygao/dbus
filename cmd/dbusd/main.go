@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"runtime/debug"
-	"time"
 
 	"github.com/funkygao/dbus/engine"
 	_ "github.com/funkygao/dbus/plugins" // trigger RegisterPlugin(s)
@@ -34,12 +33,14 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second * time.Duration(options.tick))
-	defer ticker.Stop()
-
 	go diagnostics.Start()
 
-	engine.New(globals).
-		LoadConfigFile(options.configfile).
-		ServeForever()
+	e := engine.New(globals).
+		LoadConfigFile(options.configfile)
+	if options.visualizeFile != "" {
+		e.ExportDiagram(options.visualizeFile)
+		return
+	}
+
+	e.ServeForever()
 }

@@ -8,19 +8,19 @@ import (
 	"github.com/funkygao/golib/gofmt"
 )
 
-type EngineStats struct {
+type engineStats struct {
 	engine   *Engine
 	MemStats *runtime.MemStats
 }
 
-func newEngineStats(e *Engine) (this *EngineStats) {
-	this = new(EngineStats)
+func newEngineStats(e *Engine) (this *engineStats) {
+	this = new(engineStats)
 	this.engine = e
 	this.MemStats = new(runtime.MemStats)
 	return
 }
 
-func (this *EngineStats) Runtime() map[string]interface{} {
+func (this *engineStats) Runtime() map[string]interface{} {
 	this.refreshMemStats()
 
 	s := make(map[string]interface{})
@@ -58,6 +58,6 @@ func (this *EngineStats) Runtime() map[string]interface{} {
 	return s
 }
 
-func (this *EngineStats) refreshMemStats() {
+func (this *engineStats) refreshMemStats() {
 	runtime.ReadMemStats(this.MemStats)
 }

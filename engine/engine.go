@@ -19,6 +19,7 @@ import (
 type Engine struct {
 	sync.RWMutex
 
+	// Engine will load json config file
 	*conf.Conf
 
 	// REST exporter
@@ -27,7 +28,7 @@ type Engine struct {
 	httpRouter   *mux.Router
 	httpPaths    []string
 
-	projects map[string]*ConfProject
+	projects map[string]*ConfProject // TODO
 
 	InputRunners  map[string]InputRunner
 	inputWrappers map[string]*PluginWrapper
@@ -38,10 +39,10 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*PluginWrapper
 
-	diagnosticTrackers map[string]*DiagnosticTracker
+	diagnosticTrackers map[string]*diagnosticTracker
 
 	router *messageRouter
-	stats  *EngineStats
+	stats  *engineStats
 
 	// PipelinePack supply for Input plugins.
 	inputRecycleChan chan *PipelinePack
@@ -73,11 +74,11 @@ func New(globals *GlobalConfigStruct) (this *Engine) {
 	this.inputRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
 	this.filterRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
 
-	this.diagnosticTrackers = make(map[string]*DiagnosticTracker)
+	this.diagnosticTrackers = make(map[string]*diagnosticTracker)
 	this.projects = make(map[string]*ConfProject)
 	this.httpPaths = make([]string, 0, 6)
 
-	this.router = NewMessageRouter()
+	this.router = newMessageRouter()
 	this.stats = newEngineStats(this)
 
 	this.hostname, _ = os.Hostname()
@@ -226,7 +227,7 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 	}
 
 	foRunner := NewFORunner(wrapper.name, plugin, pluginCommons)
-	matcher := NewMatcher(section.StringList("match", nil), foRunner)
+	matcher := newMatcher(section.StringList("match", nil), foRunner)
 	foRunner.matcher = matcher
 
 	switch pluginCategory {
@@ -240,6 +241,11 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		this.OutputRunners[foRunner.name] = foRunner
 		this.outputWrappers[foRunner.name] = wrapper
 	}
+}
+
+// ExportDiagram exports the pipeline dependencies to a diagram.
+func (tihs *Engine) ExportDiagram(outfile string) {
+	// TODO
 }
 
 // common config directives for all plugins

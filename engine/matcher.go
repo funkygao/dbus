@@ -4,13 +4,13 @@ import (
 	"fmt"
 )
 
-type Matcher struct {
+type matcher struct {
 	runner  FilterOutputRunner
 	matches map[string]bool
 }
 
-func NewMatcher(matches []string, r FilterOutputRunner) *Matcher {
-	this := new(Matcher)
+func newMatcher(matches []string, r FilterOutputRunner) *matcher {
+	this := new(matcher)
 	this.matches = make(map[string]bool)
 	for _, m := range matches {
 		this.matches[m] = true
@@ -19,11 +19,11 @@ func NewMatcher(matches []string, r FilterOutputRunner) *Matcher {
 	return this
 }
 
-func (this *Matcher) InChan() chan *PipelinePack {
+func (this *matcher) InChan() chan *PipelinePack {
 	return this.runner.InChan()
 }
 
-func (this *Matcher) match(pack *PipelinePack) bool {
+func (this *matcher) Match(pack *PipelinePack) bool {
 	if pack.Ident == "" {
 		errmsg := fmt.Sprintf("Pack with empty ident: %+v", *pack)
 		panic(errmsg)
