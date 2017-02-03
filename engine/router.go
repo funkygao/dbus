@@ -26,7 +26,7 @@ func (this *routerStats) update(pack *PipelinePack) {
 	atomic.AddInt64(&this.TotalProcessedMsgN, 1)
 	atomic.AddInt32(&this.PeriodProcessedMsgN, 1)
 
-	if pack.Input {
+	if pack.input {
 		atomic.AddInt64(&this.TotalInputMsgN, 1)
 		atomic.AddInt32(&this.PeriodInputMsgN, 1)
 
@@ -175,7 +175,7 @@ LOOP:
 				if matcher != nil && matcher.match(pack) {
 					foundMatch = true
 
-					pack.IncRef()
+					pack.incRef()
 					pack.diagnostics.AddStamp(matcher.runner)
 					matcher.InChan() <- pack
 				}
@@ -189,7 +189,7 @@ LOOP:
 				if matcher != nil && matcher.match(pack) {
 					foundMatch = true
 
-					pack.IncRef()
+					pack.incRef()
 					pack.diagnostics.AddStamp(matcher.runner)
 					matcher.InChan() <- pack
 				}

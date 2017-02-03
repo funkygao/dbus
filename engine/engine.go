@@ -127,7 +127,7 @@ func (this *Engine) PipelinePack(msgLoopCount int) *PipelinePack {
 	}
 
 	pack := <-this.filterRecycleChan
-	pack.MsgLoopCount = msgLoopCount
+	pack.msgLoopCount = msgLoopCount
 
 	return pack
 }
