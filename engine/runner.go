@@ -76,7 +76,7 @@ func (this *foRunner) Matcher() *Matcher {
 }
 
 func (this *foRunner) Inject(pack *PipelinePack) bool {
-	pack.Input = false
+	pack.input = false
 	this.engine.router.hub <- pack
 	return true
 }

@@ -43,7 +43,7 @@ func (this *iRunner) Inject(pack *PipelinePack) {
 		//Globals().Fatalf("empty Ident: %+v", *pack)
 	}
 
-	pack.Input = true
+	pack.input = true
 	this.engine.router.hub <- pack
 }
 

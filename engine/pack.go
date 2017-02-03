@@ -6,10 +6,16 @@ import (
 
 // PipelinePack is the pipeline data structure that is transfered between plugins.
 type PipelinePack struct {
-	RecycleChan chan *PipelinePack
-	RefCount    int32
+	recycleChan chan *PipelinePack
+	refCount    int32
 
-	Input bool
+	input bool
+
+	// To avoid infinite message loops
+	msgLoopCount int
+
+	// Used internally to stamp diagnostic information
+	diagnostics *PacketTracking
 
 	// For routing
 	Ident string
@@ -17,45 +23,40 @@ type PipelinePack struct {
 	// Project name
 	Project string
 
-	// To avoid infinite message loops
-	MsgLoopCount int
-
 	Payload []byte
-
-	// Used internally to stamp diagnostic information
-	diagnostics *PacketTracking
 }
 
 func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 	return &PipelinePack{
-		RecycleChan:  recycleChan,
-		RefCount:     int32(1),
-		MsgLoopCount: 0,
-		Input:        false,
+		recycleChan:  recycleChan,
+		refCount:     int32(1),
+		msgLoopCount: 0,
+		input:        false,
 		diagnostics:  NewPacketTracking(),
 	}
 }
 
-func (this *PipelinePack) IncRef() {
-	atomic.AddInt32(&this.RefCount, 1)
+func (this *PipelinePack) incRef() {
+	atomic.AddInt32(&this.refCount, 1)
 }
 
 func (this *PipelinePack) Reset() {
-	this.RefCount = int32(1)
-	this.MsgLoopCount = 0
-	this.Project = ""
-	this.Input = false
-	this.Ident = ""
+	this.refCount = int32(1)
+	this.msgLoopCount = 0
+	this.input = false
 	this.diagnostics.Reset()
+
+	this.Project = ""
+	this.Ident = ""
 }
 
 func (this *PipelinePack) Recycle() {
-	count := atomic.AddInt32(&this.RefCount, -1)
+	count := atomic.AddInt32(&this.refCount, -1)
 	if count == 0 {
 		this.Reset()
 
 		// reuse this pack to avoid re-alloc
-		this.RecycleChan <- this
+		this.recycleChan <- this
 	} else if count < 0 {
 		Globals().Panic("reference count below zero")
 	}
