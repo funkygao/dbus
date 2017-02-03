@@ -15,9 +15,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type EngineConfig struct {
+type Engine struct {
+	sync.RWMutex
+
 	*conf.Conf
-	*sync.Mutex
 
 	// REST exporter
 	listener   net.Listener
@@ -51,9 +52,8 @@ type EngineConfig struct {
 	pid      int
 }
 
-func NewEngineConfig(globals *GlobalConfigStruct) (this *EngineConfig) {
-	this = new(EngineConfig)
-	this.Mutex = new(sync.Mutex)
+func New(globals *GlobalConfigStruct) (this *Engine) {
+	this = new(Engine)
 
 	if globals == nil {
 		globals = DefaultGlobals()
@@ -85,7 +85,7 @@ func NewEngineConfig(globals *GlobalConfigStruct) (this *EngineConfig) {
 	return this
 }
 
-func (this *EngineConfig) pluginNames() (names []string) {
+func (this *Engine) pluginNames() (names []string) {
 	names = make([]string, 0, 20)
 	for _, pr := range this.InputRunners {
 		names = append(names, pr.Name())
@@ -100,17 +100,17 @@ func (this *EngineConfig) pluginNames() (names []string) {
 	return
 }
 
-func (this *EngineConfig) stopInputRunner(name string) {
+func (this *Engine) stopInputRunner(name string) {
 	this.Lock()
 	this.InputRunners[name] = nil
 	this.Unlock()
 }
 
-func (this *EngineConfig) EngineConfig() *EngineConfig {
+func (this *Engine) Engine() *Engine {
 	return this
 }
 
-func (this *EngineConfig) Project(name string) *ConfProject {
+func (this *Engine) Project(name string) *ConfProject {
 	p, present := this.projects[name]
 	if !present {
 		panic("invalid project: " + name)
@@ -120,7 +120,7 @@ func (this *EngineConfig) Project(name string) *ConfProject {
 }
 
 // For Filter to generate new pack
-func (this *EngineConfig) PipelinePack(msgLoopCount int) *PipelinePack {
+func (this *Engine) PipelinePack(msgLoopCount int) *PipelinePack {
 	if msgLoopCount++; msgLoopCount > Globals().MaxMsgLoops {
 		return nil
 	}
@@ -131,7 +131,7 @@ func (this *EngineConfig) PipelinePack(msgLoopCount int) *PipelinePack {
 	return pack
 }
 
-func (this *EngineConfig) LoadConfigFile(fn string) *EngineConfig {
+func (this *Engine) LoadConfigFile(fn string) *Engine {
 	cf, err := conf.Load(fn)
 	if err != nil {
 		panic(err)
@@ -186,7 +186,7 @@ func (this *EngineConfig) LoadConfigFile(fn string) *EngineConfig {
 	return this
 }
 
-func (this *EngineConfig) loadPluginSection(section *conf.Conf) {
+func (this *Engine) loadPluginSection(section *conf.Conf) {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.load(section)
 	if pluginCommons.disabled {

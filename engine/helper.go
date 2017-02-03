@@ -7,7 +7,7 @@ import (
 )
 
 type PluginHelper interface {
-	EngineConfig() *EngineConfig
+	Engine() *Engine
 	PipelinePack(msgLoopCount int) *PipelinePack
 	Project(name string) *ConfProject
 	RegisterHttpApi(path string,

@@ -11,7 +11,7 @@ import (
 	"github.com/funkygao/golib/observer"
 )
 
-func (this *EngineConfig) ServeForever() {
+func (this *Engine) ServeForever() {
 	var (
 		outputsWg = new(sync.WaitGroup)
 		filtersWg = new(sync.WaitGroup)

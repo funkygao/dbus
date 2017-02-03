@@ -9,11 +9,11 @@ import (
 )
 
 type EngineStats struct {
-	engine   *EngineConfig
+	engine   *Engine
 	MemStats *runtime.MemStats
 }
 
-func newEngineStats(e *EngineConfig) (this *EngineStats) {
+func newEngineStats(e *Engine) (this *EngineStats) {
 	this = new(EngineStats)
 	this.engine = e
 	this.MemStats = new(runtime.MemStats)

@@ -42,6 +42,10 @@ func parseFlags() {
 	flag.Usage = showUsage
 	flag.Parse()
 
+	if options.tick <= 0 {
+		panic("tick must be possitive")
+	}
+
 	if options.veryVerbose {
 		options.debug = true
 	}
@@ -49,9 +53,6 @@ func parseFlags() {
 		options.verbose = true
 	}
 
-	if options.tick <= 0 {
-		panic("tick must be possitive")
-	}
 }
 
 func showUsage() {

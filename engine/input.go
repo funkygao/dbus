@@ -67,7 +67,7 @@ func (this *iRunner) TickLength() time.Duration {
 	return this.tickLength
 }
 
-func (this *iRunner) start(e *EngineConfig, wg *sync.WaitGroup) error {
+func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 	this.engine = e
 	if this.tickLength > 0 {
 		this.ticker = time.Tick(this.tickLength)
@@ -82,7 +82,7 @@ func (this *iRunner) start(e *EngineConfig, wg *sync.WaitGroup) error {
 	return nil
 }
 
-func (this *iRunner) runMainloop(e *EngineConfig, wg *sync.WaitGroup) {
+func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	globals := Globals()

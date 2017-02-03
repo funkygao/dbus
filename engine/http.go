@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (this *EngineConfig) launchHttpServ() {
+func (this *Engine) launchHttpServ() {
 	this.httpRouter = mux.NewRouter()
 	this.httpServer = &http.Server{Addr: this.String("http_addr", "127.0.0.1:9876"), Handler: this.httpRouter}
 
@@ -34,7 +34,7 @@ func (this *EngineConfig) launchHttpServ() {
 	Globals().Printf("Listening on http://%s", this.httpServer.Addr)
 }
 
-func (this *EngineConfig) handleHttpQuery(w http.ResponseWriter, req *http.Request,
+func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 	params map[string]interface{}) (interface{}, error) {
 	var (
 		vars    = mux.Vars(req)
@@ -94,7 +94,7 @@ func (this *EngineConfig) handleHttpQuery(w http.ResponseWriter, req *http.Reque
 	return output, nil
 }
 
-func (this *EngineConfig) RegisterHttpApi(path string,
+func (this *Engine) RegisterHttpApi(path string,
 	handlerFunc func(http.ResponseWriter,
 		*http.Request, map[string]interface{}) (interface{}, error)) *mux.Route {
 	wrappedFunc := func(w http.ResponseWriter, req *http.Request) {
@@ -157,7 +157,7 @@ func (this *EngineConfig) RegisterHttpApi(path string,
 	return this.httpRouter.HandleFunc(path, wrappedFunc)
 }
 
-func (this *EngineConfig) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{},
+func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{},
 	error) {
 	params := make(map[string]interface{})
 	decoder := json.NewDecoder(req.Body)
@@ -169,7 +169,7 @@ func (this *EngineConfig) decodeHttpParams(w http.ResponseWriter, req *http.Requ
 	return params, nil
 }
 
-func (this *EngineConfig) stopHttpServ() {
+func (this *Engine) stopHttpServ() {
 	if this.listener != nil {
 		this.listener.Close()
 

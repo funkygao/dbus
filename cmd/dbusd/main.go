@@ -39,7 +39,7 @@ func main() {
 
 	go diagnostics.Start()
 
-	engine.NewEngineConfig(globals).
+	engine.New(globals).
 		LoadConfigFile(options.configfile).
 		ServeForever()
 }

@@ -6,7 +6,7 @@ import (
 
 // Base interface for the  plugin runners.
 type PluginRunner interface {
-	start(e *EngineConfig, wg *sync.WaitGroup) (err error)
+	start(e *Engine, wg *sync.WaitGroup) (err error)
 
 	Name() string
 
@@ -29,7 +29,7 @@ type FilterOutputRunner interface {
 type pRunnerBase struct {
 	name          string
 	plugin        Plugin
-	engine        *EngineConfig
+	engine        *Engine
 	pluginCommons *pluginCommons
 	leakCount     int
 }
@@ -93,7 +93,7 @@ func (this *foRunner) Filter() Filter {
 	return this.plugin.(Filter)
 }
 
-func (this *foRunner) start(e *EngineConfig, wg *sync.WaitGroup) error {
+func (this *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
 	this.engine = e
 
 	go this.runMainloop(wg)
