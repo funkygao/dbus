@@ -7,6 +7,7 @@ import (
 
 	"github.com/funkygao/dbus/engine"
 	_ "github.com/funkygao/dbus/plugins" // trigger RegisterPlugin(s)
+	"github.com/funkygao/gafka/diagnostics"
 )
 
 func init() {
@@ -35,6 +36,8 @@ func main() {
 
 	ticker := time.NewTicker(time.Second * time.Duration(options.tick))
 	defer ticker.Stop()
+
+	go diagnostics.Start()
 
 	engine.NewEngineConfig(globals).
 		LoadConfigFile(options.configfile).
