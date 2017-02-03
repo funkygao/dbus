@@ -5,8 +5,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -87,21 +85,6 @@ func New(globals *GlobalConfigStruct) (this *Engine) {
 	return this
 }
 
-func (this *Engine) pluginNames() (names []string) {
-	names = make([]string, 0, 20)
-	for _, pr := range this.InputRunners {
-		names = append(names, pr.Name())
-	}
-	for _, pr := range this.FilterRunners {
-		names = append(names, pr.Name())
-	}
-	for _, pr := range this.OutputRunners {
-		names = append(names, pr.Name())
-	}
-
-	return
-}
-
 func (this *Engine) stopInputRunner(name string) {
 	this.Lock()
 	this.InputRunners[name] = nil
@@ -115,13 +98,13 @@ func (this *Engine) Engine() *Engine {
 func (this *Engine) Project(name string) *ConfProject {
 	p, present := this.projects[name]
 	if !present {
-		panic("invalid project: " + name)
+		return nil
 	}
 
 	return p
 }
 
-// For Filter to generate new pack
+// For Filter to generate new pack.
 func (this *Engine) PipelinePack(msgLoopCount int) *PipelinePack {
 	if msgLoopCount++; msgLoopCount > Globals().MaxMsgLoops {
 		return nil
@@ -140,25 +123,6 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 	}
 
 	this.Conf = cf
-
-	var (
-		totalCpus int
-		maxProcs  int
-		globals   = Globals()
-	)
-	totalCpus = runtime.NumCPU()
-	cpuNumConfig := this.String("cpu_num", "auto")
-	if cpuNumConfig == "auto" {
-		maxProcs = totalCpus/2 + 1
-	} else {
-		maxProcs, err = strconv.Atoi(cpuNumConfig)
-		if err != nil {
-			panic(err)
-		}
-	}
-	runtime.GOMAXPROCS(maxProcs)
-
-	globals.Printf("Starting engine with %d/%d CPUs...", maxProcs, totalCpus)
 
 	// 'projects' section
 	for i := 0; i < len(this.List("projects", nil)); i++ {
@@ -226,7 +190,7 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		return
 	}
 
-	foRunner := NewFORunner(wrapper.name, plugin, pluginCommons)
+	foRunner := newFORunner(wrapper.name, plugin, pluginCommons)
 	matcher := newMatcher(section.StringList("match", nil), foRunner)
 	foRunner.matcher = matcher
 
@@ -246,29 +210,4 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 // ExportDiagram exports the pipeline dependencies to a diagram.
 func (tihs *Engine) ExportDiagram(outfile string) {
 	// TODO
-}
-
-// common config directives for all plugins
-type pluginCommons struct {
-	name     string `json:"name"`
-	class    string `json:"class"`
-	ticker   int    `json:"ticker_interval"`
-	disabled bool   `json:"disabled"`
-	comment  string `json:"comment"`
-}
-
-func (this *pluginCommons) load(section *conf.Conf) {
-	this.name = section.String("name", "")
-	if this.name == "" {
-		pretty.Printf("%# v\n", *section)
-		panic(fmt.Sprintf("invalid plugin config: %v", *section))
-	}
-
-	this.class = section.String("class", "")
-	if this.class == "" {
-		this.class = this.name
-	}
-	this.comment = section.String("comment", "")
-	this.ticker = section.Int("ticker_interval", Globals().TickerLength)
-	this.disabled = section.Bool("disabled", false)
 }

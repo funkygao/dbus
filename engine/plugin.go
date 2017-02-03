@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	conf "github.com/funkygao/jsconf"
+	"github.com/funkygao/pretty"
 )
 
 type Plugin interface {
@@ -35,4 +36,29 @@ func (this *PluginWrapper) Create() (plugin Plugin) {
 	plugin = this.pluginCreator()
 	plugin.Init(this.configCreator())
 	return
+}
+
+// common config directives for all plugins
+type pluginCommons struct {
+	name     string `json:"name"`
+	class    string `json:"class"`
+	ticker   int    `json:"ticker_interval"`
+	disabled bool   `json:"disabled"`
+	comment  string `json:"comment"`
+}
+
+func (this *pluginCommons) load(section *conf.Conf) {
+	this.name = section.String("name", "")
+	if this.name == "" {
+		pretty.Printf("%# v\n", *section)
+		panic(fmt.Sprintf("invalid plugin config: %v", *section))
+	}
+
+	this.class = section.String("class", "")
+	if this.class == "" {
+		this.class = this.name
+	}
+	this.comment = section.String("comment", "")
+	this.ticker = section.Int("ticker_interval", Globals().TickerLength)
+	this.disabled = section.Bool("disabled", false)
 }

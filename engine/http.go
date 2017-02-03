@@ -37,6 +37,21 @@ func (this *Engine) launchHttpServ() {
 	Globals().Printf("Listening on http://%s", this.httpServer.Addr)
 }
 
+func (this *Engine) pluginNames() (names []string) {
+	names = make([]string, 0, 20)
+	for _, pr := range this.InputRunners {
+		names = append(names, pr.Name())
+	}
+	for _, pr := range this.FilterRunners {
+		names = append(names, pr.Name())
+	}
+	for _, pr := range this.OutputRunners {
+		names = append(names, pr.Name())
+	}
+
+	return
+}
+
 func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 	params map[string]interface{}) (interface{}, error) {
 	var (

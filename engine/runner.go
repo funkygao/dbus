@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// Base interface for the  plugin runners.
+// PluginRunner is the base interface for the  plugin runners.
 type PluginRunner interface {
 	start(e *Engine, wg *sync.WaitGroup) (err error)
 
@@ -34,6 +34,7 @@ type pRunnerBase struct {
 	leakCount     int
 }
 
+// foRunner is filter output runner.
 type foRunner struct {
 	pRunnerBase
 
@@ -58,7 +59,7 @@ func (this *pRunnerBase) LeakCount() int {
 	return this.leakCount
 }
 
-func NewFORunner(name string, plugin Plugin, pluginCommons *pluginCommons) (this *foRunner) {
+func newFORunner(name string, plugin Plugin, pluginCommons *pluginCommons) (this *foRunner) {
 	this = &foRunner{
 		pRunnerBase: pRunnerBase{
 			name:          name,
