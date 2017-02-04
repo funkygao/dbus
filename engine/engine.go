@@ -13,7 +13,6 @@ import (
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
-	"github.com/funkygao/pretty"
 	"github.com/gorilla/mux"
 )
 
@@ -34,7 +33,7 @@ type Engine struct {
 	httpRouter   *mux.Router
 	httpPaths    []string
 
-	projects map[string]*ConfProject // TODO
+	projects map[string]*Project // TODO
 
 	InputRunners  map[string]InputRunner
 	inputWrappers map[string]*pluginWrapper
@@ -81,7 +80,7 @@ func New(globals *GlobalConfig) (this *Engine) {
 	this.filterRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
 
 	this.diagnosticTrackers = make(map[string]*diagnosticTracker)
-	this.projects = make(map[string]*ConfProject)
+	this.projects = make(map[string]*Project)
 	this.httpPaths = make([]string, 0, 6)
 
 	this.router = newMessageRouter()
@@ -102,7 +101,7 @@ func (this *Engine) Engine() *Engine {
 	return this
 }
 
-func (this *Engine) Project(name string) *ConfProject {
+func (this *Engine) Project(name string) *Project {
 	p, present := this.projects[name]
 	if !present {
 		return nil
@@ -111,19 +110,10 @@ func (this *Engine) Project(name string) *ConfProject {
 	return p
 }
 
-// For Filter to generate new pack.
-func (this *Engine) PipelinePack(msgLoopCount int) *PipelinePack {
-	if msgLoopCount++; msgLoopCount > Globals().MaxMsgLoops {
-		return nil
-	}
-
-	pack := <-this.filterRecycleChan
-	pack.msgLoopCount = msgLoopCount
-
-	return pack
-}
-
 func (this *Engine) LoadConfigFile(fn string) *Engine {
+	if _, err := os.Stat(fn); err != nil {
+		panic(err)
+	}
 	cf, err := conf.Load(fn)
 	if err != nil {
 		panic(err)
@@ -138,7 +128,7 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 			panic(err)
 		}
 
-		project := &ConfProject{}
+		project := &Project{}
 		project.fromConfig(section)
 		if _, present := this.projects[project.Name]; present {
 			panic("dup project: " + project.Name)
@@ -161,9 +151,9 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 
 func (this *Engine) loadPluginSection(section *conf.Conf) {
 	pluginCommons := new(pluginCommons)
-	pluginCommons.load(section)
+	pluginCommons.loadConfig(section)
 	if pluginCommons.disabled {
-		Globals().Printf("[%s]disabled\n", pluginCommons.name)
+		Globals().Printf("%s disabled", pluginCommons.name)
 
 		return
 	}
@@ -171,21 +161,28 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 	wrapper := new(pluginWrapper)
 	var ok bool
 	if wrapper.pluginCreator, ok = availablePlugins[pluginCommons.class]; !ok {
-		pretty.Printf("allPlugins: %# v\n", availablePlugins)
 		panic("unknown plugin type: " + pluginCommons.class)
 	}
 	wrapper.configCreator = func() *conf.Conf { return section }
 	wrapper.name = pluginCommons.name
 
-	plugin := wrapper.pluginCreator()
-	plugin.Init(section)
-
-	pluginCats := pluginTypeRegex.FindStringSubmatch(pluginCommons.class)
-	if len(pluginCats) < 2 {
+	pluginType := pluginTypeRegex.FindStringSubmatch(pluginCommons.class)
+	if len(pluginType) < 2 {
 		panic("invalid plugin type: " + pluginCommons.class)
 	}
 
-	pluginCategory := pluginCats[1]
+	plugin := wrapper.pluginCreator()
+	plugin.Init(section)
+
+	pluginCategory := pluginType[1]
+	// ident
+	if pluginCategory == "Input" || pluginCategory == "Filter" { // TODO
+		ident := section.String("ident", "")
+		if ident == "" {
+			panic("empty ident for plugin: " + wrapper.name)
+		}
+	}
+
 	if pluginCategory == "Input" {
 		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input),
 			pluginCommons)
@@ -209,11 +206,6 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		this.OutputRunners[foRunner.name] = foRunner
 		this.outputWrappers[foRunner.name] = wrapper
 	}
-}
-
-// ExportDiagram exports the pipeline dependencies to a diagram.
-func (this *Engine) ExportDiagram(outfile string) {
-	// TODO
 }
 
 func (this *Engine) ServeForever() {
@@ -262,7 +254,7 @@ func (this *Engine) ServeForever() {
 	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
 
 	if globals.Verbose {
-		globals.Printf("Initializing PipelinePack pools with size=%d\n",
+		globals.Printf("Initializing PipelinePack pools with size=%d",
 			globals.RecyclePoolSize)
 	}
 	for i := 0; i < globals.RecyclePoolSize; i++ {
@@ -315,7 +307,7 @@ func (this *Engine) ServeForever() {
 	for !globals.Stopping {
 		select {
 		case sig := <-globals.sigChan:
-			globals.Printf("Got signal %s\n", sig.String())
+			globals.Printf("Got signal %s", sig.String())
 			switch sig {
 			case syscall.SIGHUP:
 				globals.Println("Reloading...")

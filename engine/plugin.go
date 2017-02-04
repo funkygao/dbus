@@ -2,10 +2,8 @@ package engine
 
 import (
 	"fmt"
-	"net/http"
 
 	conf "github.com/funkygao/jsconf"
-	"github.com/gorilla/mux"
 )
 
 type Plugin interface {
@@ -30,14 +28,7 @@ func RegisterPlugin(name string, factory func() Plugin) {
 type PluginHelper interface {
 	Engine() *Engine
 
-	// TODO discard it
-	PipelinePack(msgLoopCount int) *PipelinePack
-
-	Project(name string) *ConfProject
-
-	RegisterHttpApi(path string,
-		handlerFunc func(http.ResponseWriter,
-			*http.Request, map[string]interface{}) (interface{}, error)) *mux.Route
+	Project(name string) *Project
 }
 
 // pluginWrapper is a helper object to support delayed plugin creation.
@@ -57,19 +48,17 @@ func (this *pluginWrapper) Create() (plugin Plugin) {
 // pluginCommons is the common config directives for all plugins.
 type pluginCommons struct {
 	name     string `json:"name"`
-	class    string `json:"class"` // TODO
+	class    string `json:"class"`
 	disabled bool   `json:"disabled"`
 	comment  string `json:"comment"`
 }
 
-func (this *pluginCommons) load(section *conf.Conf) {
-	this.name = section.String("name", "")
-	if this.name == "" {
+func (this *pluginCommons) loadConfig(section *conf.Conf) {
+	if this.name = section.String("name", ""); this.name == "" {
 		panic(fmt.Sprintf("name is required"))
 	}
 
-	this.class = section.String("class", "")
-	if this.class == "" {
+	if this.class = section.String("class", ""); this.class == "" {
 		this.class = this.name
 	}
 	this.comment = section.String("comment", "")

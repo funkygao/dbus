@@ -24,6 +24,8 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	binlog := this.binlogStream.Stream()
+
 	for {
 		select {
 		case <-this.stopChan:
@@ -34,6 +36,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				break
 			}
 
+			pack.Payload = <-binlog
 			r.Inject(pack)
 		}
 	}

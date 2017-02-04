@@ -7,20 +7,18 @@ import (
 	conf "github.com/funkygao/jsconf"
 )
 
-type ConfProject struct {
+type Project struct {
 	*log.Logger
 
-	Name        string `json:"name"`
-	IndexPrefix string `json:"index_prefix"`
-	ShowError   bool   `json:"show_error"`
+	Name      string `json:"name"`
+	ShowError bool   `json:"show_error"`
 }
 
-func (this *ConfProject) fromConfig(c *conf.Conf) {
+func (this *Project) fromConfig(c *conf.Conf) {
 	this.Name = c.String("name", "")
 	if this.Name == "" {
 		panic("project must has 'name'")
 	}
-	this.IndexPrefix = c.String("index_prefix", this.Name)
 	this.ShowError = c.Bool("show_error", true)
 
 	logfile := c.String("logfile", "var/"+this.Name+".log")
@@ -40,10 +38,10 @@ func (this *ConfProject) fromConfig(c *conf.Conf) {
 	this.Logger = log.New(logWriter, "", logOptions)
 }
 
-func (this *ConfProject) Start() {
-	this.Println("Started")
+func (this *Project) Start() {
+	this.Printf("Project[%s] started", this.Name)
 }
 
-func (this *ConfProject) Stop() {
-	this.Println("Stopped")
+func (this *Project) Stop() {
+	this.Printf("Project[%s] stopped", this.Name)
 }
