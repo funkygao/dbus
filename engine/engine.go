@@ -45,15 +45,15 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*pluginWrapper
 
+	// inputPackTracker, filterPackTracker
 	diagnosticTrackers map[string]*diagnosticTracker
 
 	router *messageRouter
-	stats  *engineStats
 
 	// PipelinePack supply for Input plugins.
 	inputRecycleChan chan *PipelinePack
 
-	// PipelinePack supply for Filter plugins
+	// PipelinePack supply for Filter plugins.
 	filterRecycleChan chan *PipelinePack
 
 	hostname string
@@ -85,7 +85,6 @@ func New(globals *GlobalConfig) (this *Engine) {
 	this.httpPaths = make([]string, 0, 6)
 
 	this.router = newMessageRouter()
-	this.stats = newEngineStats(this)
 
 	this.hostname, _ = os.Hostname()
 	this.pid = os.Getpid()
