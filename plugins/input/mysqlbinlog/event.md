@@ -45,3 +45,21 @@ storeValue 数据反序列化：
                mysqlType: "varchar(20)"
         }
     }
+
+maxwell:
+{ 
+    "database": "zd_shard461_prod",
+    "table": "ticket_field_entries",
+    "type":  "update",
+    "data":  {
+        "id":918362569,
+        "ticket_field_id":2409966,
+        "ticket_id":105008079,
+        "updated_at":"2015-08-01 20:35:37",
+        "account_id":34989,
+        "value":"147",
+        "created_at":"2015-08-01 20:32:23"
+    },
+    "ts": 1438461337 
+}
+
