@@ -12,28 +12,21 @@ type PipelinePack struct {
 
 	input bool
 
-	// To avoid infinite message loops
-	msgLoopCount int
-
 	// Used internally to stamp diagnostic information
 	diagnostics *PacketTracking
 
 	// For routing
 	Ident string
 
-	// Project name
-	Project string
-
-	Payload []byte
+	Payload Payloader
 }
 
 func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 	return &PipelinePack{
-		recycleChan:  recycleChan,
-		refCount:     int32(1),
-		msgLoopCount: 0,
-		input:        false,
-		diagnostics:  NewPacketTracking(),
+		recycleChan: recycleChan,
+		refCount:    int32(1),
+		input:       false,
+		diagnostics: NewPacketTracking(),
 	}
 }
 
@@ -42,17 +35,16 @@ func (this *PipelinePack) incRef() {
 }
 
 func (this PipelinePack) String() string {
-	return fmt.Sprintf("{%s:%s, %+v, %s}", this.Project, this.Ident, this.input, string(this.Payload))
+	return fmt.Sprintf("{%s, %+v, %s}", this.Ident, this.input, this.Payload)
 }
 
 func (this *PipelinePack) Reset() {
 	this.refCount = int32(1)
-	this.msgLoopCount = 0
 	this.input = false
 	this.diagnostics.Reset()
 
-	this.Project = ""
 	this.Ident = ""
+	this.Payload = nil
 }
 
 func (this *PipelinePack) Recycle() {

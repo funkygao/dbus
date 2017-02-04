@@ -5,6 +5,7 @@ import (
 
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/mysqlbinlog"
+	"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 	"github.com/siddontang/go-mysql/canal"
 )
@@ -43,7 +44,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				break
 			}
 
-			pack.Payload = <-this.binlog
+			pack.Payload = model.Bytes(<-this.binlog) // FIXME will not able to close
 			r.Inject(pack)
 		}
 	}
@@ -52,6 +53,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 }
 
 func (this *MysqlbinlogInput) Stop() {
+	this.binlogStream.Close()
 	close(this.stopChan)
 }
 

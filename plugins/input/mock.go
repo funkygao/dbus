@@ -2,6 +2,7 @@ package input
 
 import (
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 )
 
@@ -24,7 +25,7 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				break
 			}
 
-			pack.Payload = []byte("hello world")
+			pack.Payload = model.Bytes("hello world")
 			r.Inject(pack)
 		}
 	}
