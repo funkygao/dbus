@@ -367,7 +367,7 @@ func (this *Engine) ServeForever() {
 			globals.Printf("Stop message sent to '%s'", runner.Name())
 		}
 
-		this.router.removeFilterMatcher <- runner.Matcher()
+		this.router.removeFilterMatcher <- runner.getMatcher()
 	}
 	filtersWg.Wait()
 	if globals.Verbose {
@@ -379,7 +379,7 @@ func (this *Engine) ServeForever() {
 			globals.Printf("Stop message sent to '%s'", runner.Name())
 		}
 
-		this.router.removeOutputMatcher <- runner.Matcher()
+		this.router.removeOutputMatcher <- runner.getMatcher()
 	}
 	outputsWg.Wait()
 	if globals.Verbose {
