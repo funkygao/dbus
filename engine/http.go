@@ -86,7 +86,7 @@ func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 		output["hostname"] = this.hostname
 
 	case "pools":
-		for poolName, _ := range this.diagnosticTrackers {
+		for poolName := range this.diagnosticTrackers {
 			packs := make([]string, 0, globals.RecyclePoolSize)
 			for _, pack := range this.diagnosticTrackers[poolName].packs {
 				s := fmt.Sprintf("[%s]%s",

@@ -279,7 +279,7 @@ func (this *Engine) ServeForever() {
 
 		var inputPoolSize, filterPoolSize int
 
-		for _ = range t.C {
+		for range t.C {
 			inputPoolSize = len(this.inputRecycleChan)
 			filterPoolSize = len(this.filterRecycleChan)
 			if globals.Verbose || inputPoolSize == 0 || filterPoolSize == 0 {

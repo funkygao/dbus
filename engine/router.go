@@ -87,7 +87,7 @@ func (this *messageRouter) Start() {
 			t := time.NewTicker(globals.WatchdogTick)
 			defer t.Stop()
 
-			for _ = range t.C {
+			for range t.C {
 				this.reportMatcherQueues(globals.Logger)
 			}
 		}()
