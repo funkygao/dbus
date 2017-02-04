@@ -16,14 +16,14 @@ const (
 )
 
 var (
-	availablePlugins = make(map[string]func() Plugin)
+	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
-	Globals func() *GlobalConfigStruct
+	Globals func() *GlobalConfig
 )
 
-// GlobalConfigStruct is the struct for holding global pipeline config values.
-type GlobalConfigStruct struct {
+// GlobalConfig is the struct for holding global pipeline config values.
+type GlobalConfig struct {
 	*log.Logger
 
 	StartedAt       time.Time
@@ -42,17 +42,17 @@ type GlobalConfigStruct struct {
 	sigChan chan os.Signal
 }
 
-func (this *GlobalConfigStruct) Shutdown() {
+func (this *GlobalConfig) Shutdown() {
 	this.Kill(syscall.SIGINT)
 }
 
-func (this *GlobalConfigStruct) Kill(sig os.Signal) {
+func (this *GlobalConfig) Kill(sig os.Signal) {
 	this.sigChan <- sig
 }
 
-func DefaultGlobals() *GlobalConfigStruct {
+func DefaultGlobals() *GlobalConfig {
 	idle, _ := time.ParseDuration("2m")
-	return &GlobalConfigStruct{
+	return &GlobalConfig{
 		Debug:           false,
 		Verbose:         false,
 		DryRun:          false,

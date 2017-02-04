@@ -15,16 +15,17 @@ type Input interface {
 type InputRunner interface {
 	PluginRunner
 
-	// Input channel from which Inputs can get fresh PipelinePacks
+	// InChan returns input channel from which Inputs can get fresh PipelinePacks.
 	InChan() chan *PipelinePack
 
-	// Associated Input plugin object.
+	// Input returns the associated Input plugin object.
 	Input() Input
 
 	// Injects PipelinePack into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *PipelinePack)
 
+	// TODO discard it?
 	setTickLength(tickLength time.Duration)
 	TickLength() time.Duration
 	Ticker() (ticker <-chan time.Time)
@@ -33,14 +34,15 @@ type InputRunner interface {
 type iRunner struct {
 	pRunnerBase
 
-	inChan     chan *PipelinePack
+	inChan chan *PipelinePack
+
 	tickLength time.Duration
 	ticker     <-chan time.Time
 }
 
 func (this *iRunner) Inject(pack *PipelinePack) {
 	if pack.Ident == "" {
-		//Globals().Fatalf("empty Ident: %+v", *pack)
+		Globals().Fatalf("empty Ident: %+v", *pack)
 	}
 
 	pack.input = true
@@ -125,7 +127,7 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 }
 
-func NewInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			name:          name,

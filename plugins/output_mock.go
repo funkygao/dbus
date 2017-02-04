@@ -18,7 +18,7 @@ func (this *MockOutput) Init(config *conf.Conf) {
 }
 
 func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
-	tick := time.NewTicker(time.Second * 5)
+	tick := time.NewTicker(time.Second * 10)
 	defer tick.Stop()
 	var n, lastN int64
 
@@ -38,7 +38,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Printf("throughput %s/s", gofmt.Comma((n-lastN)/5))
+			log.Printf("throughput %s/s", gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}

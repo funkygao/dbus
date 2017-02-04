@@ -6,12 +6,14 @@ import (
 
 // PluginRunner is the base interface for the  plugin runners.
 type PluginRunner interface {
-	start(e *Engine, wg *sync.WaitGroup) (err error)
 
+	// Name returns the name of the underlying plugin.
 	Name() string
 
-	// Underlying plugin object
+	// Underlying plugin object.
 	Plugin() Plugin
+
+	start(e *Engine, wg *sync.WaitGroup) (err error)
 
 	setLeakCount(count int)
 	LeakCount() int
@@ -106,7 +108,7 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 
 	var (
 		pluginType string
-		pw         *PluginWrapper
+		pw         *pluginWrapper
 	)
 
 	globals := Globals()
@@ -134,7 +136,7 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 				globals.Printf("Output[%s] ended", this.name)
 			}
 		} else {
-			panic("unkown plugin type")
+			panic("unknown plugin type")
 		}
 
 		if globals.Stopping {

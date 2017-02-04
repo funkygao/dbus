@@ -29,7 +29,8 @@ func (this *routerStats) update(pack *PipelinePack) {
 	if pack.input {
 		atomic.AddInt64(&this.TotalInputMsgN, 1)
 		atomic.AddInt32(&this.PeriodInputMsgN, 1)
-
+		atomic.AddInt64(&this.TotalInputBytes, int64(len(pack.Payload)))
+		atomic.AddInt64(&this.PeriodInputBytes, int64(len(pack.Payload)))
 	}
 }
 

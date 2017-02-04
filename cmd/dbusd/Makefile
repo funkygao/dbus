@@ -1,5 +1,5 @@
 mock:
 	@go build
 	@mkdir -p var
-	./dbusd -conf ../../etc/mock.cf
+	./dbusd -conf ../../etc/mock.cf -vv
 

@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 )
 
-// PipelinePack is the pipeline data structure that is transfered between plugins.
+// PipelinePack is the pipeline data structure that is transferred between plugins.
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
 	refCount    int32
