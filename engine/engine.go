@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -175,17 +176,12 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 	plugin.Init(section)
 
 	pluginCategory := pluginType[1]
-	// ident
-	if pluginCategory == "Input" || pluginCategory == "Filter" { // TODO
+	if pluginCategory == "Input" {
 		ident := section.String("ident", "")
 		if ident == "" {
 			panic("empty ident for plugin: " + wrapper.name)
 		}
-	}
-
-	if pluginCategory == "Input" {
-		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input),
-			pluginCommons)
+		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons, ident)
 		this.inputWrappers[wrapper.name] = wrapper
 
 		return
@@ -222,8 +218,7 @@ func (this *Engine) ServeForever() {
 	// if Input terminates very soon, global.Shutdown will
 	// not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP,
-		syscall.SIGUSR2, syscall.SIGUSR1)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGUSR2, syscall.SIGUSR1)
 
 	this.launchHttpServ()
 
@@ -231,6 +226,10 @@ func (this *Engine) ServeForever() {
 		globals.Println("Launching Output(s)...")
 	}
 	for _, runner := range this.OutputRunners {
+		if globals.VeryVerbose {
+			globals.Printf("  starting %s...", runner.Name())
+		}
+
 		outputsWg.Add(1)
 		if err = runner.start(this, outputsWg); err != nil {
 			panic(err)
@@ -241,6 +240,10 @@ func (this *Engine) ServeForever() {
 		globals.Println("Launching Filter(s)...")
 	}
 	for _, runner := range this.FilterRunners {
+		if globals.VeryVerbose {
+			globals.Printf("  starting %s...", runner.Name())
+		}
+
 		filtersWg.Add(1)
 		if err = runner.start(this, filtersWg); err != nil {
 			panic(err)
@@ -254,8 +257,7 @@ func (this *Engine) ServeForever() {
 	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
 
 	if globals.Verbose {
-		globals.Printf("Initializing PipelinePack pools with size=%d",
-			globals.RecyclePoolSize)
+		globals.Printf("Initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
 	}
 	for i := 0; i < globals.RecyclePoolSize; i++ {
 		inputPack := NewPipelinePack(this.inputRecycleChan)
@@ -281,12 +283,14 @@ func (this *Engine) ServeForever() {
 			inputPoolSize = len(this.inputRecycleChan)
 			filterPoolSize = len(this.filterRecycleChan)
 			if globals.Verbose || inputPoolSize == 0 || filterPoolSize == 0 {
-				globals.Printf("Recycle pool energy: [input]%d [filter]%d",
-					inputPoolSize, filterPoolSize)
+				globals.Printf("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
 			}
 		}
 	}()
 
+	if globals.Verbose {
+		globals.Println("Launching Router...")
+	}
 	go this.router.Start()
 
 	for _, project := range this.projects {
@@ -297,6 +301,10 @@ func (this *Engine) ServeForever() {
 		globals.Println("Launching Input(s)...")
 	}
 	for _, runner := range this.InputRunners {
+		if globals.VeryVerbose {
+			globals.Printf("  starting %s...", runner.Name())
+		}
+
 		inputsWg.Add(1)
 		if err = runner.start(this, inputsWg); err != nil {
 			inputsWg.Done()
@@ -307,7 +315,7 @@ func (this *Engine) ServeForever() {
 	for !globals.Stopping {
 		select {
 		case sig := <-globals.sigChan:
-			globals.Printf("Got signal %s", sig.String())
+			globals.Printf("Got signal %s", strings.ToUpper(sig.String()))
 			switch sig {
 			case syscall.SIGHUP:
 				globals.Println("Reloading...")
@@ -377,6 +385,7 @@ func (this *Engine) ServeForever() {
 		globals.Println("All Outputs terminated")
 	}
 
+	// TODO stop router
 	//close(e.router.hub)
 
 	this.stopHttpServ()

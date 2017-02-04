@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"sync/atomic"
 )
 
@@ -38,6 +39,10 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 
 func (this *PipelinePack) incRef() {
 	atomic.AddInt32(&this.refCount, 1)
+}
+
+func (this PipelinePack) String() string {
+	return fmt.Sprintf("{%s:%s, %+v, %s}", this.Project, this.Ident, this.input, string(this.Payload))
 }
 
 func (this *PipelinePack) Reset() {

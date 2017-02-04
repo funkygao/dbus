@@ -33,25 +33,26 @@ type InputRunner interface {
 type iRunner struct {
 	pRunnerBase
 
+	ident  string
 	inChan chan *PipelinePack
 }
 
-func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(name string, input Input, pluginCommons *pluginCommons, ident string) (r InputRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			name:          name,
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
+		ident: ident,
 	}
 }
 
 func (this *iRunner) Inject(pack *PipelinePack) {
-	if pack.Ident == "" {
-		Globals().Fatalf("empty Ident: %+v", *pack)
-	}
-
 	pack.input = true
+	if pack.Ident == "" {
+		pack.Ident = this.ident
+	}
 	this.engine.router.hub <- pack
 }
 

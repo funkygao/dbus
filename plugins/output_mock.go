@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"log"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -20,8 +19,9 @@ func (this *MockOutput) Init(config *conf.Conf) {
 func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	tick := time.NewTicker(time.Second * 10)
 	defer tick.Stop()
-	var n, lastN int64
 
+	var n, lastN int64
+	globals := engine.Globals()
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -32,13 +32,13 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			n++
 
 			if !this.blackhole {
-				log.Printf("-> %s", string(pack.Payload))
+				globals.Printf("-> %s", pack)
 			}
 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Printf("throughput %s/s", gofmt.Comma((n-lastN)/10))
+			globals.Printf("throughput %s/s", gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}

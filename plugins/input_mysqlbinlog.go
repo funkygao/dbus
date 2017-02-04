@@ -8,18 +8,12 @@ import (
 
 type MysqlbinlogInput struct {
 	stopChan chan struct{}
-	ident    string
 
 	binlogStream *mysqlbinlog.MysqlBinlog
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
-	this.ident = config.String("ident", "")
-	if this.ident == "" {
-		panic("empty ident")
-	}
-
 	this.binlogStream = mysqlbinlog.New()
 }
 
