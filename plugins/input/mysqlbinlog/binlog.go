@@ -29,6 +29,12 @@ func (m *MysqlBinlog) LoadConfig(config *conf.Conf) *MysqlBinlog {
 		panic(err)
 	}
 
+	if image := config.String("binlog_row_image", ""); image != "" {
+		if err = c.CheckBinlogRowImage(image); err != nil {
+			panic(err)
+		}
+	}
+
 	m.Canal = c
 	return m
 }
