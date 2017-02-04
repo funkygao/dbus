@@ -2,8 +2,10 @@ package plugins
 
 import (
 	"log"
+	"time"
 
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
 )
 
@@ -16,6 +18,10 @@ func (this *MockOutput) Init(config *conf.Conf) {
 }
 
 func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	tick := time.NewTicker(time.Second * 5)
+	defer tick.Stop()
+	var n, lastN int64
+
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -23,11 +29,17 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 				return nil
 			}
 
+			n++
+
 			if !this.blackhole {
 				log.Printf("-> %s", string(pack.Payload))
 			}
 
 			pack.Recycle()
+
+		case <-tick.C:
+			log.Printf("throughput %s/s", gofmt.Comma((n-lastN)/5))
+			lastN = n
 		}
 	}
 

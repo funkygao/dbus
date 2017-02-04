@@ -15,7 +15,7 @@
         
         {
             name:   "MockOutput"
-            blackhole: false
+            blackhole: true
             match:  ["mock", ]
         }
     ]

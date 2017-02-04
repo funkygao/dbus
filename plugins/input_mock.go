@@ -31,7 +31,6 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				break
 			}
 
-			pack.Reset()
 			pack.Ident = this.ident
 			pack.Payload = []byte("hello world")
 			r.Inject(pack)
