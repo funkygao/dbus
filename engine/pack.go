@@ -1,10 +1,11 @@
 package engine
 
 import (
+	"fmt"
 	"sync/atomic"
 )
 
-// PipelinePack is the pipeline data structure that is transfered between plugins.
+// PipelinePack is the pipeline data structure that is transferred between plugins.
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
 	refCount    int32
@@ -38,6 +39,10 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 
 func (this *PipelinePack) incRef() {
 	atomic.AddInt32(&this.refCount, 1)
+}
+
+func (this PipelinePack) String() string {
+	return fmt.Sprintf("{%s:%s, %+v, %s}", this.Project, this.Ident, this.input, string(this.Payload))
 }
 
 func (this *PipelinePack) Reset() {

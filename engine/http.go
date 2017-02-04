@@ -79,7 +79,6 @@ func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 		output["result"] = "go to global logger to see result"
 
 	case "stat":
-		output["runtime"] = this.stats.Runtime()
 		output["router"] = this.router.stats
 		output["started"] = globals.StartedAt
 		output["elapsed"] = time.Since(globals.StartedAt).String()

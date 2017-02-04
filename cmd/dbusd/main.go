@@ -5,7 +5,9 @@ import (
 	"runtime/debug"
 
 	"github.com/funkygao/dbus/engine"
-	_ "github.com/funkygao/dbus/plugins" // trigger RegisterPlugin(s)
+	_ "github.com/funkygao/dbus/plugins/filter"
+	_ "github.com/funkygao/dbus/plugins/input"
+	_ "github.com/funkygao/dbus/plugins/output"
 	"github.com/funkygao/gafka/diagnostics"
 )
 
@@ -21,7 +23,6 @@ func init() {
 	globals.Verbose = options.verbose
 	globals.VeryVerbose = options.veryVerbose
 	globals.DryRun = options.dryrun
-	globals.TickerLength = options.tick
 	globals.Logger = newLogger()
 }
 

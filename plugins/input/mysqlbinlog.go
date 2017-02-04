@@ -1,29 +1,38 @@
-package plugins
+package input
 
 import (
+	"encoding/json"
+
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/plugins/mysqlbinlog"
+	"github.com/funkygao/dbus/plugins/input/mysqlbinlog"
 	conf "github.com/funkygao/jsconf"
+	"github.com/siddontang/go-mysql/canal"
+)
+
+var (
+	_ canal.RowsEventHandler = &MysqlbinlogInput{}
 )
 
 type MysqlbinlogInput struct {
 	stopChan chan struct{}
-	ident    string
+	binlog   chan []byte
 
 	binlogStream *mysqlbinlog.MysqlBinlog
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
-	this.ident = config.String("ident", "")
-	if this.ident == "" {
-		panic("empty ident")
-	}
-
-	this.binlogStream = mysqlbinlog.New()
+	this.binlog = make(chan []byte)
+	this.binlogStream = mysqlbinlog.New().LoadConfig(config)
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	if err := this.binlogStream.Start(); err != nil {
+		panic(err)
+	}
+
+	this.binlogStream.RegRowsEventHandler(this)
+
 	for {
 		select {
 		case <-this.stopChan:
@@ -34,6 +43,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				break
 			}
 
+			pack.Payload = <-this.binlog
 			r.Inject(pack)
 		}
 	}
@@ -43,6 +53,16 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 func (this *MysqlbinlogInput) Stop() {
 	close(this.stopChan)
+}
+
+func (this *MysqlbinlogInput) String() string {
+	return "MysqlbinlogInput"
+}
+
+func (this *MysqlbinlogInput) Do(e *canal.RowsEvent) error {
+	b, _ := json.Marshal(e)
+	this.binlog <- b
+	return nil
 }
 
 func init() {

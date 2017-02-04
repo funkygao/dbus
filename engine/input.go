@@ -2,7 +2,11 @@ package engine
 
 import (
 	"sync"
-	"time"
+)
+
+var (
+	_ PluginRunner = &iRunner{}
+	_ InputRunner  = &iRunner{}
 )
 
 type Input interface {
@@ -15,35 +19,40 @@ type Input interface {
 type InputRunner interface {
 	PluginRunner
 
-	// Input channel from which Inputs can get fresh PipelinePacks
+	// InChan returns input channel from which Inputs can get fresh PipelinePacks.
 	InChan() chan *PipelinePack
 
-	// Associated Input plugin object.
+	// Input returns the associated Input plugin object.
 	Input() Input
 
 	// Injects PipelinePack into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *PipelinePack)
-
-	setTickLength(tickLength time.Duration)
-	TickLength() time.Duration
-	Ticker() (ticker <-chan time.Time)
 }
 
 type iRunner struct {
 	pRunnerBase
 
-	inChan     chan *PipelinePack
-	tickLength time.Duration
-	ticker     <-chan time.Time
+	ident  string
+	inChan chan *PipelinePack
+}
+
+func newInputRunner(name string, input Input, pluginCommons *pluginCommons, ident string) (r InputRunner) {
+	return &iRunner{
+		pRunnerBase: pRunnerBase{
+			name:          name,
+			plugin:        input.(Plugin),
+			pluginCommons: pluginCommons,
+		},
+		ident: ident,
+	}
 }
 
 func (this *iRunner) Inject(pack *PipelinePack) {
-	if pack.Ident == "" {
-		//Globals().Fatalf("empty Ident: %+v", *pack)
-	}
-
 	pack.input = true
+	if pack.Ident == "" {
+		pack.Ident = this.ident
+	}
 	this.engine.router.hub <- pack
 }
 
@@ -55,27 +64,8 @@ func (this *iRunner) Input() Input {
 	return this.plugin.(Input)
 }
 
-func (this *iRunner) setTickLength(tickLength time.Duration) {
-	this.tickLength = tickLength
-}
-
-func (this *iRunner) Ticker() (t <-chan time.Time) {
-	return this.ticker
-}
-
-func (this *iRunner) TickLength() time.Duration {
-	return this.tickLength
-}
-
 func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 	this.engine = e
-	if this.tickLength > 0 {
-		this.ticker = time.Tick(this.tickLength)
-	} else {
-		this.ticker = nil
-	}
-
-	// got the engine's recylable PipelinePack pool
 	this.inChan = e.inputRecycleChan
 
 	go this.runMainloop(e, wg)
@@ -123,14 +113,4 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 		this.plugin = iw.Create()
 	}
 
-}
-
-func NewInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
-	return &iRunner{
-		pRunnerBase: pRunnerBase{
-			name:          name,
-			plugin:        input.(Plugin),
-			pluginCommons: pluginCommons,
-		},
-	}
 }

@@ -1,0 +1,28 @@
+{
+    http_addr: "127.0.0.1:9876"
+
+    projects: [
+        {
+            name: "mysql"
+        }
+    ]
+
+    plugins: [
+        {
+            name: "MysqlbinlogInput"
+            ident: "binlog"
+            master_addr: "localhost:3306"
+            user: "root"
+            password: ""
+            flavor: "mysql"
+            server_id: 3
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: false
+            match:  ["binlog", ]
+        }
+    ]
+
+}

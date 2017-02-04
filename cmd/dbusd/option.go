@@ -15,7 +15,6 @@ var (
 		showversion        bool
 		logfile            string
 		debug              bool
-		tick               int
 		dryrun             bool
 		lockfile           string
 		diagnosticInterval int
@@ -38,15 +37,10 @@ func parseFlags() {
 	flag.StringVar(&options.lockfile, "lockfile", "var/dpiped.lock", "lockfile path")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
-	flag.IntVar(&options.tick, "tick", 60*10, "tick interval in seconds to report sys stat")
 	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
 	flag.StringVar(&options.visualizeFile, "visualize", "", "visualize the pipleline to png file")
 	flag.Usage = showUsage
 	flag.Parse()
-
-	if options.tick <= 0 {
-		panic("tick must be possitive")
-	}
 
 	if options.veryVerbose {
 		options.debug = true

@@ -1,4 +1,4 @@
-package plugins
+package input
 
 import (
 	"github.com/funkygao/dbus/engine"
@@ -7,17 +7,10 @@ import (
 
 type MockInput struct {
 	stopChan chan struct{}
-
-	ident string
 }
 
 func (this *MockInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
-
-	this.ident = config.String("ident", "")
-	if this.ident == "" {
-		panic("empty ident")
-	}
 }
 
 func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
@@ -31,7 +24,6 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				break
 			}
 
-			pack.Ident = this.ident
 			pack.Payload = []byte("hello world")
 			r.Inject(pack)
 		}
