@@ -191,9 +191,6 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input),
 			pluginCommons)
 		this.inputWrappers[wrapper.name] = wrapper
-		if pluginCommons.ticker > 0 {
-			this.InputRunners[wrapper.name].setTickLength(time.Duration(pluginCommons.ticker) * time.Second)
-		}
 
 		return
 	}

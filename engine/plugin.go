@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	conf "github.com/funkygao/jsconf"
 	"github.com/gorilla/mux"
@@ -57,11 +56,10 @@ func (this *pluginWrapper) Create() (plugin Plugin) {
 
 // pluginCommons is the common config directives for all plugins.
 type pluginCommons struct {
-	name     string        `json:"name"`
-	class    string        `json:"class"`           // TODO
-	ticker   time.Duration `json:"ticker_interval"` // TODO
-	disabled bool          `json:"disabled"`
-	comment  string        `json:"comment"`
+	name     string `json:"name"`
+	class    string `json:"class"` // TODO
+	disabled bool   `json:"disabled"`
+	comment  string `json:"comment"`
 }
 
 func (this *pluginCommons) load(section *conf.Conf) {
@@ -75,6 +73,5 @@ func (this *pluginCommons) load(section *conf.Conf) {
 		this.class = this.name
 	}
 	this.comment = section.String("comment", "")
-	this.ticker = section.Duration("ticker_interval", Globals().WatchdogTick)
 	this.disabled = section.Bool("disabled", false)
 }
