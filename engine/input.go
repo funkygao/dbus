@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+var (
+	_ PluginRunner = &iRunner{}
+	_ InputRunner  = &iRunner{}
+)
+
 type Input interface {
 	Plugin
 

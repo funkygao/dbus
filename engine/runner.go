@@ -4,6 +4,13 @@ import (
 	"sync"
 )
 
+var (
+	_ PluginRunner       = &foRunner{}
+	_ FilterOutputRunner = &foRunner{}
+	_ OutputRunner       = &foRunner{}
+	_ FilterRunner       = &foRunner{}
+)
+
 // PluginRunner is the base interface for the  plugin runners.
 type PluginRunner interface {
 
@@ -27,7 +34,7 @@ type FilterOutputRunner interface {
 	Matcher() *matcher
 }
 
-// Base for all runners
+// pRunnerBase is base for all plugin runners.
 type pRunnerBase struct {
 	name          string
 	plugin        Plugin
