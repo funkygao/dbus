@@ -5,6 +5,10 @@ import (
 	"sync/atomic"
 )
 
+type Payloader interface {
+	Length() int
+}
+
 // PipelinePack is the pipeline data structure that is transferred between plugins.
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
