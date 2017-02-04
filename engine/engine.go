@@ -284,7 +284,7 @@ func (this *Engine) ServeForever() {
 
 	// check if we have enough recycle pool reservation
 	go func() {
-		t := time.NewTicker(time.Second * time.Duration(globals.TickerLength))
+		t := time.NewTicker(globals.WatchdogTick)
 		defer t.Stop()
 
 		var inputPoolSize, filterPoolSize int

@@ -123,16 +123,16 @@ func (this *messageRouter) Start() {
 		foundMatch bool
 	)
 
-	ticker = time.NewTicker(time.Second * time.Duration(globals.TickerLength))
+	ticker = time.NewTicker(globals.WatchdogTick)
 	defer ticker.Stop()
 
 	if globals.Verbose {
-		globals.Printf("Router started with ticker=%ds\n", globals.TickerLength)
+		globals.Printf("Router started with ticker=%s", globals.WatchdogTick)
 	}
 
 	if globals.Verbose {
 		go func() {
-			t := time.NewTicker(time.Second * time.Duration(globals.TickerLength))
+			t := time.NewTicker(globals.WatchdogTick)
 			defer t.Stop()
 
 			for _ = range t.C {
@@ -151,7 +151,7 @@ LOOP:
 			this.removeMatcher(matcher, this.filterMatchers)
 
 		case <-ticker.C:
-			this.stats.render(globals.Logger, globals.TickerLength)
+			this.stats.render(globals.Logger, int(globals.WatchdogTick.Seconds()))
 			this.stats.resetPeriodCounters()
 
 		case pack, ok = <-this.hub:

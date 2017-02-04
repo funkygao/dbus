@@ -21,7 +21,6 @@ func init() {
 	globals.Verbose = options.verbose
 	globals.VeryVerbose = options.veryVerbose
 	globals.DryRun = options.dryrun
-	globals.TickerLength = options.tick
 	globals.Logger = newLogger()
 }
 

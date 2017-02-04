@@ -34,7 +34,8 @@ type GlobalConfig struct {
 	DryRun          bool
 	RecyclePoolSize int
 	PluginChanSize  int
-	TickerLength    int
+
+	WatchdogTick time.Duration
 
 	MaxMsgLoops int
 	MaxPackIdle time.Duration
@@ -58,7 +59,7 @@ func DefaultGlobals() *GlobalConfig {
 		DryRun:          false,
 		RecyclePoolSize: 100,
 		PluginChanSize:  150,
-		TickerLength:    10 * 60, // 10 minutes
+		WatchdogTick:    time.Minute * 10,
 		MaxMsgLoops:     4,
 		MaxPackIdle:     idle,
 		StartedAt:       time.Now(),
