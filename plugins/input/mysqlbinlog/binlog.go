@@ -20,6 +20,8 @@ func (m *MysqlBinlog) LoadConfig(config *conf.Conf) *MysqlBinlog {
 	cfg.Password = config.String("password", "")
 	cfg.Flavor = config.String("flavor", "mysql") // or mariadb
 	cfg.ServerID = uint32(config.Int("server_id", 1007))
+	cfg.DataDir = config.String("work_dir", "var/")
+	cfg.Dump.DiscardErr = false
 	// TODO validate
 
 	c, err := canal.NewCanal(cfg)

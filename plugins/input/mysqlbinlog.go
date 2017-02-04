@@ -28,6 +28,8 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	engine.Globals().Printf("start from position: %+v", this.binlogStream.SyncedPosition())
+
 	if err := this.binlogStream.Start(); err != nil {
 		panic(err)
 	}
@@ -44,8 +46,14 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				break
 			}
 
-			pack.Payload = model.Bytes(<-this.binlog) // FIXME will not able to close
-			r.Inject(pack)
+			select {
+			case b := <-this.binlog:
+				pack.Payload = model.Bytes(b)
+				r.Inject(pack)
+
+			case <-this.stopChan:
+				return nil
+			}
 		}
 	}
 
