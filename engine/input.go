@@ -66,8 +66,6 @@ func (this *iRunner) Input() Input {
 
 func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 	this.engine = e
-
-	// got the engine's recylable PipelinePack pool
 	this.inChan = e.inputRecycleChan
 
 	go this.runMainloop(e, wg)
