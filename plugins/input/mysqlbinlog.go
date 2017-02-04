@@ -1,8 +1,8 @@
-package plugins
+package input
 
 import (
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/plugins/mysqlbinlog"
+	"github.com/funkygao/dbus/plugins/input/mysqlbinlog"
 	conf "github.com/funkygao/jsconf"
 )
 

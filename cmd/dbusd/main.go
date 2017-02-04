@@ -5,7 +5,9 @@ import (
 	"runtime/debug"
 
 	"github.com/funkygao/dbus/engine"
-	_ "github.com/funkygao/dbus/plugins" // trigger RegisterPlugin(s)
+	_ "github.com/funkygao/dbus/plugins/filter"
+	_ "github.com/funkygao/dbus/plugins/input"
+	_ "github.com/funkygao/dbus/plugins/output"
 	"github.com/funkygao/gafka/diagnostics"
 )
 

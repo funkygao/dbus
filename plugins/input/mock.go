@@ -1,4 +1,4 @@
-package plugins
+package input
 
 import (
 	"github.com/funkygao/dbus/engine"
