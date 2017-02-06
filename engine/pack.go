@@ -7,6 +7,7 @@ import (
 
 type Payloader interface {
 	Length() int
+	Bytes() []byte
 }
 
 // PipelinePack is the pipeline data structure that is transferred between plugins.
