@@ -22,6 +22,7 @@ func (m *MysqlBinlog) LoadConfig(config *conf.Conf) *MysqlBinlog {
 	cfg.ServerID = uint32(config.Int("server_id", 1007))
 	cfg.DataDir = config.String("work_dir", "var/")
 	cfg.Dump.DiscardErr = false
+	cfg.Dump.ExecutionPath = "" // ignore mysqldump
 	// TODO validate
 
 	c, err := canal.NewCanal(cfg)
