@@ -23,3 +23,4 @@ another databus that listens for mysql binlog and distribute to sinks
 - [ ] pack.Payload reuse memory
 - [ ] what if replication conn broken
 - [ ] position will be stored in zk
+- [ ] play with binlog_row_image
