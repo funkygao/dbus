@@ -82,6 +82,9 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		case *replication.GenericEvent:
 
+		case *replication.GTIDEvent:
+			// TODO
+
 		default:
 			log.Warn("unexpected event: %+v", e)
 
