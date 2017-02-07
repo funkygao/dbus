@@ -23,6 +23,7 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	for {
+		log.Info("starting replication")
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
 		<-ready
@@ -32,6 +33,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
+				log.Trace("yes sir! I quit")
 				return nil
 
 			case err, ok := <-errors:
