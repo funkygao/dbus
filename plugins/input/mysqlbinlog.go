@@ -38,9 +38,14 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			case <-this.stopChan:
 				return nil
 
-			case err := <-errors:
+			case err, ok := <-errors:
 				// e,g. replication conn broken
-				log.Error("slave: %s", err)
+				if !ok {
+					// stopped
+					return nil
+				}
+
+				log.Error("slave: %v", err)
 				time.Sleep(time.Second * 5)
 
 			case pack, ok := <-r.InChan():
