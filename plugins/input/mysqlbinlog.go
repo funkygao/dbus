@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/plugins/input/mysqlbinlog"
+	"github.com/funkygao/dbus/plugins/input/myslave"
 	"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 	"github.com/siddontang/go-mysql/canal"
@@ -18,13 +18,13 @@ type MysqlbinlogInput struct {
 	stopChan chan struct{}
 	binlog   chan []byte
 
-	binlogStream *mysqlbinlog.MysqlBinlog
+	binlogStream *myslave.MySlave
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 	this.binlog = make(chan []byte)
-	this.binlogStream = mysqlbinlog.New().LoadConfig(config)
+	this.binlogStream = myslave.New().LoadConfig(config)
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
