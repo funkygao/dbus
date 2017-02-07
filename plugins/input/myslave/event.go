@@ -9,11 +9,12 @@ import (
 )
 
 type RowsEvent struct {
-	Name     string `json:"log"`
-	Position uint32 `json:"pos"`
-	Schema   string `json:"db"`
-	Table    string `json:"table"`
-	Action   string `json:"action"`
+	Name      string `json:"log"`
+	Position  uint32 `json:"pos"`
+	Schema    string `json:"db"`
+	Table     string `json:"table"`
+	Action    string `json:"action"`
+	Timestamp uint32 `json:"t"`
 
 	// binlog has three update event version, v0, v1 and v2.
 	// for v1 and v2, the rows number must be even.
@@ -23,7 +24,7 @@ type RowsEvent struct {
 }
 
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %d %s %s/%s %+v", r.Name, r.Position, r.Action, r.Schema, r.Table, r.Rows)
+	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Name, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
 }
 
 func (r *RowsEvent) Bytes() []byte {
@@ -52,11 +53,12 @@ func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.Row
 	}
 
 	m.rowsEvent <- &RowsEvent{
-		Name:     m.pos.Name,
-		Position: h.LogPos,
-		Schema:   schema,
-		Table:    table,
-		Action:   action,
-		Rows:     e.Rows,
+		Name:      m.pos.Name,
+		Position:  h.LogPos,
+		Schema:    schema,
+		Table:     table,
+		Action:    action,
+		Timestamp: h.Timestamp,
+		Rows:      e.Rows,
 	}
 }

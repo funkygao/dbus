@@ -25,6 +25,15 @@
             blackhole: false
             match:  ["binlog", ]
         }
+
+        {
+            name: "KafkaOutput"
+            zone: "local"
+            cluster: "me"
+            topic: "foobar"
+            hhdirs: ["hh", ]
+            match: ["binlog1", ]
+        }
     ]
 
 }
