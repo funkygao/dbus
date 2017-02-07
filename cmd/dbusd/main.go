@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"runtime/debug"
 
 	"github.com/funkygao/dbus/engine"
 	_ "github.com/funkygao/dbus/plugins/filter"
 	_ "github.com/funkygao/dbus/plugins/input"
 	_ "github.com/funkygao/dbus/plugins/output"
-	"github.com/funkygao/gafka/diagnostics"
+	"github.com/funkygao/gafka/diagnostics/agent"
 )
 
 func init() {
@@ -34,7 +35,7 @@ func main() {
 		}
 	}()
 
-	go diagnostics.Start()
+	log.Printf("pprof ready on %s", agent.Start())
 
 	e := engine.New(globals).
 		LoadConfigFile(options.configfile)
