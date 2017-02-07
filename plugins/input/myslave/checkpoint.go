@@ -10,7 +10,6 @@ import (
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/siddontang/go-mysql/mysql"
-	"github.com/siddontang/go/ioutil2"
 )
 
 type checkpoint struct {
@@ -58,7 +57,7 @@ func (m *checkpoint) Save(force bool) error {
 	e.Encode(m)
 
 	var err error
-	if err = ioutil2.WriteFileAtomic(m.name, buf.Bytes(), 0644); err != nil {
+	if err = writeFileAtomic(m.name, buf.Bytes(), 0644); err != nil {
 		log.Errorf("canal save master info to file %s err %v", m.name, err)
 	}
 
