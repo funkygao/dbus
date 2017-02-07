@@ -1,5 +1,5 @@
 {
-    http_addr: "127.0.0.1:9876"
+    api_addr: "127.0.0.1:9876"
 
     projects: [
         {
@@ -10,7 +10,6 @@
     plugins: [
         {
             name: "MysqlbinlogInput"
-            loglevel: "debug"
             ident: "binlog"
             master_host: "localhost"
             master_port: 3306
@@ -19,13 +18,7 @@
             flavor: "mysql"
             server_id: 3
             gtid: false
-        }
-        
-        {
-            name:   "MockOutput"
-            blackhole: false
-            match:  ["binlog1", ]
-        }
+        }            
 
         {
             name: "KafkaOutput"

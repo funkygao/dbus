@@ -112,6 +112,9 @@ func (this *Engine) Project(name string) *Project {
 }
 
 func (this *Engine) LoadConfigFile(fn string) *Engine {
+	if fn == "" {
+		panic("config file is required")
+	}
 	if _, err := os.Stat(fn); err != nil {
 		panic(err)
 	}

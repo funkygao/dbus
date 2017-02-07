@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"runtime/debug"
 
 	"github.com/funkygao/dbus/engine"
@@ -11,6 +10,7 @@ import (
 	_ "github.com/funkygao/dbus/plugins/output"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/diagnostics/agent"
+	"github.com/funkygao/log4go"
 )
 
 func init() {
@@ -20,12 +20,8 @@ func init() {
 		showVersionAndExit()
 	}
 
-	globals = engine.DefaultGlobals()
-	globals.Debug = options.debug
-	globals.Verbose = options.verbose
-	globals.VeryVerbose = options.veryVerbose
-	globals.DryRun = options.dryrun
-	globals.Logger = newLogger()
+	setupLogging()
+
 	ctx.LoadFromHome()
 }
 
@@ -37,14 +33,22 @@ func main() {
 		}
 	}()
 
-	log.Printf("pprof ready on %s", agent.Start())
+	globals := engine.DefaultGlobals()
+	globals.Debug = options.debug
+	globals.Verbose = options.verbose
+	globals.VeryVerbose = options.veryVerbose
+	globals.DryRun = options.dryrun
+	globals.Logger = newLogger()
 
 	e := engine.New(globals).
 		LoadConfigFile(options.configfile)
+
 	if options.visualizeFile != "" {
 		e.ExportDiagram(options.visualizeFile)
 		return
 	}
+
+	log4go.Info("pprof agent ready on %s", agent.Start())
 
 	e.ServeForever()
 }

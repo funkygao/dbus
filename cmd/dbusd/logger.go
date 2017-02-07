@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"os"
+
+	"github.com/funkygao/log4go"
 )
 
 func newLogger() *log.Logger {
@@ -28,4 +30,8 @@ func newLogger() *log.Logger {
 	log.SetPrefix(prefix)
 
 	return log.New(logWriter, prefix, logOptions)
+}
+
+func setupLogging() {
+	log4go.SetLevel(log4go.ToLogLevel(options.loglevel, log4go.TRACE))
 }

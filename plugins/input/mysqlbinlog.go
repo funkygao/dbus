@@ -19,14 +19,11 @@ type MysqlbinlogInput struct {
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
-	logLevel := config.String("loglevel", "trace")
-	for _, filter := range log.Global {
-		filter.Level = log.ToLogLevel(logLevel, log.TRACE)
-	}
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	for {
+		log.Info("starting replication")
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
 		<-ready
@@ -36,6 +33,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
+				log.Trace("yes sir! I quit")
 				return nil
 
 			case err, ok := <-errors:
