@@ -28,13 +28,9 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
-	engine.Globals().Printf("start from position: %+v", this.binlogStream.SyncedPosition())
-
 	if err := this.binlogStream.Start(); err != nil {
 		panic(err)
 	}
-
-	this.binlogStream.RegRowsEventHandler(this)
 
 	for {
 		select {

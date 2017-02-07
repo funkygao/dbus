@@ -11,12 +11,12 @@
         {
             name: "MysqlbinlogInput"
             ident: "binlog"
-            master_addr: "localhost:3306"
+            master_host: "localhost"
+            master_port: 3306
             user: "root"
             password: ""
             flavor: "mysql"
             server_id: 3
-            work_dir: "var/"
         }
         
         {
