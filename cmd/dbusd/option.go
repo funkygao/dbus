@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+
+	"github.com/funkygao/dbus"
 )
 
 var (
@@ -14,6 +16,7 @@ var (
 		configfile         string
 		showversion        bool
 		logfile            string
+		loglevel           string
 		debug              bool
 		dryrun             bool
 		lockfile           string
@@ -32,9 +35,9 @@ Flags:
 func parseFlags() {
 	flag.BoolVar(&options.verbose, "v", false, "verbose")
 	flag.BoolVar(&options.veryVerbose, "vv", false, "very verbose")
-	flag.StringVar(&options.configfile, "conf", "etc/engine.cf", "main config file")
-	flag.StringVar(&options.logfile, "log", "", "master log file path, default stdout")
-	flag.StringVar(&options.lockfile, "lockfile", "var/dpiped.lock", "lockfile path")
+	flag.StringVar(&options.configfile, "conf", "", "main config file")
+	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
+	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
@@ -57,7 +60,7 @@ func showUsage() {
 }
 
 func showVersionAndExit() {
-	fmt.Fprintf(os.Stderr, "%s %s (build: %s)\n", os.Args[0], Version, BuildID)
+	fmt.Fprintf(os.Stderr, "%s %s (build: %s)\n", os.Args[0], dbus.Version, dbus.BuildID)
 	fmt.Fprintf(os.Stderr, "Built with %s %s for %s/%s\n",
 		runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 	os.Exit(0)

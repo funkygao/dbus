@@ -9,6 +9,8 @@ VENDOR=funkygao
 PROJECT=dbus
 VERSION=0.1.1-alpha
 PKGNAME=${VENDOR}-${PROJECT}
+GIT_ID=$(shell git rev-parse HEAD | cut -c1-7)
+GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
 
 help:
 	@echo "The following commands are available:"
@@ -25,6 +27,8 @@ help:
 	@echo "    make ineffassign : Detect ineffectual assignments"
 	@echo "    make misspell    : Detect commonly misspelled words in source files"
 	@echo "    make astscan     : GO AST scanner"
+	@echo ""
+	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
 	@echo ""
 	@echo "    make docs        : Generate source code documentation"
 	@echo ""
@@ -118,3 +122,6 @@ clean:
 nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
+
+install:
+	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w"  ./cmd/dbusd
