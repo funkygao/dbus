@@ -10,7 +10,6 @@
     plugins: [
         {
             name: "MysqlbinlogInput"
-            loglevel: "debug"
             ident: "binlog"
             master_host: "localhost"
             master_port: 3306

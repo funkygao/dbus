@@ -124,4 +124,4 @@ nuke:
 	GOPATH=$(GOPATH) go clean -i ./...
 
 install:
-	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w"  ./cmd/dbusd
+	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
