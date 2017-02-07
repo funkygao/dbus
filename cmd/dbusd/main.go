@@ -9,6 +9,7 @@ import (
 	_ "github.com/funkygao/dbus/plugins/filter"
 	_ "github.com/funkygao/dbus/plugins/input"
 	_ "github.com/funkygao/dbus/plugins/output"
+	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/diagnostics/agent"
 )
 
@@ -25,6 +26,7 @@ func init() {
 	globals.VeryVerbose = options.veryVerbose
 	globals.DryRun = options.dryrun
 	globals.Logger = newLogger()
+	ctx.LoadFromHome()
 }
 
 func main() {

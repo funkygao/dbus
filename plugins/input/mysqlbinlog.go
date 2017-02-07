@@ -5,7 +5,7 @@ import (
 
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/myslave"
-	"github.com/funkygao/dbus/plugins/model"
+	//"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
@@ -60,7 +60,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						return nil
 					}
 
-					pack.Payload = model.Bytes(row.Bytes())
+					pack.Payload = row
 					r.Inject(pack)
 
 				case <-this.stopChan:

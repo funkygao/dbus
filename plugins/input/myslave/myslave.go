@@ -21,7 +21,9 @@ type MySlave struct {
 }
 
 func New() *MySlave {
-	return &MySlave{}
+	return &MySlave{
+		pos: &checkpoint{name: "master.info"},
+	}
 }
 
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
@@ -59,6 +61,10 @@ func (m *MySlave) Close() {
 func (m *MySlave) MarkAsProcessed(r *RowsEvent) error {
 	m.pos.Update(r.Name, r.Position)
 	return m.pos.Save(false)
+}
+
+func (m *MySlave) Checkpoint() error {
+	return m.pos.Save(true)
 }
 
 func (m *MySlave) EventStream() <-chan *RowsEvent {

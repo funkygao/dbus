@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/funkygao/dbus/engine"
 	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
+
+var _ engine.Payloader = &RowsEvent{}
 
 type RowsEvent struct {
 	Name      string `json:"log"`
@@ -30,6 +33,10 @@ func (r *RowsEvent) String() string {
 func (r *RowsEvent) Bytes() []byte {
 	b, _ := json.Marshal(r)
 	return b
+}
+
+func (r *RowsEvent) Length() int {
+	return 0 // FIXME
 }
 
 func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.RowsEvent) {

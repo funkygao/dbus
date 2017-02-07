@@ -8,6 +8,7 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
+// TODO graceful shutdown
 func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.rowsEvent = make(chan *RowsEvent, 100)
 	m.errors = make(chan error)

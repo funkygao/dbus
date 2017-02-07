@@ -10,6 +10,7 @@
     plugins: [
         {
             name: "MysqlbinlogInput"
+            loglevel: "debug"
             ident: "binlog"
             master_host: "localhost"
             master_port: 3306
@@ -23,7 +24,7 @@
         {
             name:   "MockOutput"
             blackhole: false
-            match:  ["binlog", ]
+            match:  ["binlog1", ]
         }
 
         {
@@ -32,7 +33,7 @@
             cluster: "me"
             topic: "foobar"
             hhdirs: ["hh", ]
-            match: ["binlog1", ]
+            match: ["binlog", ]
         }
     ]
 

@@ -1,7 +1,10 @@
 package output
 
 import (
+	"time"
+
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/plugins/input/myslave"
 	"github.com/funkygao/gafka/cmd/kateway/hh"
 	"github.com/funkygao/gafka/cmd/kateway/hh/disk"
 	"github.com/funkygao/gafka/cmd/kateway/meta"
@@ -17,6 +20,8 @@ type KafkaOutput struct {
 	zone, cluster, topic string
 	hhdirs               []string
 	zkzone               *zk.ZkZone
+
+	myslave *myslave.MySlave
 }
 
 func (this *KafkaOutput) Init(config *conf.Conf) {
@@ -44,26 +49,48 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 
 	store.DefaultPubStore = kafka.NewPubStore(100, 0, false, false, false)
+	if err := store.DefaultPubStore.Start(); err != nil {
+		panic(err)
+	}
+	this.myslave = myslave.New()
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+
 	globals := engine.Globals()
 	for {
 		select {
+		case <-tick.C:
+			if err := this.myslave.Checkpoint(); err != nil {
+				// TODO
+			}
+
 		case pack, ok := <-r.InChan():
 			if !ok {
 				return nil
 			}
 
-			partition, offset, err := store.DefaultPubStore.SyncPub(this.cluster, this.topic, nil, pack.Payload.Bytes())
+			row, ok := pack.Payload.(*myslave.RowsEvent)
+			if !ok {
+				globals.Printf("wrong payload: %+v", pack.Payload)
+				continue
+			}
+
+			partition, offset, err := store.DefaultPubStore.SyncPub(this.cluster, this.topic, nil, row.Bytes())
 			if err != nil {
+				globals.Println(err)
 				hh.Default.Append(this.cluster, this.topic, nil, pack.Payload.Bytes())
 			}
 
-			globals.Printf("%d %d", partition, offset)
+			if err = this.myslave.MarkAsProcessed(row); err != nil {
+				// TODO
+			}
+
+			globals.Printf("%d/%d %s", partition, offset, row)
 
 			pack.Recycle()
-
 		}
 	}
 
