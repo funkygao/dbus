@@ -53,27 +53,40 @@ func (m *MySlave) Start() error {
 		fmt.Printf("==> %T\n", ev.Event)
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
-			//e.NextLogName
-			//e.Position
-			e.Dump(os.Stdout)
+			// e,g.
+			// Position: 4
+			// Next log name: mysql.000002
+			m.pos.Name = string(e.NextLogName)
 
 		case *replication.RowsEvent:
 			m.handleRowsEvent(ev.Header, e)
 
 		case *replication.QueryEvent:
-			fmt.Printf("query: %s\n", string(e.Query))
+			// e,g. create table y(id int)
+			// e,g. BEGIN
 
 		case *replication.XIDEvent:
-			fmt.Printf("xid: %d\n", e.XID)
+			// e,g. xid: 1293
 
 		case *replication.FormatDescriptionEvent:
-			e.Dump(os.Stdout)
+			// Version: 4
+			// Server version: 5.6.23-log
+			// Checksum algorithm: 1
 
 		case *replication.TableMapEvent:
-			e.Dump(os.Stdout)
+			// e,g.
+			// TableID: 170
+			// TableID size: 6
+			// Flags: 1
+			// Schema: test
+			// Table: y
+			// Column count: 1
+			// Column type:
+			// 00000000  03
+			// NULL bitmap:
+			// 00000000  01
 
 		case *replication.GenericEvent:
-			e.Dump(os.Stdout)
 
 		default:
 			fmt.Println("unexpected event!!!")
