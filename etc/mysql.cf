@@ -17,6 +17,7 @@
             password: ""
             flavor: "mysql"
             server_id: 3
+            gtid: false
         }
         
         {

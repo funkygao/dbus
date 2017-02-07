@@ -7,12 +7,17 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
+// MySlave is a mimic mysql slave that replicates binlog from
+// mysql master using IO thread.
 type MySlave struct {
 	r *replication.BinlogSyncer
 
 	gtid       bool // TODO
 	masterAddr string
 	pos        *checkpoint
+
+	errors    chan error
+	rowsEvent chan *RowsEvent
 }
 
 func New() *MySlave {
@@ -32,10 +37,34 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 		User:     config.String("user", "root"),
 		Password: config.String("password", ""),
 	})
+
+	var err error
+	if m.pos, err = loadCheckpoint("master.info"); err != nil {
+		panic(err)
+	}
+	if len(m.pos.Addr) != 0 && m.masterAddr != m.pos.Addr {
+		// master changed, reset
+		m.pos = &checkpoint{Addr: m.masterAddr}
+	}
+
 	return m
 }
 
-func (m *MySlave) MarkAsProcessed(name string, pos uint32) error {
-	m.pos.Update(name, pos)
+func (m *MySlave) Close() {
+	m.pos.Save(true)
+	m.r.Close()
+	close(m.errors)
+}
+
+func (m *MySlave) MarkAsProcessed(r *RowsEvent) error {
+	m.pos.Update(r.Name, r.Position)
 	return m.pos.Save(false)
+}
+
+func (m *MySlave) EventStream() <-chan *RowsEvent {
+	return m.rowsEvent
+}
+
+func (m *MySlave) Errors() <-chan error {
+	return m.errors
 }

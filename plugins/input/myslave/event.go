@@ -1,22 +1,34 @@
 package myslave
 
 import (
+	"encoding/json"
 	"fmt"
 
+	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
 
 type RowsEvent struct {
-	Name     string
-	Position uint32
+	Name     string `json:"log"`
+	Position uint32 `json:"pos"`
+	Schema   string `json:"db"`
+	Table    string `json:"table"`
+	Action   string `json:"action"`
 
-	Schema, Table string
-	Action        string
-	Rows          [][]interface{}
+	// binlog has three update event version, v0, v1 and v2.
+	// for v1 and v2, the rows number must be even.
+	// Two rows for one event, format is [before update row, after update row]
+	// for update v0, only one row for a event, and we don't support this version.
+	Rows [][]interface{} `json:"rows"`
 }
 
 func (r *RowsEvent) String() string {
 	return fmt.Sprintf("%s %d %s %s/%s %+v", r.Name, r.Position, r.Action, r.Schema, r.Table, r.Rows)
+}
+
+func (r *RowsEvent) Bytes() []byte {
+	b, _ := json.Marshal(r)
+	return b
 }
 
 func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.RowsEvent) {
@@ -35,11 +47,11 @@ func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.Row
 		action = "update"
 
 	default:
-		fmt.Printf("%s not supported", h.EventType)
+		log.Warn("%s not supported: %+v", h.EventType, e)
 		return
 	}
 
-	r := &RowsEvent{
+	m.rowsEvent <- &RowsEvent{
 		Name:     m.pos.Name,
 		Position: h.LogPos,
 		Schema:   schema,
@@ -47,5 +59,4 @@ func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.Row
 		Action:   action,
 		Rows:     e.Rows,
 	}
-	fmt.Println(r)
 }

@@ -2,32 +2,28 @@ package myslave
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
+	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
 
-func (m *MySlave) Start() error {
+func (m *MySlave) StartReplication(ready chan struct{}) {
+	m.rowsEvent = make(chan *RowsEvent, 100)
+	m.errors = make(chan error)
+
 	if m.gtid {
 		// TODO
 	}
 
-	var err error
-	if m.pos, err = loadCheckpoint("master.info"); err != nil {
-		return err
-	}
-	if len(m.pos.Addr) != 0 && m.masterAddr != m.pos.Addr {
-		// master changed, reset
-		m.pos = &checkpoint{Addr: m.masterAddr}
-	}
-
 	s, err := m.r.StartSync(m.pos.Pos())
 	if err != nil {
-		return err
+		m.errors <- err
+		close(ready)
+		return
 	}
 
+	close(ready)
 	timeout := time.Second
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -44,13 +40,11 @@ func (m *MySlave) Start() error {
 				continue
 			}
 
-			return err
+			m.errors <- err
+			return
 		}
 
-		// next binglog pos
-		//pos = ev.Header.LogPos
-
-		fmt.Printf("==> %T\n", ev.Event)
+		log.Debug("-> %T", ev.Event)
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
 			// e,g.
@@ -89,14 +83,9 @@ func (m *MySlave) Start() error {
 		case *replication.GenericEvent:
 
 		default:
-			fmt.Println("unexpected event!!!")
-			e.Dump(os.Stdout)
+			log.Warn("unexpected event: %+v", e)
+
 		}
 	}
 
-	return nil
-}
-
-func (m *MySlave) Close() {
-	m.r.Close()
 }
