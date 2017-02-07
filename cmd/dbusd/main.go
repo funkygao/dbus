@@ -20,12 +20,6 @@ func init() {
 		showVersionAndExit()
 	}
 
-	globals = engine.DefaultGlobals()
-	globals.Debug = options.debug
-	globals.Verbose = options.verbose
-	globals.VeryVerbose = options.veryVerbose
-	globals.DryRun = options.dryrun
-	globals.Logger = newLogger()
 	setupLogging()
 
 	ctx.LoadFromHome()
@@ -39,8 +33,16 @@ func main() {
 		}
 	}()
 
+	globals := engine.DefaultGlobals()
+	globals.Debug = options.debug
+	globals.Verbose = options.verbose
+	globals.VeryVerbose = options.veryVerbose
+	globals.DryRun = options.dryrun
+	globals.Logger = newLogger()
+
 	e := engine.New(globals).
 		LoadConfigFile(options.configfile)
+
 	if options.visualizeFile != "" {
 		e.ExportDiagram(options.visualizeFile)
 		return

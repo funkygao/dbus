@@ -11,22 +11,23 @@ import (
 
 var (
 	options struct {
-		verbose            bool
-		veryVerbose        bool
-		configfile         string
-		showversion        bool
-		logfile            string
-		loglevel           string
-		debug              bool
-		dryrun             bool
-		lockfile           string
-		diagnosticInterval int
-		visualizeFile      string
+		verbose     bool
+		veryVerbose bool
+		debug       bool
+		dryrun      bool
+
+		configfile    string
+		showversion   bool
+		visualizeFile string
+		lockfile      string
+
+		logfile  string
+		loglevel string
 	}
 )
 
 const (
-	USAGE = `dbusd - Distributed Data Pipeline
+	USAGE = `dbusd - Distributed DataBus
 
 Flags:
 `
@@ -42,7 +43,10 @@ func parseFlags() {
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
 	flag.StringVar(&options.visualizeFile, "visualize", "", "visualize the pipleline to png file")
-	flag.Usage = showUsage
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, USAGE)
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if options.veryVerbose {
@@ -52,11 +56,6 @@ func parseFlags() {
 		options.verbose = true
 	}
 
-}
-
-func showUsage() {
-	fmt.Fprint(os.Stderr, USAGE)
-	flag.PrintDefaults()
 }
 
 func showVersionAndExit() {
