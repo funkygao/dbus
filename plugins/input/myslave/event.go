@@ -17,7 +17,7 @@ type RowsEvent struct {
 	Schema    string `json:"db"`
 	Table     string `json:"table"`
 	Action    string `json:"action"`
-	Timestamp uint32 `json:"t"`
+	Timestamp uint32 `json:"ts"`
 
 	// binlog has three update event version, v0, v1 and v2.
 	// for v1 and v2, the rows number must be even.

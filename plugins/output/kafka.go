@@ -14,6 +14,7 @@ import (
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 type KafkaOutput struct {
@@ -59,7 +60,6 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	tick := time.NewTicker(time.Second)
 	defer tick.Stop()
 
-	globals := engine.Globals()
 	for {
 		select {
 		case <-tick.C:
@@ -74,13 +74,13 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 			row, ok := pack.Payload.(*myslave.RowsEvent)
 			if !ok {
-				globals.Printf("wrong payload: %+v", pack.Payload)
+				log.Error("wrong payload: %+v", pack.Payload)
 				continue
 			}
 
 			partition, offset, err := store.DefaultPubStore.SyncPub(this.cluster, this.topic, nil, row.Bytes())
 			if err != nil {
-				globals.Println(err)
+				log.Error("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
 				hh.Default.Append(this.cluster, this.topic, nil, pack.Payload.Bytes())
 			}
 
@@ -88,7 +88,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				// TODO
 			}
 
-			globals.Printf("%d/%d %s", partition, offset, row)
+			log.Debug("%d/%d %s", partition, offset, row)
 
 			pack.Recycle()
 		}

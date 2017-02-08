@@ -2,6 +2,7 @@ package myslave
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	log "github.com/funkygao/log4go"
@@ -10,6 +11,19 @@ import (
 
 // TODO graceful shutdown
 func (m *MySlave) StartReplication(ready chan struct{}) {
+	m.gtid = m.cf.Bool("GTID", false)
+	host := m.cf.String("master_host", "localhost")
+	port := uint16(m.cf.Int("master_port", 3306))
+	m.masterAddr = fmt.Sprintf("%s:%d", host, port)
+	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
+		ServerID: uint32(m.cf.Int("server_id", 1007)),
+		Flavor:   m.cf.String("flavor", "mysql"), // or mariadb
+		Host:     host,
+		Port:     port,
+		User:     m.cf.String("user", "root"),
+		Password: m.cf.String("password", ""),
+	})
+
 	m.rowsEvent = make(chan *RowsEvent, 100)
 	m.errors = make(chan error)
 
@@ -25,8 +39,19 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	}
 
 	close(ready)
+	log.Trace("ready to receive binlog stream")
+
 	timeout := time.Second
 	for {
+		// what if the conn broken?
+		// 2017/02/08 08:31:39 binlogsyncer.go:529: [info] receive EOF packet, retry ReadPacket
+		// 2017/02/08 08:31:39 binlogsyncer.go:484: [error] connection was bad
+		// 2017/02/08 08:31:40 binlogsyncer.go:446: [info] begin to re-sync from (mysql.000003, 2492)
+		// 2017/02/08 08:31:40 binlogsyncer.go:130: [info] register slave for master server localhost:3306
+		// 2017/02/08 08:31:40 binlogsyncer.go:502: [error] retry sync err: dial tcp [::1]:3306: getsockopt: connection refused, wait 1s and retry again
+		// 2017/02/08 08:31:42 binlogsyncer.go:446: [info] begin to re-sync from (mysql.000003, 2492)
+		// 2017/02/08 08:31:42 binlogsyncer.go:130: [info] register slave for master server localhost:3306
+		// 2017/02/08 08:31:42 binlogsyncer.go:502: [error] retry sync err: dial tcp [::1]:3306: getsockopt: connection refused, wait 1s and retry again
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := s.GetEvent(ctx)
 		cancel()

@@ -1,16 +1,21 @@
 package myslave
 
 import (
-	"fmt"
+	"time"
 
+	"github.com/funkygao/gafka/telemetry"
+	"github.com/funkygao/gafka/telemetry/influxdb"
+	"github.com/funkygao/go-metrics"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
 
 // MySlave is a mimic mysql slave that replicates binlog from
 // mysql master using IO thread.
 type MySlave struct {
-	r *replication.BinlogSyncer
+	r  *replication.BinlogSyncer
+	cf *conf.Conf
 
 	gtid       bool // TODO
 	masterAddr string
@@ -27,18 +32,20 @@ func New() *MySlave {
 }
 
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
-	m.gtid = config.Bool("gtid", false)
-	host := config.String("master_host", "localhost")
-	port := uint16(config.Int("master_port", 3306))
-	m.masterAddr = fmt.Sprintf("%s:%d", host, port)
-	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID: uint32(config.Int("server_id", 1007)),
-		Flavor:   config.String("flavor", "mysql"), // or mariadb
-		Host:     host,
-		Port:     port,
-		User:     config.String("user", "root"),
-		Password: config.String("password", ""),
-	})
+	m.cf = config
+
+	if cf, err := influxdb.NewConfig(m.cf.String("influx_addr", ""),
+		m.cf.String("influx_db", "myslave"), "", "",
+		m.cf.Duration("influx_tick", time.Minute)); err == nil {
+		telemetry.Default = influxdb.New(metrics.DefaultRegistry, cf)
+		go func() {
+			if err := telemetry.Default.Start(); err != nil {
+				log.Error("telemetry[%s]: %s", telemetry.Default.Name(), err)
+			}
+		}()
+	} else {
+		log.Warn("telemetry disabled for: %s", err)
+	}
 
 	var err error
 	if m.pos, err = loadCheckpoint("master.info"); err != nil {
@@ -55,7 +62,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 func (m *MySlave) Close() {
 	m.pos.Save(true)
 	m.r.Close()
-	close(m.errors)
+	//close(m.errors)
 }
 
 func (m *MySlave) MarkAsProcessed(r *RowsEvent) error {

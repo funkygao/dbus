@@ -47,10 +47,10 @@ func (this *pluginWrapper) Create() (plugin Plugin) {
 
 // pluginCommons is the common config directives for all plugins.
 type pluginCommons struct {
-	name     string `json:"name"`
-	class    string `json:"class"`
-	disabled bool   `json:"disabled"`
-	comment  string `json:"comment"`
+	name     string
+	class    string
+	disabled bool
+	comment  string
 }
 
 func (this *pluginCommons) loadConfig(section *conf.Conf) {
