@@ -1,5 +1,5 @@
 # List special make targets that are not associated with files
-.PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke
+.PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
@@ -103,8 +103,6 @@ docs:
 # Alias to run all quality-assurance checks
 qa: fmtcheck test vet lint coverage cyclo ineffassign misspell astscan
 
-# --- INSTALL ---
-
 # Get the dependencies
 deps:
 	GOPATH=$(GOPATH) go get github.com/golang/lint/golint
@@ -124,8 +122,10 @@ nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
 
+# Report the golang line of code
 loc:
 	@find . -name "*.go" | xargs wc -l | tail -1
 
+# Install dbsud to $GOPATH/bin
 install:
 	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
