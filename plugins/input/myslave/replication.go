@@ -13,7 +13,7 @@ import (
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.rowsEvent = make(chan *RowsEvent, m.c.Int("event_buffer_len", 100))
-	m.errors = make(chan error)
+	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
 		ServerID: uint32(m.c.Int("server_id", 1007)),
@@ -38,10 +38,12 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		Pos:  offset,
 	})
 	if err != nil {
+		// e,g.
+		// ERROR 1045 (28000): Access denied for user 'xx'@'1.1.1.1'
 		log.Error("%s", err)
+		close(ready)
 		m.emitFatalError(err)
 
-		close(ready)
 		return
 	}
 
