@@ -48,6 +48,7 @@ func main() {
 		return
 	}
 
+	agent.HttpAddr = ":10120" // FIXME security issue
 	log4go.Info("pprof agent ready on %s", agent.Start())
 
 	e.ServeForever()
