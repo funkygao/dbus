@@ -23,6 +23,8 @@ _testmain.go
 *.test
 *.prof
 *.swp
+*.tmp
+hh/
 target/
 
 cmd/dbusd/dbusd
