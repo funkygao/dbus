@@ -59,11 +59,20 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 }
 
 func (m *MySlave) Close() {
-	m.r.Close()
+	if m.r != nil {
+		m.r.Close()
+	}
 	if err := m.p.Flush(); err != nil {
 		log.Error("flush: %s", err)
 	}
 	//close(m.errors)
+}
+
+func (m *MySlave) StopReplication() {
+	m.r.Close()
+	if err := m.p.Flush(); err != nil {
+		log.Error("flush: %s", err)
+	}
 }
 
 func (m *MySlave) MarkAsProcessed(r *RowsEvent) error {

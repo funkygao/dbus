@@ -22,7 +22,11 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	defer this.slave.Close()
+
 	for {
+	RESTART_REPLICATION:
+
 		log.Info("starting replication")
 
 		ready := make(chan struct{})
@@ -37,19 +41,15 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				log.Trace("yes sir! I quit")
 				return nil
 
-			case err, ok := <-errors:
-				// e,g. replication conn broken
-				if !ok {
-					// stopped
-					return nil
-				}
-
+			case err := <-errors:
 				log.Error("slave: %v", err)
+				this.slave.StopReplication()
 				time.Sleep(time.Second * 5)
+				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
 				if !ok {
-					break
+					return nil
 				}
 
 				select {
@@ -63,6 +63,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					r.Inject(pack)
 
 				case <-this.stopChan:
+					log.Trace("yes sir! I quit")
 					return nil
 				}
 			}
@@ -73,7 +74,6 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 }
 
 func (this *MysqlbinlogInput) Stop() {
-	this.slave.Close()
 	close(this.stopChan)
 }
 
