@@ -24,6 +24,7 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	defer this.slave.Close()
 
+	backoff := time.Second * 5
 	for {
 	RESTART_REPLICATION:
 
@@ -42,9 +43,9 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				return nil
 
 			case err := <-errors:
-				log.Error("slave: %v", err)
+				log.Error("backoff %s: %v", backoff, err)
 				this.slave.StopReplication()
-				time.Sleep(time.Second * 5)
+				time.Sleep(backoff)
 				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
@@ -53,6 +54,12 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				}
 
 				select {
+				case err := <-errors:
+					log.Error("backoff %s: %v", backoff, err)
+					this.slave.StopReplication()
+					time.Sleep(time.Second * 5)
+					goto RESTART_REPLICATION
+
 				case row, ok := <-rows:
 					if !ok {
 						log.Info("event stream closed")
