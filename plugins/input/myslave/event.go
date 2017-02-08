@@ -11,8 +11,10 @@ import (
 
 var _ engine.Payloader = &RowsEvent{}
 
+// RowsEvent is a structured mysql binlog rows event.
+// It implements engine.Payloader interface and can be transferred between plugins.
 type RowsEvent struct {
-	Name      string `json:"log"`
+	Log       string `json:"log"`
 	Position  uint32 `json:"pos"`
 	Schema    string `json:"db"`
 	Table     string `json:"tbl"`
@@ -26,20 +28,23 @@ type RowsEvent struct {
 	Rows [][]interface{} `json:"rows"`
 }
 
+// Implements Payloader.
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Name, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
+	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
 }
 
+// Implements Payloader.
 func (r *RowsEvent) Bytes() []byte {
 	b, _ := json.Marshal(r)
 	return b
 }
 
+// Implements Payloader.
 func (r *RowsEvent) Length() int {
-	return 0 // FIXME
+	return len(r.Log) + len(r.Schema) + len(r.Table) + 9 // FIXME Rows not counted
 }
 
-func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.RowsEvent) {
+func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *replication.RowsEvent) {
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
 
@@ -60,7 +65,7 @@ func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.Row
 	}
 
 	m.rowsEvent <- &RowsEvent{
-		Name:      m.pos.Name,
+		Log:       f,
 		Position:  h.LogPos,
 		Schema:    schema,
 		Table:     table,
