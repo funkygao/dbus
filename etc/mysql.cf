@@ -28,8 +28,13 @@
         {
             name: "PubOutput"
             zone: "local"
+            master_host: "localhost"
+            master_port: 3306
             cluster: "me"
             topic: "foobar"
+            ack: 1
+            async: false
+            compress: false
             hhdirs: ["hh", ]
             match: ["binlog", ]
         }
