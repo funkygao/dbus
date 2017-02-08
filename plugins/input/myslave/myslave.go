@@ -17,7 +17,6 @@ type MySlave struct {
 	r  *replication.BinlogSyncer
 	cf *conf.Conf
 
-	gtid       bool // TODO
 	masterAddr string
 	pos        *checkpoint
 

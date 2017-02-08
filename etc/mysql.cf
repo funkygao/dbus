@@ -11,6 +11,7 @@
         {
             name: "MysqlbinlogInput"
             ident: "binlog"
+            event_buffer_len: 100
             master_host: "localhost"
             master_port: 3306
             user: "root"

@@ -10,30 +10,27 @@ import (
 )
 
 // TODO graceful shutdown
+// TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	m.gtid = m.cf.Bool("GTID", false)
 	host := m.cf.String("master_host", "localhost")
 	port := uint16(m.cf.Int("master_port", 3306))
 	m.masterAddr = fmt.Sprintf("%s:%d", host, port)
+	m.rowsEvent = make(chan *RowsEvent, m.cf.Int("event_buffer_len", 100))
+	m.errors = make(chan error)
+
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
 		ServerID: uint32(m.cf.Int("server_id", 1007)),
-		Flavor:   m.cf.String("flavor", "mysql"), // or mariadb
+		Flavor:   m.cf.String("flavor", "mysql"),
 		Host:     host,
 		Port:     port,
 		User:     m.cf.String("user", "root"),
 		Password: m.cf.String("password", ""),
 	})
-
-	m.rowsEvent = make(chan *RowsEvent, 100)
-	m.errors = make(chan error)
-
-	if m.gtid {
-		// TODO
-	}
-
-	s, err := m.r.StartSync(m.pos.Pos())
+	syncer, err := m.r.StartSync(m.pos.Pos())
 	if err != nil {
-		m.errors <- err
+		log.Error("%s", err)
+		m.emitFatalError(err)
+
 		close(ready)
 		return
 	}
@@ -42,6 +39,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	log.Trace("ready to receive binlog stream")
 
 	timeout := time.Second
+	maxTimeout := time.Minute
 	for {
 		// what if the conn broken?
 		// 2017/02/08 08:31:39 binlogsyncer.go:529: [info] receive EOF packet, retry ReadPacket
@@ -52,13 +50,16 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// 2017/02/08 08:31:42 binlogsyncer.go:446: [info] begin to re-sync from (mysql.000003, 2492)
 		// 2017/02/08 08:31:42 binlogsyncer.go:130: [info] register slave for master server localhost:3306
 		// 2017/02/08 08:31:42 binlogsyncer.go:502: [error] retry sync err: dial tcp [::1]:3306: getsockopt: connection refused, wait 1s and retry again
+		//
+		// or invalid position sent?
+		// 2017/02/08 08:42:09 binlogstreamer.go:47: [error] close sync with err: ERROR 1236 (HY000): Client requested master to start replication from position > file size; the first event 'mysql.000004' at 2274, the last event read from '/usr/local/var/mysql.000004' at 4, the last byte read from '/usr/local/var/mysql.000004' at 4.
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		ev, err := s.GetEvent(ctx)
+		ev, err := syncer.GetEvent(ctx)
 		cancel()
 
 		if err != nil {
 			if err == context.DeadlineExceeded {
-				if timeout < time.Minute {
+				if timeout < maxTimeout {
 					// backoff
 					timeout *= 2
 				}
@@ -66,7 +67,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 				continue
 			}
 
-			m.errors <- err
+			// TODO try out all the cases
+			m.emitFatalError(err)
 			return
 		}
 
@@ -77,11 +79,14 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Position: 4
 			// Next log name: mysql.000002
 			m.pos.Name = string(e.NextLogName)
+			// FIXME
+			log.Trace("%s %d", m.pos.Name, e.Position)
 
 		case *replication.RowsEvent:
 			m.handleRowsEvent(ev.Header, e)
 
 		case *replication.QueryEvent:
+			// DDL comes this way
 			// e,g. create table y(id int)
 			// e,g. BEGIN
 
@@ -113,8 +118,12 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		default:
 			log.Warn("unexpected event: %+v", e)
-
 		}
 	}
 
+}
+
+func (m *MySlave) emitFatalError(err error) {
+	m.errors <- err
+	m.r.Close()
 }

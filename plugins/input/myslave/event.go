@@ -15,8 +15,8 @@ type RowsEvent struct {
 	Name      string `json:"log"`
 	Position  uint32 `json:"pos"`
 	Schema    string `json:"db"`
-	Table     string `json:"table"`
-	Action    string `json:"action"`
+	Table     string `json:"tbl"`
+	Action    string `json:"dml"`
 	Timestamp uint32 `json:"ts"`
 
 	// binlog has three update event version, v0, v1 and v2.
@@ -46,13 +46,13 @@ func (m *MySlave) handleRowsEvent(h *replication.EventHeader, e *replication.Row
 	var action string
 	switch h.EventType {
 	case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-		action = "insert"
+		action = "I"
 
 	case replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-		action = "delete"
+		action = "D"
 
 	case replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-		action = "update"
+		action = "U"
 
 	default:
 		log.Warn("%s not supported: %+v", h.EventType, e)
