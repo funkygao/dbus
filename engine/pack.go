@@ -5,9 +5,18 @@ import (
 	"sync/atomic"
 )
 
+// Payloader defines the contract of PipelinePack payload.
+// Any plugin transferrable data must implement this interface.
 type Payloader interface {
+	// Length returns the size of the payload in bytes.
 	Length() int
+
+	// Bytes returns the marshalled byte array of the payload.
 	Bytes() []byte
+
+	// String return the string format of the payload.
+	// Useful for debugging.
+	String() string
 }
 
 // PipelinePack is the pipeline data structure that is transferred between plugins.

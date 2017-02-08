@@ -1,8 +1,6 @@
 package output
 
 import (
-	"time"
-
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/myslave"
 	"github.com/funkygao/gafka/cmd/kateway/hh"
@@ -53,20 +51,12 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	if err := store.DefaultPubStore.Start(); err != nil {
 		panic(err)
 	}
-	this.myslave = myslave.New()
+	this.myslave = myslave.New().LoadConfig(config)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
-	tick := time.NewTicker(time.Second)
-	defer tick.Stop()
-
 	for {
 		select {
-		case <-tick.C:
-			if err := this.myslave.Checkpoint(); err != nil {
-				// TODO
-			}
-
 		case pack, ok := <-r.InChan():
 			if !ok {
 				return nil
@@ -84,6 +74,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				hh.Default.Append(this.cluster, this.topic, nil, pack.Payload.Bytes())
 			}
 
+			// FIXME only after pub'ed shall we mark it processed
 			if err = this.myslave.MarkAsProcessed(row); err != nil {
 				// TODO
 			}

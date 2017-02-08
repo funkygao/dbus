@@ -2,31 +2,41 @@ package myslave
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	log "github.com/funkygao/log4go"
+	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
 )
 
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	host := m.cf.String("master_host", "localhost")
-	port := uint16(m.cf.Int("master_port", 3306))
-	m.masterAddr = fmt.Sprintf("%s:%d", host, port)
-	m.rowsEvent = make(chan *RowsEvent, m.cf.Int("event_buffer_len", 100))
+	m.rowsEvent = make(chan *RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID: uint32(m.cf.Int("server_id", 1007)),
-		Flavor:   m.cf.String("flavor", "mysql"),
-		Host:     host,
-		Port:     port,
-		User:     m.cf.String("user", "root"),
-		Password: m.cf.String("password", ""),
+		ServerID: uint32(m.c.Int("server_id", 1007)),
+		Flavor:   m.c.String("flavor", "mysql"),
+		Host:     m.host,
+		Port:     m.port,
+		User:     m.c.String("user", "root"),
+		Password: m.c.String("password", ""),
 	})
-	syncer, err := m.r.StartSync(m.pos.Pos())
+
+	file, offset, err := m.p.Committed()
+	if err != nil {
+		log.Error("%s", err)
+		m.emitFatalError(err)
+
+		close(ready)
+		return
+	}
+
+	syncer, err := m.r.StartSync(mysql.Position{
+		Name: file,
+		Pos:  offset,
+	})
 	if err != nil {
 		log.Error("%s", err)
 		m.emitFatalError(err)
@@ -78,12 +88,11 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// e,g.
 			// Position: 4
 			// Next log name: mysql.000002
-			m.pos.Name = string(e.NextLogName)
-			// FIXME
-			log.Trace("%s %d", m.pos.Name, e.Position)
+			file = string(e.NextLogName)
+			log.Trace("rotate to (%s, %d)", file, e.Position)
 
 		case *replication.RowsEvent:
-			m.handleRowsEvent(ev.Header, e)
+			m.handleRowsEvent(file, ev.Header, e)
 
 		case *replication.QueryEvent:
 			// DDL comes this way
