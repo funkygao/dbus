@@ -15,7 +15,9 @@ import (
 type KafkaOutput struct {
 	zone, cluster, topic string
 
-	zkzone  *zk.ZkZone
+	zkzone *zk.ZkZone
+	// FIXME should be shared with MysqlbinlogInput
+	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
 	myslave *myslave.MySlave
 }
 
