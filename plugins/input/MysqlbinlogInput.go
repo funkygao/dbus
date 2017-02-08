@@ -19,6 +19,9 @@ type MysqlbinlogInput struct {
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
+
+	// so that KafkaOutput can reuse
+	engine.Globals().Register("myslave", this.slave)
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
