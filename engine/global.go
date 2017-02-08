@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"syscall"
 	"time"
+
+	conf "github.com/funkygao/jsconf"
 )
 
 const (
@@ -25,6 +27,7 @@ var (
 // GlobalConfig is the struct for holding global pipeline config values.
 type GlobalConfig struct {
 	*log.Logger
+	*conf.Conf
 
 	StartedAt       time.Time
 	Stopping        bool

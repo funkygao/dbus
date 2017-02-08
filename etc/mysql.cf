@@ -1,5 +1,8 @@
 {
     api_addr: "127.0.0.1:9876"
+    influx_addr: "http://localhost:8086"
+    influx_db: "myslave"
+    influx_tick: "1m"
 
     projects: [
         {
@@ -19,10 +22,9 @@
             password: ""
             // flavor: "mariadb"
             flavor: "mysql"
-            server_id: 3
+            server_id: 137
             GTID: false
-            influx_addr: "http://localhost:8086"
-            influx_db: "myslave"
+            pos_commit_interval: "1s"
         }            
 
         {

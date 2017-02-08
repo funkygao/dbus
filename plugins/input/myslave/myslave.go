@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
@@ -39,11 +40,13 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.port = uint16(m.c.Int("master_port", 3306))
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
 
-	if c, err := influxdb.NewConfig(m.c.String("influx_addr", ""),
-		m.c.String("influx_db", "myslave"), "", "",
-		m.c.Duration("influx_tick", time.Minute)); err == nil {
+	globals := engine.Globals()
+	if c, err := influxdb.NewConfig(globals.String("influx_addr", ""),
+		globals.String("influx_db", "dbus"), "", "",
+		globals.Duration("influx_tick", time.Minute)); err == nil {
 		telemetry.Default = influxdb.New(metrics.DefaultRegistry, c)
 		go func() {
+			// FIXME telemetry should be global instead of plugin scope
 			if err := telemetry.Default.Start(); err != nil {
 				log.Error("telemetry[%s]: %s", telemetry.Default.Name(), err)
 			}

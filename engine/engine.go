@@ -124,6 +124,7 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 	}
 
 	this.Conf = cf
+	Globals().Conf = cf
 
 	// 'projects' section
 	for i := 0; i < len(this.List("projects", nil)); i++ {
