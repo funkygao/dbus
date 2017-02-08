@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"sync"
 	"syscall"
 	"time"
 
@@ -43,6 +45,10 @@ type GlobalConfig struct {
 	MaxMsgLoops int
 	MaxPackIdle time.Duration
 
+	// registry is used to hold the global object shared between plugins.
+	registry map[string]interface{}
+	regMu    sync.RWMutex
+
 	sigChan chan os.Signal
 }
 
@@ -52,6 +58,24 @@ func (this *GlobalConfig) Shutdown() {
 
 func (this *GlobalConfig) Kill(sig os.Signal) {
 	this.sigChan <- sig
+}
+
+func (this *GlobalConfig) Register(k string, v interface{}) {
+	this.regMu.Lock()
+	defer this.regMu.Unlock()
+
+	if _, present := this.registry[k]; present {
+		panic(fmt.Sprintf("dup register: %s", k))
+	}
+
+	this.registry[k] = v
+}
+
+func (this *GlobalConfig) Registered(k string) interface{} {
+	this.regMu.RLock()
+	defer this.regMu.RUnlock()
+
+	return this.registry[k]
 }
 
 func DefaultGlobals() *GlobalConfig {
@@ -66,6 +90,7 @@ func DefaultGlobals() *GlobalConfig {
 		MaxMsgLoops:     4,
 		MaxPackIdle:     idle,
 		StartedAt:       time.Now(),
-		Logger:          log.New(os.Stdout, "", log.Ldate|log.Lshortfile|log.Ltime),
+		Logger:          log.New(os.Stdout, "", log.Ldate|log.Lshortfile|log.Ltime), // TODO
+		registry:        map[string]interface{}{},
 	}
 }

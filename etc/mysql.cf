@@ -14,7 +14,9 @@
         {
             name: "MysqlbinlogInput"
             ident: "binlog"
+            // zone is used for positioner
             zone: "local"
+            pos_commit_interval: "1s"
             event_buffer_len: 100
             master_host: "localhost"
             master_port: 3306
@@ -24,14 +26,11 @@
             flavor: "mysql"
             server_id: 137
             GTID: false
-            pos_commit_interval: "1s"
         }            
 
         {
             name: "PubOutput"
             zone: "local"
-            master_host: "localhost"
-            master_port: 3306
             cluster: "me"
             topic: "foobar"
             ack: 1

@@ -51,10 +51,11 @@ func (this *PubOutput) Init(config *conf.Conf) {
 	if err := store.DefaultPubStore.Start(); err != nil {
 		panic(err)
 	}
-	this.myslave = myslave.New().LoadConfig(config)
 }
 
 func (this *PubOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	this.myslave = engine.Globals().Registered("myslave").(*myslave.MySlave)
+
 	for {
 		select {
 		case pack, ok := <-r.InChan():

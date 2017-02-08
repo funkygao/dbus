@@ -53,10 +53,11 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 	this.compress = config.Bool("compress", false)
 	this.zkzone = zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
-	this.myslave = myslave.New().LoadConfig(config)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	this.myslave = engine.Globals().Registered("myslave").(*myslave.MySlave)
+
 	if err := this.prepareProducer(); err != nil {
 		return err
 	}
