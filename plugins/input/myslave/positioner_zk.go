@@ -17,9 +17,8 @@ type positionerZk struct {
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 
-	zkzone     *zk.ZkZone
-	masterAddr string
-
+	zkzone        *zk.ZkZone
+	masterAddr    string
 	birthCry      sync2.AtomicBool
 	interval      time.Duration
 	lastCommitted time.Time
