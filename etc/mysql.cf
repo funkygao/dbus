@@ -22,8 +22,6 @@
             master_port: 3306
             user: "root"
             password: ""
-            // flavor: "mariadb"
-            flavor: "mysql"
             server_id: 137
             GTID: false
         }            
