@@ -23,6 +23,8 @@ type KafkaOutput struct {
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
 
+	sendMessage func(row *myslave.RowsEvent)
+
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
 	myslave *myslave.MySlave
@@ -44,6 +46,11 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 	this.ack = ack
 	this.async = config.Bool("async", false)
+	if this.async {
+		this.sendMessage = this.asyncSendMessage
+	} else {
+		this.sendMessage = this.syncSendMessage
+	}
 	this.compress = config.Bool("compress", false)
 	this.zkzone = zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
 	this.myslave = myslave.New().LoadConfig(config)
@@ -71,7 +78,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 			row, ok := pack.Payload.(*myslave.RowsEvent)
 			if !ok {
-				log.Error("wrong payload: %+v", pack.Payload)
+				log.Error("bad payload: %+v", pack.Payload)
 				continue
 			}
 
@@ -125,7 +132,7 @@ func (this *KafkaOutput) prepareProducer() error {
 	return nil
 }
 
-func (this *KafkaOutput) sendMessage(row *myslave.RowsEvent) {
+func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
 	msg := &sarama.ProducerMessage{
 		Topic: this.topic,
 		Value: sarama.ByteEncoder(row.Bytes()),
@@ -136,31 +143,34 @@ func (this *KafkaOutput) sendMessage(row *myslave.RowsEvent) {
 		offset    int64
 		err       error
 	)
-	if !this.async {
-		for {
-			if partition, offset, err = this.p.SendMessage(msg); err == nil {
-				break
-			}
-
-			log.Error("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
-			time.Sleep(time.Second)
+	for {
+		if partition, offset, err = this.p.SendMessage(msg); err == nil {
+			break
 		}
 
-		if err = this.myslave.MarkAsProcessed(row); err != nil {
-			log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
-		}
-
-		log.Debug("%d/%d %s", partition, offset, row)
-		return
+		log.Error("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
+		time.Sleep(time.Second)
 	}
 
-	// async
-	this.ap.Input() <- msg
 	if err = this.myslave.MarkAsProcessed(row); err != nil {
 		log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
 	}
 
 	log.Debug("%d/%d %s", partition, offset, row)
+}
+
+func (this *KafkaOutput) asyncSendMessage(row *myslave.RowsEvent) {
+	msg := &sarama.ProducerMessage{
+		Topic: this.topic,
+		Value: sarama.ByteEncoder(row.Bytes()),
+	}
+
+	this.ap.Input() <- msg
+	if err := this.myslave.MarkAsProcessed(row); err != nil {
+		log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
+	}
+
+	log.Debug("async sending: %s", row)
 }
 
 func init() {
