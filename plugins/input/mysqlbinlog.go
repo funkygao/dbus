@@ -45,7 +45,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			case err := <-errors:
 				log.Error("backoff %s: %v", backoff, err)
 				this.slave.StopReplication()
-				time.Sleep(backoff)
+
+				select {
+				case <-time.After(backoff):
+				case <-this.stopChan:
+					log.Trace("yes sir! I quit")
+					return nil
+				}
 				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
@@ -57,7 +63,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				case err := <-errors:
 					log.Error("backoff %s: %v", backoff, err)
 					this.slave.StopReplication()
-					time.Sleep(time.Second * 5)
+
+					select {
+					case <-time.After(backoff):
+					case <-this.stopChan:
+						log.Trace("yes sir! I quit")
+						return nil
+					}
 					goto RESTART_REPLICATION
 
 				case row, ok := <-rows:

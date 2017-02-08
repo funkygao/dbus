@@ -38,9 +38,9 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		Pos:  offset,
 	})
 	if err != nil {
+		// unrecoverable err encountered
 		// e,g.
 		// ERROR 1045 (28000): Access denied for user 'xx'@'1.1.1.1'
-		log.Error("%s", err)
 		close(ready)
 		m.emitFatalError(err)
 
