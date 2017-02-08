@@ -15,12 +15,12 @@ another databus that listens for mysql binlog and distribute to sinks
 
 ### TODO
 
-- [ ] logging
+- [X] logging
 - [ ] graceful shutdown
-- [ ] metrics
-- [ ] telemetry and alert
+- [X] metrics
+- [X] telemetry and alert
 - [ ] master/slave
 - [ ] pack.Payload reuse memory
 - [ ] what if replication conn broken
-- [ ] position will be stored in zk
+- [X] position will be stored in zk
 - [ ] play with binlog_row_image

@@ -15,7 +15,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-type KafkaOutput struct {
+type PubOutput struct {
 	zone, cluster, topic string
 	hhdirs               []string
 	zkzone               *zk.ZkZone
@@ -23,7 +23,7 @@ type KafkaOutput struct {
 	myslave *myslave.MySlave
 }
 
-func (this *KafkaOutput) Init(config *conf.Conf) {
+func (this *PubOutput) Init(config *conf.Conf) {
 	this.zone = config.String("zone", "")
 	this.cluster = config.String("cluster", "")
 	this.topic = config.String("topic", "")
@@ -54,7 +54,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	this.myslave = myslave.New().LoadConfig(config)
 }
 
-func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+func (this *PubOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -89,7 +89,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 }
 
 func init() {
-	engine.RegisterPlugin("KafkaOutput", func() engine.Plugin {
-		return new(KafkaOutput)
+	engine.RegisterPlugin("PubOutput", func() engine.Plugin {
+		return new(PubOutput)
 	})
 }
