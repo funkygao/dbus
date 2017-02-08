@@ -2,9 +2,11 @@ package myslave
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	log "github.com/funkygao/log4go"
+	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
 )
@@ -16,8 +18,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID: uint32(m.c.Int("server_id", 1007)),
-		Flavor:   m.c.String("flavor", "mysql"),
+		ServerID: uint32(m.c.Int("server_id", 137)), // 137 unique enough?
+		Flavor:   "mysql",                           // currently mariadb not implemented
 		Host:     m.host,
 		Port:     m.port,
 		User:     m.c.String("user", "root"),
@@ -26,24 +28,32 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 	file, offset, err := m.p.Committed()
 	if err != nil {
-		log.Error("%s", err)
-		m.emitFatalError(err)
-
 		close(ready)
+		m.emitFatalError(err)
 		return
 	}
 
-	syncer, err := m.r.StartSync(mysql.Position{
-		Name: file,
-		Pos:  offset,
-	})
+	var syncer *replication.BinlogStreamer
+	if m.GTID {
+		// SELECT @@gtid_mode
+		// SHOW GLOBAL VARIABLES LIKE 'SERVER_UUID'
+		var masterUuid uuid.UUID
+		set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUuid.String(), 1, 2))
+		syncer, err = m.r.StartSyncGTID(set)
+		panic("not implemented") // TODO
+	} else {
+		syncer, err = m.r.StartSync(mysql.Position{
+			Name: file,
+			Pos:  offset,
+		})
+	}
+
 	if err != nil {
 		// unrecoverable err encountered
 		// e,g.
 		// ERROR 1045 (28000): Access denied for user 'xx'@'1.1.1.1'
 		close(ready)
 		m.emitFatalError(err)
-
 		return
 	}
 
@@ -131,7 +141,9 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		case *replication.GenericEvent:
 
 		case *replication.GTIDEvent:
-			// TODO
+			if m.GTID {
+				// TODO
+			}
 
 		default:
 			log.Warn("unexpected event: %+v", e)

@@ -24,6 +24,7 @@ type MySlave struct {
 	masterAddr string
 	host       string
 	port       uint16
+	GTID       bool // global tx id
 
 	errors    chan error
 	rowsEvent chan *RowsEvent
@@ -39,6 +40,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.host = m.c.String("master_host", "localhost")
 	m.port = uint16(m.c.Int("master_port", 3306))
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
+	m.GTID = m.c.Bool("GTID", false)
 
 	globals := engine.Globals()
 	if c, err := influxdb.NewConfig(globals.String("influx_addr", ""),
