@@ -82,6 +82,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			return
 		}
 
+		m.m.Events.Mark(1)
+
 		log.Debug("-> %T", ev.Event)
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
@@ -92,6 +94,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			log.Trace("rotate to (%s, %d)", file, e.Position)
 
 		case *replication.RowsEvent:
+			m.m.TPS.Mark(1)
+			m.m.Lag.Update(time.Now().Unix() - int64(ev.Header.Timestamp))
 			m.handleRowsEvent(file, ev.Header, e)
 
 		case *replication.QueryEvent:
@@ -134,5 +138,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 func (m *MySlave) emitFatalError(err error) {
 	m.errors <- err
-	m.r.Close()
+	if m.r != nil {
+		m.r.Close()
+	}
 }

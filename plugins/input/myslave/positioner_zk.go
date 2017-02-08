@@ -7,6 +7,7 @@ import (
 
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
+	"github.com/funkygao/golib/sync2"
 	zklib "github.com/samuel/go-zookeeper/zk"
 )
 
@@ -16,9 +17,9 @@ type positionerZk struct {
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 
-	zkzone     *zk.ZkZone
-	masterAddr string
-
+	zkzone        *zk.ZkZone
+	masterAddr    string
+	birthCry      sync2.AtomicBool
 	interval      time.Duration
 	lastCommitted time.Time
 }
@@ -38,6 +39,7 @@ func newPositionerZk(zone string, masterAddr string, interval time.Duration) *po
 func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
 	z.File = file
 	z.Offset = offset
+	z.birthCry.Set(true)
 
 	now := time.Now()
 	if now.Sub(z.lastCommitted) > z.interval {
@@ -56,6 +58,10 @@ func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
 }
 
 func (z *positionerZk) Flush() (err error) {
+	if !z.birthCry.Get() {
+		return
+	}
+
 	data, _ := json.Marshal(z)
 	if _, err = z.zkzone.Conn().Set(z.path(), data, -1); err == zklib.ErrNoNode {
 		_, err = z.zkzone.Conn().Create(z.path(), data, 0, zklib.WorldACL(zklib.PermAll))
