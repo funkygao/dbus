@@ -65,6 +65,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		//
 		// or invalid position sent?
 		// 2017/02/08 08:42:09 binlogstreamer.go:47: [error] close sync with err: ERROR 1236 (HY000): Client requested master to start replication from position > file size; the first event 'mysql.000004' at 2274, the last event read from '/usr/local/var/mysql.000004' at 4, the last byte read from '/usr/local/var/mysql.000004' at 4.
+		//
+		// [02/08/17 17:39:20] [EROR] ( mysqlbinlog.go:64) backoff 5s: invalid table id 2413, no correspond table map event
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := syncer.GetEvent(ctx)
 		cancel()

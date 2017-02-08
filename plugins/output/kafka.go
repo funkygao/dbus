@@ -156,7 +156,11 @@ func (this *KafkaOutput) sendMessage(row *myslave.RowsEvent) {
 
 	// async
 	this.ap.Input() <- msg
+	if err = this.myslave.MarkAsProcessed(row); err != nil {
+		log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
+	}
 
+	log.Debug("%d/%d %s", partition, offset, row)
 }
 
 func init() {
