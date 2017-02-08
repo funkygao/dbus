@@ -1,13 +1,14 @@
 # List special make targets that are not associated with files
 .PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
+VERSION=0.1.1-beta
+
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
 CVSPATH=github.com/funkygao
 OWNER=funkygao
 VENDOR=funkygao
 PROJECT=dbus
-VERSION=0.1.1-beta
 PKGNAME=${VENDOR}-${PROJECT}
 GIT_ID=$(shell git rev-parse HEAD | cut -c1-7)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
