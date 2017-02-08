@@ -27,6 +27,7 @@ help:
 	@echo "    make ineffassign : Detect ineffectual assignments"
 	@echo "    make misspell    : Detect commonly misspelled words in source files"
 	@echo "    make astscan     : GO AST scanner"
+	@echo "    make loc         : Line of code"
 	@echo ""
 	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
 	@echo ""
@@ -122,6 +123,9 @@ clean:
 nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
+
+loc:
+	@find . -name "*.go" | xargs wc -l | tail -1
 
 install:
 	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
