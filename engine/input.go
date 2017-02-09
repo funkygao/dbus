@@ -2,6 +2,8 @@ package engine
 
 import (
 	"sync"
+
+	log "github.com/funkygao/log4go"
 )
 
 var (
@@ -77,17 +79,11 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		if globals.Verbose {
-			globals.Printf("Input[%s] starting", this.name)
-		}
-
+		log.Trace("Input[%s] starting", this.name)
 		if err := this.Input().Run(this, e); err != nil {
 			panic(err)
 		}
-
-		if globals.Verbose {
-			globals.Printf("Input[%s] ended", this.name)
-		}
+		log.Trace("Input[%s] stopped", this.name)
 
 		if globals.Stopping {
 			e.stopInputRunner(this.name)
@@ -104,9 +100,7 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			}
 		}
 
-		if globals.Verbose {
-			globals.Printf("Input[%s] restarting", this.name)
-		}
+		log.Trace("Input[%s] restarting", this.name)
 
 		// Re-initialize our plugin with its wrapper
 		iw := e.inputWrappers[this.name]

@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"sync"
@@ -28,7 +27,6 @@ var (
 
 // GlobalConfig is the struct for holding global pipeline config values.
 type GlobalConfig struct {
-	*log.Logger
 	*conf.Conf
 
 	StartedAt       time.Time
@@ -90,7 +88,6 @@ func DefaultGlobals() *GlobalConfig {
 		MaxMsgLoops:     4,
 		MaxPackIdle:     idle,
 		StartedAt:       time.Now(),
-		Logger:          log.New(os.Stdout, "", log.Ldate|log.Lshortfile|log.Ltime), // TODO
 		registry:        map[string]interface{}{},
 	}
 }

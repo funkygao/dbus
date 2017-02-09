@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,25 +11,6 @@ import (
 	"github.com/funkygao/dbus"
 	"github.com/funkygao/log4go"
 )
-
-func newLogger() *log.Logger {
-	var logWriter io.Writer = os.Stderr // default log writer
-	var err error
-	if options.logfile != "" {
-		logWriter, err = os.OpenFile(options.logfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	logOptions := log.Ldate | log.Ltime | log.Lshortfile
-	if options.debug {
-		logOptions |= log.Lmicroseconds
-	}
-
-	prefix := fmt.Sprintf("[%d] ", os.Getpid())
-	return log.New(logWriter, prefix, logOptions)
-}
 
 func setupLogging() {
 	// keep the world silent

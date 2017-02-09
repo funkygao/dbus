@@ -2,11 +2,11 @@ package engine
 
 import (
 	"fmt"
-	"log"
 	"sync/atomic"
 	"time"
 
 	"github.com/funkygao/golib/gofmt"
+	log "github.com/funkygao/log4go"
 )
 
 type messageRouter struct {
@@ -41,7 +41,7 @@ func (this *messageRouter) addOutputMatcher(matcher *matcher) {
 	this.outputMatchers = append(this.outputMatchers, matcher)
 }
 
-func (this *messageRouter) reportMatcherQueues(logger *log.Logger) {
+func (this *messageRouter) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(this.hub))
 	if len(this.hub) == globals.PluginChanSize {
@@ -61,7 +61,7 @@ func (this *messageRouter) reportMatcherQueues(logger *log.Logger) {
 		}
 	}
 
-	logger.Println(s)
+	log.Debug(s)
 }
 
 // Dispatch pack from Input to MatchRunners
@@ -79,19 +79,17 @@ func (this *messageRouter) Start() {
 	defer ticker.Stop()
 
 	if globals.Verbose {
-		globals.Printf("Router started with ticker=%s", globals.WatchdogTick)
-	}
-
-	if globals.Verbose {
 		go func() {
 			t := time.NewTicker(globals.WatchdogTick)
 			defer t.Stop()
 
 			for range t.C {
-				this.reportMatcherQueues(globals.Logger)
+				this.reportMatcherQueues()
 			}
 		}()
 	}
+
+	log.Trace("Router started with ticker=%s", globals.WatchdogTick)
 
 LOOP:
 	for ok {
@@ -103,7 +101,7 @@ LOOP:
 			this.removeMatcher(matcher, this.filterMatchers)
 
 		case <-ticker.C:
-			this.stats.render(globals.Logger, int(globals.WatchdogTick.Seconds()))
+			this.stats.render(int(globals.WatchdogTick.Seconds()))
 			this.stats.resetPeriodCounters()
 
 		case pack, ok = <-this.hub:
@@ -151,7 +149,7 @@ LOOP:
 			if !foundMatch {
 				// Maybe we closed all filter/output inChan, but there
 				// still exits some remnant packs in router.hub
-				globals.Printf("Found no match: %+v", pack)
+				log.Warn("no match: %+v", pack)
 			}
 
 			// never forget this!
@@ -159,18 +157,13 @@ LOOP:
 		}
 	}
 
-	if globals.Verbose {
-		globals.Println("Router shutdown.")
-	}
+	log.Trace("Router shutdown.")
 }
 
 func (this *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
-	globals := Globals()
 	for idx, m := range matchers {
 		if m == matcher {
-			if globals.Verbose {
-				globals.Printf("Closed matcher for %s", m.runner.Name())
-			}
+			log.Trace("closing matcher for %s", m.runner.Name())
 
 			// in golang, close means we can no longer send to that chan
 			// but consumers can still recv from the chan
@@ -214,15 +207,15 @@ func (this *routerStats) resetPeriodCounters() {
 	this.PeriodMaxMsgBytes = int64(0)
 }
 
-func (this *routerStats) render(logger *log.Logger, elapsed int) {
-	logger.Printf("Total:%10s %10s speed:%6s/s %10s/s max: %s/%s",
+func (this *routerStats) render(elapsed int) {
+	log.Debug("Total:%10s %10s speed:%6s/s %10s/s max: %s/%s",
 		gofmt.Comma(this.TotalProcessedMsgN),
 		gofmt.ByteSize(this.TotalProcessedBytes),
 		gofmt.Comma(int64(this.PeriodProcessedMsgN/int32(elapsed))),
 		gofmt.ByteSize(this.PeriodProcessedBytes/int64(elapsed)),
 		gofmt.ByteSize(this.PeriodMaxMsgBytes),
 		gofmt.ByteSize(this.TotalMaxMsgBytes))
-	logger.Printf("Input:%10s %10s speed:%6s/s %10s/s",
+	log.Debug("Input:%10s %10s speed:%6s/s %10s/s",
 		gofmt.Comma(int64(this.PeriodInputMsgN)),
 		gofmt.ByteSize(this.PeriodInputBytes),
 		gofmt.Comma(int64(this.PeriodInputMsgN/int32(elapsed))),

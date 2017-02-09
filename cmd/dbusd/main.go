@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"runtime/debug"
+	"time"
 
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/engine"
 	_ "github.com/funkygao/dbus/plugins/filter"
 	_ "github.com/funkygao/dbus/plugins/input"
@@ -38,7 +40,6 @@ func main() {
 	globals.Verbose = options.verbose
 	globals.VeryVerbose = options.veryVerbose
 	globals.DryRun = options.dryrun
-	globals.Logger = newLogger()
 
 	e := engine.New(globals).
 		LoadConfigFile(options.configfile)
@@ -51,5 +52,9 @@ func main() {
 	agent.HttpAddr = ":10120" // FIXME security issue
 	log4go.Info("pprof agent ready on %s", agent.Start())
 
+	t0 := time.Now()
 	e.ServeForever()
+
+	log4go.Info("dbus[%s@%s] %s, bye!", dbus.BuildID, dbus.Version, time.Since(t0))
+	log4go.Close()
 }
