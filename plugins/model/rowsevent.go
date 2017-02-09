@@ -15,6 +15,7 @@ var (
 
 // RowsEvent is a structured mysql binlog rows event.
 // It implements engine.Payloader interface and can be transferred between plugins.
+// It also implements kafka message value interface and can be produced to kafka.
 type RowsEvent struct {
 	Log       string `json:"log"`
 	Position  uint32 `json:"pos"`

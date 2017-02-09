@@ -6,6 +6,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/dbus/plugins/model"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
@@ -23,7 +24,7 @@ type KafkaOutput struct {
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
 
-	sendMessage func(row *myslave.RowsEvent)
+	sendMessage func(row *model.RowsEvent)
 
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
@@ -72,7 +73,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				return nil
 			}
 
-			row, ok := pack.Payload.(*myslave.RowsEvent)
+			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
 				log.Error("bad payload: %+v", pack.Payload)
 				continue
@@ -135,7 +136,7 @@ func (this *KafkaOutput) prepareProducer() error {
 	return nil
 }
 
-func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
+func (this *KafkaOutput) syncSendMessage(row *model.RowsEvent) {
 	msg := &sarama.ProducerMessage{
 		Topic: this.topic,
 		Value: row,
@@ -162,7 +163,7 @@ func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
 	log.Debug("sync sent [%d/%d] %s", partition, offset, row)
 }
 
-func (this *KafkaOutput) asyncSendMessage(row *myslave.RowsEvent) {
+func (this *KafkaOutput) asyncSendMessage(row *model.RowsEvent) {
 	msg := &sarama.ProducerMessage{
 		Topic: this.topic,
 		Value: row,

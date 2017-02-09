@@ -3,6 +3,7 @@ package output
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/dbus/plugins/model"
 	"github.com/funkygao/gafka/cmd/kateway/hh"
 	"github.com/funkygao/gafka/cmd/kateway/hh/disk"
 	"github.com/funkygao/gafka/cmd/kateway/meta"
@@ -63,7 +64,7 @@ func (this *PubOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 				return nil
 			}
 
-			row, ok := pack.Payload.(*myslave.RowsEvent)
+			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
 				log.Error("wrong payload: %+v", pack.Payload)
 				continue

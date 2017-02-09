@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
@@ -25,7 +26,7 @@ type MySlave struct {
 	dbExcluded, tableExcluded map[string]struct{}
 
 	errors    chan error
-	rowsEvent chan *RowsEvent
+	rowsEvent chan *model.RowsEvent
 }
 
 func New() *MySlave {
@@ -72,11 +73,11 @@ func (m *MySlave) StopReplication() {
 	}
 }
 
-func (m *MySlave) MarkAsProcessed(r *RowsEvent) error {
+func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
 	return m.p.MarkAsProcessed(r.Log, r.Position)
 }
 
-func (m *MySlave) EventStream() <-chan *RowsEvent {
+func (m *MySlave) EventStream() <-chan *model.RowsEvent {
 	return m.rowsEvent
 }
 

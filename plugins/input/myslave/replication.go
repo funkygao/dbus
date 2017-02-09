@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/funkygao/dbus/plugins/model"
 	log "github.com/funkygao/log4go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"
@@ -14,7 +15,7 @@ import (
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	m.rowsEvent = make(chan *RowsEvent, m.c.Int("event_buffer_len", 100))
+	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
