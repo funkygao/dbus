@@ -28,6 +28,8 @@ type RowsEvent struct {
 	// Two rows for one event, format is [before update row, after update row]
 	// for update v0, only one row for a event, and we don't support this version.
 	Rows [][]interface{} `json:"rows"`
+
+	bytes []byte
 }
 
 // Implements engine.Payloader.
@@ -37,10 +39,18 @@ func (r *RowsEvent) String() string {
 
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Encode() ([]byte, error) {
+	if len(r.bytes) > 0 {
+		return r.bytes, nil
+	}
+
 	return json.Marshal(r)
 }
 
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Length() int {
-	return len(r.Log) + len(r.Schema) + len(r.Table) + 9 // FIXME Rows not counted
+	if len(r.bytes) == 0 {
+		r.bytes, _ = json.Marshal(r)
+	}
+
+	return len(r.bytes)
 }
