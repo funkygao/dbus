@@ -15,6 +15,7 @@ import (
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
 
@@ -159,7 +160,7 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.loadConfig(section)
 	if pluginCommons.disabled {
-		Globals().Printf("%s disabled", pluginCommons.name)
+		log.Warn("%s disabled", pluginCommons.name)
 
 		return
 	}
@@ -227,13 +228,9 @@ func (this *Engine) ServeForever() {
 
 	this.launchHttpServ()
 
-	if globals.Verbose {
-		globals.Println("Launching Output(s)...")
-	}
+	log.Trace("launching Output(s)...")
 	for _, runner := range this.OutputRunners {
-		if globals.VeryVerbose {
-			globals.Printf("  starting %s...", runner.Name())
-		}
+		log.Debug("  starting %s...", runner.Name())
 
 		outputsWg.Add(1)
 		if err = runner.start(this, outputsWg); err != nil {
@@ -241,13 +238,9 @@ func (this *Engine) ServeForever() {
 		}
 	}
 
-	if globals.Verbose {
-		globals.Println("Launching Filter(s)...")
-	}
+	log.Trace("launching Filter(s)...")
 	for _, runner := range this.FilterRunners {
-		if globals.VeryVerbose {
-			globals.Printf("  starting %s...", runner.Name())
-		}
+		log.Debug("  starting %s...", runner.Name())
 
 		filtersWg.Add(1)
 		if err = runner.start(this, filtersWg); err != nil {
@@ -261,9 +254,7 @@ func (this *Engine) ServeForever() {
 	filterPackTracker := newDiagnosticTracker("filterPackTracker")
 	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
 
-	if globals.Verbose {
-		globals.Printf("Initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
-	}
+	log.Trace("initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
 		inputPack := NewPipelinePack(this.inputRecycleChan)
 		inputPackTracker.AddPack(inputPack)
@@ -288,27 +279,21 @@ func (this *Engine) ServeForever() {
 			inputPoolSize = len(this.inputRecycleChan)
 			filterPoolSize = len(this.filterRecycleChan)
 			if globals.Verbose || inputPoolSize == 0 || filterPoolSize == 0 {
-				globals.Printf("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
+				log.Debug("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
 			}
 		}
 	}()
 
-	if globals.Verbose {
-		globals.Println("Launching Router...")
-	}
+	log.Trace("launching Router...")
 	go this.router.Start()
 
 	for _, project := range this.projects {
 		project.Start()
 	}
 
-	if globals.Verbose {
-		globals.Println("Launching Input(s)...")
-	}
+	log.Trace("Launching Input(s)...")
 	for _, runner := range this.InputRunners {
-		if globals.VeryVerbose {
-			globals.Printf("  starting %s...", runner.Name())
-		}
+		log.Debug("  starting %s...", runner.Name())
 
 		inputsWg.Add(1)
 		if err = runner.start(this, inputsWg); err != nil {
@@ -320,14 +305,14 @@ func (this *Engine) ServeForever() {
 	for !globals.Stopping {
 		select {
 		case sig := <-globals.sigChan:
-			globals.Printf("Got signal %s", strings.ToUpper(sig.String()))
+			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 			switch sig {
 			case syscall.SIGHUP:
-				globals.Println("Reloading...")
+				log.Info("Reloading...")
 				observer.Publish(RELOAD, nil)
 
 			case syscall.SIGINT:
-				globals.Println("Engine shutdown...")
+				log.Info("Engine shutdown...")
 				globals.Stopping = true
 
 			case syscall.SIGUSR1:
@@ -350,45 +335,30 @@ func (this *Engine) ServeForever() {
 			continue
 		}
 
-		if globals.Verbose {
-			globals.Printf("Stop message sent to '%s'", runner.Name())
-		}
-
+		log.Trace("Stop message sent to %s", runner.Name())
 		runner.Input().Stop()
 	}
 	this.Unlock()
 	inputsWg.Wait() // wait for all inputs done
-	if globals.Verbose {
-		globals.Println("All Inputs terminated")
-	}
+	log.Trace("all Inputs stopped")
 
 	// ok, now we are sure no more inputs, but in route.inChan there
 	// still may be filter injected packs and output not consumed packs
 	// we must wait for all the packs to be consumed before shutdown
 
 	for _, runner := range this.FilterRunners {
-		if globals.Verbose {
-			globals.Printf("Stop message sent to '%s'", runner.Name())
-		}
-
+		log.Trace("Stop message sent to %s", runner.Name())
 		this.router.removeFilterMatcher <- runner.getMatcher()
 	}
 	filtersWg.Wait()
-	if globals.Verbose {
-		globals.Println("All Filters terminated")
-	}
+	log.Trace("all Filters stopped")
 
 	for _, runner := range this.OutputRunners {
-		if globals.Verbose {
-			globals.Printf("Stop message sent to '%s'", runner.Name())
-		}
-
+		log.Trace("Stop message sent to %s", runner.Name())
 		this.router.removeOutputMatcher <- runner.getMatcher()
 	}
 	outputsWg.Wait()
-	if globals.Verbose {
-		globals.Println("All Outputs terminated")
-	}
+	log.Trace("all Outputs stopped")
 
 	// TODO stop router
 	//close(e.router.hub)
@@ -399,7 +369,7 @@ func (this *Engine) ServeForever() {
 		project.Stop()
 	}
 
-	globals.Printf("Shutdown with input:%s, dispatched:%s",
+	log.Info("shutdown with input:%s, dispatched:%s",
 		gofmt.Comma(this.router.stats.TotalInputMsgN),
 		gofmt.Comma(this.router.stats.TotalProcessedMsgN))
 }

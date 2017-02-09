@@ -2,6 +2,8 @@ package engine
 
 import (
 	"time"
+
+	log "github.com/funkygao/log4go"
 )
 
 // diagnosticTracker is a diagnostic tracker for the pipeline packs pool.
@@ -39,10 +41,7 @@ func (this *diagnosticTracker) Run(interval int) {
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
-	if globals.Debug {
-		globals.Printf("Diagnostic[%s] started with %ds",
-			this.PoolName, interval)
-	}
+	log.Trace("Diagnostic[%s] started with %ds", this.PoolName, interval)
 
 	for ever {
 		select {
@@ -68,18 +67,16 @@ func (this *diagnosticTracker) Run(interval int) {
 			}
 
 			if len(probablePacks) > 0 {
-				globals.Printf("[%s]%d packs have been idle more than %.0f seconds",
+				log.Warn("[%s]%d packs have been idle more than %.0f seconds",
 					this.PoolName, len(probablePacks), idleMax.Seconds())
 				for runner, count = range pluginCounts {
 					runner.setLeakCount(count) // let runner know leak count
 
-					globals.Printf("\t%s: %d", runner.Name(), count)
+					log.Warn("\t%s: %d", runner.Name(), count)
 				}
 
-				if globals.Debug {
-					for _, pack := range probablePacks {
-						globals.Printf("[%s]%s", this.PoolName, *pack)
-					}
+				for _, pack := range probablePacks {
+					log.Debug("[%s]%s", this.PoolName, *pack)
 				}
 			}
 
@@ -90,10 +87,7 @@ func (this *diagnosticTracker) Run(interval int) {
 }
 
 func (this *diagnosticTracker) Stop() {
-	globals := Globals()
-	if globals.Verbose {
-		globals.Printf("Diagnostic[%s] stopped", this.PoolName)
-	}
+	log.Trace("Diagnostic[%s] stopped", this.PoolName)
 
 	close(this.stopChan)
 }

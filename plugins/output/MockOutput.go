@@ -6,6 +6,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 type MockOutput struct {
@@ -21,7 +22,6 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 	defer tick.Stop()
 
 	var n, lastN int64
-	globals := engine.Globals()
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -32,13 +32,13 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			n++
 
 			if !this.blackhole {
-				globals.Printf("-> %s", pack)
+				log.Info("-> %s", pack)
 			}
 
 			pack.Recycle()
 
 		case <-tick.C:
-			globals.Printf("throughput %s/s", gofmt.Comma((n-lastN)/10))
+			log.Info("throughput %s/s", gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}

@@ -69,6 +69,6 @@ func (this *PipelinePack) Recycle() {
 		// reuse this pack to avoid re-alloc
 		this.recycleChan <- this
 	} else if count < 0 {
-		Globals().Panic("reference count below zero")
+		fmt.Println("reference count below zero")
 	}
 }

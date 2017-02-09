@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/funkygao/golib/bjtime"
+	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
 
@@ -32,9 +33,9 @@ func (this *Engine) launchHttpServ() {
 	if err != nil {
 		panic(err)
 	}
-	go this.httpServer.Serve(this.httpListener)
 
-	Globals().Printf("Listening on http://%s", this.httpServer.Addr)
+	go this.httpServer.Serve(this.httpListener)
+	log.Info("API server ready on http://%s", this.httpServer.Addr)
 }
 
 func (this *Engine) pluginNames() (names []string) {
@@ -75,7 +76,7 @@ func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 	case "debug":
 		stack := make([]byte, 1<<20)
 		stackSize := runtime.Stack(stack, true)
-		globals.Println(string(stack[:stackSize]))
+		fmt.Println(string(stack[:stackSize]))
 		output["result"] = "go to global logger to see result"
 
 	case "stat":
@@ -141,10 +142,10 @@ func (this *Engine) RegisterHttpApi(path string,
 
 		// debug request body content
 		if globals.Debug {
-			globals.Printf("req body: %+v", params)
+			log.Debug("req body: %+v", params)
 		}
 		// access log
-		globals.Printf("%s \"%s %s %s\" %d %s",
+		log.Debug("%s \"%s %s %s\" %d %s",
 			req.RemoteAddr,
 			req.Method,
 			req.RequestURI,
@@ -152,7 +153,7 @@ func (this *Engine) RegisterHttpApi(path string,
 			status,
 			time.Since(t1))
 		if status != http.StatusOK {
-			globals.Printf("ERROR %v", err)
+			log.Error("ERROR %v", err)
 		}
 
 		if ret != nil {
@@ -188,10 +189,6 @@ func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (
 func (this *Engine) stopHttpServ() {
 	if this.httpListener != nil {
 		this.httpListener.Close()
-
-		globals := Globals()
-		if globals.Verbose {
-			globals.Println("HTTP stopped")
-		}
+		log.Trace("API server stopped")
 	}
 }

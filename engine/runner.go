@@ -2,6 +2,8 @@ package engine
 
 import (
 	"sync"
+
+	log "github.com/funkygao/log4go"
 )
 
 var (
@@ -122,27 +124,19 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 	globals := Globals()
 	for {
 		if filter, ok := this.plugin.(Filter); ok {
-			if globals.Verbose {
-				globals.Printf("Filter[%s] starting", this.name)
-			}
+			log.Trace("Filter[%s] starting", this.name)
 
 			pluginType = "filter"
 			filter.Run(this, this.engine)
 
-			if globals.Verbose {
-				globals.Printf("Filter[%s] ended", this.name)
-			}
+			log.Trace("Filter[%s] stopped", this.name)
 		} else if output, ok := this.plugin.(Output); ok {
-			if globals.Verbose {
-				globals.Printf("Output[%s] starting", this.name)
-			}
+			log.Trace("Output[%s] starting", this.name)
 
 			pluginType = "output"
 			output.Run(this, this.engine)
 
-			if globals.Verbose {
-				globals.Printf("Output[%s] ended", this.name)
-			}
+			log.Trace("Output[%s] stopped", this.name)
 		} else {
 			panic("unknown plugin type")
 		}
@@ -157,9 +151,7 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 			}
 		}
 
-		if globals.Verbose {
-			globals.Printf("[%s] restarting", this.name)
-		}
+		log.Trace("[%s] restarting", this.name)
 
 		// Re-initialize our plugin using its wrapper
 		if pluginType == "filter" {
