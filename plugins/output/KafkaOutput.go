@@ -122,7 +122,7 @@ func (this *KafkaOutput) prepareProducer() error {
 
 	this.ap = ap
 	go func() {
-		log.Trace("reaping async kafka[%s] errors", this.cluster)
+		log.Trace("reaping async %s.%s.%s errors", this.zone, this.cluster, this.topic)
 
 		for err := range this.ap.Errors() {
 			// e,g.
