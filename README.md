@@ -27,6 +27,7 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] play with binlog_row_image
 - [ ] bug fix
   - next log position leads to failure after resume
+  - when repliation stops, mysql show processlist still exists
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

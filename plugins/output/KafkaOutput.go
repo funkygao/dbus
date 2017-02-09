@@ -39,12 +39,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 
 	// ack is ignored in async mode
-	ack := sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForLocal)))
-	if ack != sarama.WaitForAll && ack != sarama.WaitForLocal && ack != sarama.NoResponse {
-		// -1, 1, 0
-		panic("invalid ack")
-	}
-	this.ack = ack
+	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForLocal)))
 	this.async = config.Bool("async", false)
 	if this.async {
 		this.sendMessage = this.asyncSendMessage
@@ -93,6 +88,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 func (this *KafkaOutput) prepareProducer() error {
 	cf := sarama.NewConfig()
+	cf.ChannelBufferSize = 256 * 2 // default was 256
 	if this.compress {
 		cf.Producer.Compression = sarama.CompressionSnappy
 	}
@@ -100,7 +96,6 @@ func (this *KafkaOutput) prepareProducer() error {
 	zkcluster := this.zkzone.NewCluster(this.cluster)
 
 	if !this.async {
-		cf.ChannelBufferSize = 256 // TODO
 		cf.Producer.RequiredAcks = this.ack
 		p, err := sarama.NewSyncProducer(zkcluster.BrokerList(), cf)
 		if err != nil {
@@ -112,6 +107,10 @@ func (this *KafkaOutput) prepareProducer() error {
 	}
 
 	// async producer
+	cf.Producer.Return.Errors = true
+	cf.Producer.Return.Successes = false // TODO
+	cf.Producer.Retry.Backoff = time.Millisecond * 500
+	cf.Producer.Retry.Max = 1000
 	cf.Producer.RequiredAcks = sarama.NoResponse
 	cf.Producer.Flush.Frequency = time.Second * 2
 	cf.Producer.Flush.Messages = 1000 // TODO
@@ -128,7 +127,8 @@ func (this *KafkaOutput) prepareProducer() error {
 		for err := range this.ap.Errors() {
 			// e,g.
 			// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
-			log.Error("[%s.%s] %s", this.zone, this.cluster, err)
+			b, _ := err.Msg.Value.Encode()
+			log.Error("[%s.%s] %s {%d, %s}", this.zone, this.cluster, err, err.Msg.Value.Length(), string(b))
 		}
 	}()
 
@@ -159,7 +159,7 @@ func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
 		log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
 	}
 
-	log.Debug("%d/%d %s", partition, offset, row)
+	log.Debug("sync sent [%d/%d] %s", partition, offset, row)
 }
 
 func (this *KafkaOutput) asyncSendMessage(row *myslave.RowsEvent) {
