@@ -12,6 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/gafka/telemetry"
+	"github.com/funkygao/gafka/telemetry/influxdb"
+	"github.com/funkygao/go-metrics"
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
@@ -153,6 +156,14 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 		this.loadPluginSection(section)
 	}
 
+	if c, err := influxdb.NewConfig(cf.String("influx_addr", ""),
+		cf.String("influx_db", "dbus"), "", "",
+		cf.Duration("influx_tick", time.Minute)); err == nil {
+		telemetry.Default = influxdb.New(metrics.DefaultRegistry, c)
+	} else {
+		log.Warn("telemetry disabled for: %s", err)
+	}
+
 	return this
 }
 
@@ -227,6 +238,16 @@ func (this *Engine) ServeForever() {
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGUSR2, syscall.SIGUSR1)
 
 	this.launchHttpServ()
+
+	if telemetry.Default != nil {
+		log.Trace("launching telemetry dumper...")
+
+		go func() {
+			if err := telemetry.Default.Start(); err != nil {
+				log.Error("telemetry[%s]: %s", telemetry.Default.Name(), err)
+			}
+		}()
+	}
 
 	log.Trace("launching Output(s)...")
 	for _, runner := range this.OutputRunners {

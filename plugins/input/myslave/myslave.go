@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/gafka/telemetry"
-	"github.com/funkygao/gafka/telemetry/influxdb"
-	"github.com/funkygao/go-metrics"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
@@ -41,21 +37,6 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.port = uint16(m.c.Int("master_port", 3306))
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
 	m.GTID = m.c.Bool("GTID", false)
-
-	globals := engine.Globals()
-	if c, err := influxdb.NewConfig(globals.String("influx_addr", ""),
-		globals.String("influx_db", "dbus"), "", "",
-		globals.Duration("influx_tick", time.Minute)); err == nil {
-		telemetry.Default = influxdb.New(metrics.DefaultRegistry, c)
-		go func() {
-			// FIXME telemetry should be global instead of plugin scope
-			if err := telemetry.Default.Start(); err != nil {
-				log.Error("telemetry[%s]: %s", telemetry.Default.Name(), err)
-			}
-		}()
-	} else {
-		log.Warn("telemetry disabled for: %s", err)
-	}
 
 	m.p = newPositionerZk(m.c.String("zone", ""), m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 	m.m = newMetrics(fmt.Sprintf("dbus.myslave.%s", m.masterAddr))
