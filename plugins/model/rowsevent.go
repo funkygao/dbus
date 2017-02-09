@@ -35,15 +35,9 @@ func (r *RowsEvent) String() string {
 	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
 }
 
-// Implements engine.Payloader.
-func (r *RowsEvent) Bytes() []byte {
-	b, _ := json.Marshal(r)
-	return b
-}
-
-// Implements sarama.Encoder. TODO
+// Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Encode() ([]byte, error) {
-	return nil, nil
+	return json.Marshal(r)
 }
 
 // Implements engine.Payloader and sarama.Encoder.

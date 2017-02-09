@@ -138,7 +138,7 @@ func (this *KafkaOutput) prepareProducer() error {
 func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
 	msg := &sarama.ProducerMessage{
 		Topic: this.topic,
-		Value: sarama.ByteEncoder(row.Bytes()),
+		Value: row,
 	}
 
 	var (
@@ -165,7 +165,7 @@ func (this *KafkaOutput) syncSendMessage(row *myslave.RowsEvent) {
 func (this *KafkaOutput) asyncSendMessage(row *myslave.RowsEvent) {
 	msg := &sarama.ProducerMessage{
 		Topic: this.topic,
-		Value: sarama.ByteEncoder(row.Bytes()),
+		Value: row,
 	}
 
 	this.ap.Input() <- msg

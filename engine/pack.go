@@ -12,7 +12,7 @@ type Payloader interface {
 	Length() int
 
 	// Bytes returns the marshalled byte array of the payload.
-	Bytes() []byte
+	Encode() ([]byte, error)
 
 	// String return the string format of the payload.
 	// Useful for debugging.

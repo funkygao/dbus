@@ -34,9 +34,8 @@ func (r *RowsEvent) String() string {
 }
 
 // Implements Payloader.
-func (r *RowsEvent) Bytes() []byte {
-	b, _ := json.Marshal(r)
-	return b
+func (r *RowsEvent) Encode() ([]byte, error) {
+	return json.Marshal(r)
 }
 
 // Implements Payloader.

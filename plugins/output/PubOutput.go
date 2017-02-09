@@ -69,10 +69,11 @@ func (this *PubOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 				continue
 			}
 
-			partition, offset, err := store.DefaultPubStore.SyncPub(this.cluster, this.topic, nil, row.Bytes())
+			msg, _ := row.Encode()
+			partition, offset, err := store.DefaultPubStore.SyncPub(this.cluster, this.topic, nil, msg)
 			if err != nil {
 				log.Error("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
-				hh.Default.Append(this.cluster, this.topic, nil, pack.Payload.Bytes())
+				hh.Default.Append(this.cluster, this.topic, nil, msg)
 			}
 
 			// FIXME only after pub'ed shall we mark it processed

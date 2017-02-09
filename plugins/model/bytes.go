@@ -16,6 +16,6 @@ func (b Bytes) String() string {
 	return string(b)
 }
 
-func (b Bytes) Bytes() []byte {
-	return b
+func (b Bytes) Encode() ([]byte, error) {
+	return b, nil
 }
