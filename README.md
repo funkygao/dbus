@@ -18,6 +18,7 @@ another databus that listens for mysql binlog and distribute to sinks
 
 - [X] logging
 - [ ] graceful shutdown
+- [ ] trace async producer Successes channel and mark as processed
 - [X] metrics
 - [X] telemetry and alert
 - [ ] presence and standby mode
@@ -32,3 +33,4 @@ another databus that listens for mysql binlog and distribute to sinks
   - [X] restart mysql master
   - [X] mysql kill process
   - [ ] tc drop network packets and high latency
+
