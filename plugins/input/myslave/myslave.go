@@ -22,12 +22,17 @@ type MySlave struct {
 	port       uint16
 	GTID       bool // global tx id
 
+	dbExcluded, tableExcluded map[string]struct{}
+
 	errors    chan error
 	rowsEvent chan *RowsEvent
 }
 
 func New() *MySlave {
-	return &MySlave{}
+	return &MySlave{
+		dbExcluded:    map[string]struct{}{},
+		tableExcluded: map[string]struct{}{},
+	}
 }
 
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
@@ -37,6 +42,12 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.port = uint16(m.c.Int("master_port", 3306))
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
 	m.GTID = m.c.Bool("GTID", false)
+	for _, db := range config.StringList("db_excluded", nil) {
+		m.dbExcluded[db] = struct{}{}
+	}
+	for _, table := range config.StringList("table_excluded", nil) {
+		m.tableExcluded[table] = struct{}{}
+	}
 
 	m.p = newPositionerZk(m.c.String("zone", ""), m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 	m.m = newMetrics(fmt.Sprintf("dbus.myslave.%s", m.masterAddr))

@@ -24,6 +24,8 @@
             password: ""
             server_id: 137
             GTID: false
+            table_excluded: ["foo", ]
+            db_excluded: ["bar", ]
         }            
 
         {

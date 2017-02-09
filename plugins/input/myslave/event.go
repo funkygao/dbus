@@ -47,6 +47,14 @@ func (r *RowsEvent) Length() int {
 func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *replication.RowsEvent) {
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
+	if _, present := m.dbExcluded[schema]; present {
+		log.Debug("db[%s] ignored: %+v %+v", schema, h, e)
+		return
+	}
+	if _, present := m.tableExcluded[table]; present {
+		log.Debug("table[%s] ignored: %+v %+v", table, h, e)
+		return
+	}
 
 	var action string
 	switch h.EventType {
