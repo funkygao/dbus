@@ -66,7 +66,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 
 	m.rowsEvent <- &RowsEvent{
 		Log:       f,
-		Position:  h.LogPos,
+		Position:  h.LogPos, // next binlog pos
 		Schema:    schema,
 		Table:     table,
 		Action:    action,

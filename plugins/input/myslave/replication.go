@@ -18,12 +18,13 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID: uint32(m.c.Int("server_id", 137)), // 137 unique enough?
-		Flavor:   "mysql",                           // currently mariadb not implemented
-		Host:     m.host,
-		Port:     m.port,
-		User:     m.c.String("user", "root"),
-		Password: m.c.String("password", ""),
+		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough?
+		Flavor:          "mysql",                           // currently mariadb not implemented
+		Host:            m.host,
+		Port:            m.port,
+		User:            m.c.String("user", "root"),
+		Password:        m.c.String("password", ""),
+		SemiSyncEnabled: false,
 	})
 
 	file, offset, err := m.p.Committed()
@@ -139,6 +140,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// 00000000  01
 
 		case *replication.GenericEvent:
+			// known misc types of event
 
 		case *replication.GTIDEvent:
 			if m.GTID {

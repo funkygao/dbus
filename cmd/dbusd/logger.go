@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"syscall"
@@ -13,7 +14,7 @@ import (
 )
 
 func newLogger() *log.Logger {
-	var logWriter io.Writer = os.Stdout // default log writer
+	var logWriter io.Writer = os.Stderr // default log writer
 	var err error
 	if options.logfile != "" {
 		logWriter, err = os.OpenFile(options.logfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
@@ -28,16 +29,16 @@ func newLogger() *log.Logger {
 	}
 
 	prefix := fmt.Sprintf("[%d] ", os.Getpid())
-	log.SetOutput(logWriter)
-	log.SetFlags(logOptions)
-	log.SetPrefix(prefix)
-
 	return log.New(logWriter, prefix, logOptions)
 }
 
 func setupLogging() {
+	// keep the world silent
+	log.SetOutput(ioutil.Discard)
+
 	level := log4go.ToLogLevel(options.loglevel, log4go.TRACE)
 	log4go.SetLevel(level)
+
 	if options.logfile == "" {
 		// stdout
 		return

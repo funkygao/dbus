@@ -20,7 +20,7 @@ another databus that listens for mysql binlog and distribute to sinks
 - [ ] graceful shutdown
 - [X] metrics
 - [X] telemetry and alert
-- [ ] master/slave
+- [ ] presence and standby mode
 - [ ] pack.Payload reuse memory
 - [ ] what if replication conn broken
 - [X] position will be stored in zk
@@ -28,6 +28,6 @@ another databus that listens for mysql binlog and distribute to sinks
 - [ ] bug fix
   - next log position leads to failure after resume
 - [ ] test cases
-  - restart mysql master
-  - mysql kill process
-  - tc drop network packets and high latency
+  - [X] restart mysql master
+  - [X] mysql kill process
+  - [ ] tc drop network packets and high latency

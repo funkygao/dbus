@@ -126,7 +126,9 @@ func (this *KafkaOutput) prepareProducer() error {
 		log.Trace("reaping async kafka[%s] errors", this.cluster)
 
 		for err := range this.ap.Errors() {
-			log.Error("%s %s", this.cluster, err)
+			// e,g.
+			// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
+			log.Error("[%s.%s] %s", this.zone, this.cluster, err)
 		}
 	}()
 
