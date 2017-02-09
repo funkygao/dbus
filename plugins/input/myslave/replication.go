@@ -40,6 +40,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// SELECT @@gtid_mode
 		// SHOW GLOBAL VARIABLES LIKE 'SERVER_UUID'
 		var masterUuid uuid.UUID
+		// 07c93cd7-a7d3-12a5-94e1-a0369a7c3790:1-313225133
 		set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUuid.String(), 1, 2))
 		syncer, err = m.r.StartSyncGTID(set)
 		panic("not implemented") // TODO
