@@ -11,10 +11,12 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 	table := string(e.Table.Table)
 	if _, present := m.dbExcluded[schema]; present {
 		log.Debug("db[%s] ignored: %+v %+v", schema, h, e)
+		m.p.MarkAsProcessed(f, h.LogPos)
 		return
 	}
 	if _, present := m.tableExcluded[table]; present {
 		log.Debug("table[%s] ignored: %+v %+v", table, h, e)
+		m.p.MarkAsProcessed(f, h.LogPos)
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/plugins/input/myslave"
-	//"github.com/funkygao/dbus/plugins/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
@@ -42,7 +41,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
-				log.Trace("yes sir! I quit")
+				log.Trace("yes sir!")
 				return nil
 
 			case err := <-errors:
@@ -52,7 +51,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				select {
 				case <-time.After(backoff):
 				case <-this.stopChan:
-					log.Trace("yes sir! I quit")
+					log.Trace("yes sir!")
 					return nil
 				}
 				goto RESTART_REPLICATION
@@ -70,7 +69,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					select {
 					case <-time.After(backoff):
 					case <-this.stopChan:
-						log.Trace("yes sir! I quit")
+						log.Trace("yes sir!")
 						return nil
 					}
 					goto RESTART_REPLICATION
@@ -85,7 +84,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					r.Inject(pack)
 
 				case <-this.stopChan:
-					log.Trace("yes sir! I quit")
+					log.Trace("yes sir!")
 					return nil
 				}
 			}

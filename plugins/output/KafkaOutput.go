@@ -128,8 +128,8 @@ func (this *KafkaOutput) prepareProducer() error {
 		for err := range this.ap.Errors() {
 			// e,g.
 			// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
-			b, _ := err.Msg.Value.Encode()
-			log.Error("[%s.%s] %s {%d, %s}", this.zone, this.cluster, err, err.Msg.Value.Length(), string(b))
+			row := err.Msg.Value.(*model.RowsEvent)
+			log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
 		}
 	}()
 

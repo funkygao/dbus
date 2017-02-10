@@ -66,7 +66,7 @@ func (this *PubOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 
 			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
-				log.Error("wrong payload: %+v", pack.Payload)
+				log.Error("bad payload: %+v", pack.Payload)
 				continue
 			}
 
