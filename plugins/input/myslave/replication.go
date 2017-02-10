@@ -109,6 +109,11 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		m.m.Events.Mark(1)
 
 		log.Debug("-> %T", ev.Event)
+		// insert into tbtest values(1) will trigger the following events:
+		// QueryEvent    BEGIN, Log position: 4800
+		// TableMapEvent Schema: mydb, Table: tbtest, TableID: 81, Log position: 4844
+		// RowsEvent     Values: 0:1, TableID: 81, Log position: 4884
+		// XIDEvent      XID: 356, Log position: 4915 // COMMMIT
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
 			// e,g.
@@ -126,6 +131,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// DDL comes this way
 			// e,g. create table y(id int)
 			// e,g. BEGIN
+			// e,g. flush tables
 
 		case *replication.XIDEvent:
 			// e,g. xid: 1293
