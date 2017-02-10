@@ -53,6 +53,7 @@ type Engine struct {
 	// inputPackTracker, filterPackTracker
 	diagnosticTrackers map[string]*diagnosticTracker
 
+	top    *topology
 	router *messageRouter
 
 	// PipelinePack supply for Input plugins.
@@ -89,6 +90,7 @@ func New(globals *GlobalConfig) (this *Engine) {
 	this.projects = make(map[string]*Project)
 	this.httpPaths = make([]string, 0, 6)
 
+	this.top = newTopology()
 	this.router = newMessageRouter()
 
 	this.hostname, _ = os.Hostname()
@@ -155,6 +157,9 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 
 		this.loadPluginSection(section)
 	}
+
+	// 'topology' section
+	this.top.load(this.Conf)
 
 	if c, err := influxdb.NewConfig(cf.String("influx_addr", ""),
 		cf.String("influx_db", "dbus"), "", "",
