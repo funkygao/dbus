@@ -162,12 +162,12 @@ func (this *KafkaOutput) prepareProducer() error {
 }
 
 func (this *KafkaOutput) syncSendMessage(row *model.RowsEvent) {
-	msg := &sarama.ProducerMessage{
-		Topic: this.topic,
-		Value: row,
-	}
-
 	var (
+		msg = &sarama.ProducerMessage{
+			Topic: this.topic,
+			Value: row,
+		}
+
 		partition int32
 		offset    int64
 		err       error
