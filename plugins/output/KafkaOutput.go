@@ -5,8 +5,8 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/model"
 	"github.com/funkygao/dbus/plugins/input/myslave"
-	"github.com/funkygao/dbus/plugins/model"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"

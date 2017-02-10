@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/funkygao/dbus/plugins/model"
+	"github.com/funkygao/dbus/model"
 	log "github.com/funkygao/log4go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"

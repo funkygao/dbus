@@ -2,7 +2,7 @@ package input
 
 import (
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/plugins/model"
+	"github.com/funkygao/dbus/model"
 	conf "github.com/funkygao/jsconf"
 )
 
