@@ -300,7 +300,7 @@ func (this *Engine) ServeForever() {
 			inputPoolSize = len(this.inputRecycleChan)
 			filterPoolSize = len(this.filterRecycleChan)
 			if globals.Verbose || inputPoolSize == 0 || filterPoolSize == 0 {
-				log.Debug("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
+				log.Trace("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
 			}
 		}
 	}()
