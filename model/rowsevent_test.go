@@ -1,11 +1,11 @@
-package myslave
+package model
 
 import (
 	"testing"
 )
 
-func BenchmarkRowEventMarshal(b *testing.B) {
-	r := &RowsEvent{
+func makeRowsEvent() *RowsEvent {
+	return &RowsEvent{
 		Log:       "mysql-bin.0001",
 		Position:  498876,
 		Schema:    "mydabase",
@@ -14,8 +14,18 @@ func BenchmarkRowEventMarshal(b *testing.B) {
 		Timestamp: 1486554654,
 		Rows:      [][]interface{}{{"user", 15, "hello world"}},
 	}
+}
 
+func BenchmarkRowsEventEncode(b *testing.B) {
+	r := makeRowsEvent()
 	for i := 0; i < b.N; i++ {
-		r.Bytes()
+		r.Encode()
+	}
+}
+
+func BenchmarkRowsEventLength(b *testing.B) {
+	r := makeRowsEvent()
+	for i := 0; i < b.N; i++ {
+		r.Length()
 	}
 }
