@@ -89,8 +89,11 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			}
 
 			// best effort to reduce dup message to kafka
-			if row.Log > this.pos.Log || (row.Log == this.pos.Log && row.Position > this.pos.Pos) {
+			if row.Log > this.pos.Log ||
+				(row.Log == this.pos.Log && row.Position > this.pos.Pos) {
 				this.sendMessage(row)
+			} else {
+				log.Trace("[%s.%s.%s] skipped {%s}", this.zone, this.cluster, this.topic, row)
 			}
 
 			pack.Recycle()
