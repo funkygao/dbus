@@ -24,6 +24,8 @@ _testmain.go
 *.prof
 *.swp
 *.tmp
+*.dmp
+
 hh/
 target/
 
