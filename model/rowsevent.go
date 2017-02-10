@@ -54,6 +54,10 @@ func (r *RowsEvent) Encode() (b []byte, err error) {
 	return
 }
 
+func (r *RowsEvent) Decode(b []byte) error {
+	return json.Unmarshal(b, r)
+}
+
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Length() int {
 	if len(r.bytes) == 0 {

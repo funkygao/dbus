@@ -17,9 +17,9 @@ another databus that listens for mysql binlog and distribute to sinks
 ### TODO
 
 - [X] logging
+- [X] share zkzone instance
 - [ ] presence and standby mode
 - [ ] graceful shutdown
-- [ ] topology in config
 - [ ] pack.Payload reuse memory
 - [ ] DDL binlog
   - drop table y;
@@ -32,6 +32,7 @@ another databus that listens for mysql binlog and distribute to sinks
 - [ ] bug fix
   - next log position leads to failure after resume
   - when repliation stops, mysql show processlist still exists
+  - table id issue
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

@@ -1,9 +1,6 @@
 package output
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -17,33 +14,8 @@ import (
 )
 
 type sentPos struct {
-	Log string `json:"log"`
-	Pos uint32 `json:"pos"`
-
-	f *os.File
-}
-
-func (p *sentPos) load(fn string) {
-	f, err := os.OpenFile(fn, os.O_CREATE|os.O_RDWR|os.O_SYNC, 0600)
-	if err != nil {
-		panic(err)
-	}
-
-	p.f = f
-
-	dec := json.NewDecoder(f)
-	dec.Decode(p)
-}
-
-func (p *sentPos) dump() {
-	p.f.Seek(0, os.SEEK_SET)
-	enc := json.NewEncoder(p.f)
-	enc.Encode(p)
-}
-
-func (p *sentPos) close() {
-	p.dump()
-	p.f.Close()
+	Log string
+	Pos uint32
 }
 
 type KafkaOutput struct {
@@ -59,8 +31,7 @@ type KafkaOutput struct {
 
 	sendMessage func(row *model.RowsEvent)
 
-	pos      *sentPos
-	posDirty bool
+	pos *sentPos
 
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
@@ -75,9 +46,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		panic("invalid configuration")
 	}
 
-	this.pos = &sentPos{}
-	this.pos.load(fmt.Sprintf("_%s.%s.%s.dmp", this.zone, this.cluster, this.topic))
-	log.Debug("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, this.pos)
+	this.initPosition()
 
 	// ack is ignored in async mode
 	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForLocal)))
@@ -98,9 +67,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		return err
 	}
 
-	posTicker := time.NewTicker(time.Millisecond * 100)
 	defer func() {
-		posTicker.Stop()
 		if this.async {
 			this.ap.Close()
 		} else {
@@ -110,15 +77,8 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 	for {
 		select {
-		case <-posTicker.C:
-			if this.posDirty {
-				this.pos.dump()
-				this.posDirty = false
-			}
-
 		case pack, ok := <-r.InChan():
 			if !ok {
-				this.pos.close()
 				return nil
 			}
 
@@ -235,10 +195,27 @@ func (this *KafkaOutput) asyncSendMessage(row *model.RowsEvent) {
 	}
 }
 
+func (this *KafkaOutput) initPosition() {
+	b, err := this.zkzone.NewCluster(this.cluster).TailMessage(this.topic, 0, 1) // FIXME 1 partition allowed only
+	if err != nil {
+		panic(err)
+	}
+
+	row := &model.RowsEvent{}
+	if err := row.Decode(b[0]); err != nil {
+		panic(err)
+	}
+
+	this.pos = &sentPos{}
+	this.pos.Log = row.Log
+	this.pos.Pos = row.Position
+
+	log.Debug("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, this.pos)
+}
+
 func (this *KafkaOutput) markAsSent(row *model.RowsEvent) {
 	this.pos.Log = row.Log
 	this.pos.Pos = row.Position
-	this.posDirty = true
 }
 
 func init() {
