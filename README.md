@@ -17,14 +17,16 @@ another databus that listens for mysql binlog and distribute to sinks
 ### TODO
 
 - [X] logging
+- [ ] presence and standby mode
 - [ ] graceful shutdown
 - [ ] topology in config
-- [ ] trace async producer Successes channel and mark as processed
+- [ ] pack.Payload reuse memory
+- [ ] DDL binlog
+  - drop table y;
+- [X] trace async producer Successes channel and mark as processed
 - [X] metrics
 - [X] telemetry and alert
-- [ ] presence and standby mode
-- [ ] pack.Payload reuse memory
-- [ ] what if replication conn broken
+- [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
 - [ ] bug fix
@@ -33,5 +35,6 @@ another databus that listens for mysql binlog and distribute to sinks
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process
+  - [ ] race detection
   - [ ] tc drop network packets and high latency
 
