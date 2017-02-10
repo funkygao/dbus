@@ -10,12 +10,12 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
 	if _, present := m.dbExcluded[schema]; present {
-		log.Debug("db[%s] ignored: %+v %+v", schema, h, e)
+		log.Debug("[%s] db[%s] ignored: %+v %+v", m.masterAddr, schema, h, e)
 		m.p.MarkAsProcessed(f, h.LogPos)
 		return
 	}
 	if _, present := m.tableExcluded[table]; present {
-		log.Debug("table[%s] ignored: %+v %+v", table, h, e)
+		log.Debug("[%s] table[%s] ignored: %+v %+v", m.masterAddr, table, h, e)
 		m.p.MarkAsProcessed(f, h.LogPos)
 		return
 	}
@@ -32,7 +32,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		action = "U"
 
 	default:
-		log.Warn("%s not supported: %+v", h.EventType, e)
+		log.Warn("[%s] %s not supported: %+v", m.masterAddr, h.EventType, e)
 		return
 	}
 

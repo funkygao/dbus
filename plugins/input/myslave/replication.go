@@ -3,6 +3,7 @@ package myslave
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/model"
@@ -61,7 +62,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	}
 
 	close(ready)
-	log.Trace("ready to receive binlog stream")
+	log.Trace("[%s] ready to receive binlog stream", m.masterAddr)
 
 	timeout := time.Second
 	maxTimeout := time.Minute
@@ -94,6 +95,12 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 				continue
 			}
 
+			if strings.HasPrefix(err.Error(), "invalid table id") {
+				log.Error("[%s] %s", m.masterAddr, err)
+				// TODO how to handle this?
+				continue
+			}
+
 			// TODO try out all the cases
 			m.emitFatalError(err)
 			return
@@ -108,7 +115,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Position: 4
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
-			log.Trace("rotate to (%s, %d)", file, e.Position)
+			log.Trace("[%s] rotate to (%s, %d)", m.masterAddr, file, e.Position)
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)
@@ -150,7 +157,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			}
 
 		default:
-			log.Warn("unexpected event: %+v", e)
+			log.Warn("[%s] unexpected event: %+v", m.masterAddr, e)
 		}
 	}
 

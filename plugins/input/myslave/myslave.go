@@ -61,7 +61,7 @@ func (m *MySlave) Close() {
 		m.r.Close()
 	}
 	if err := m.p.Flush(); err != nil {
-		log.Error("flush: %s", err)
+		log.Error("[%s] flush: %s", m.masterAddr, err)
 	}
 	//close(m.errors)
 }
@@ -69,7 +69,7 @@ func (m *MySlave) Close() {
 func (m *MySlave) StopReplication() {
 	m.r.Close()
 	if err := m.p.Flush(); err != nil {
-		log.Error("flush: %s", err)
+		log.Error("[%s] flush: %s", m.masterAddr, err)
 	}
 }
 
