@@ -201,14 +201,17 @@ func (this *KafkaOutput) initPosition() {
 		panic(err)
 	}
 
-	row := &model.RowsEvent{}
-	if err := row.Decode(b[0]); err != nil {
-		panic(err)
-	}
-
 	this.pos = &sentPos{}
-	this.pos.Log = row.Log
-	this.pos.Pos = row.Position
+	if len(b) == 1 {
+		// has checkpoint in kafka
+		row := &model.RowsEvent{}
+		if err := row.Decode(b[0]); err != nil {
+			panic(err)
+		}
+
+		this.pos.Log = row.Log
+		this.pos.Pos = row.Position
+	}
 
 	log.Debug("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, this.pos)
 }
