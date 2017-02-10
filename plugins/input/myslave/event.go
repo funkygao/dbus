@@ -1,7 +1,7 @@
 package myslave
 
 import (
-	"github.com/funkygao/dbus/plugins/model"
+	"github.com/funkygao/dbus/model"
 	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )

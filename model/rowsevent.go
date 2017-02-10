@@ -43,12 +43,15 @@ func (r *RowsEvent) MetaInfo() string {
 }
 
 // Implements engine.Payloader and sarama.Encoder.
-func (r *RowsEvent) Encode() ([]byte, error) {
+func (r *RowsEvent) Encode() (b []byte, err error) {
 	if len(r.bytes) > 0 {
 		return r.bytes, nil
 	}
 
-	return json.Marshal(r)
+	b, err = json.Marshal(r)
+	r.bytes = b
+
+	return
 }
 
 // Implements engine.Payloader and sarama.Encoder.

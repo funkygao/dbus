@@ -61,7 +61,7 @@ func (this *messageRouter) reportMatcherQueues() {
 		}
 	}
 
-	log.Debug(s)
+	log.Trace(s)
 }
 
 // Dispatch pack from Input to MatchRunners
@@ -208,14 +208,14 @@ func (this *routerStats) resetPeriodCounters() {
 }
 
 func (this *routerStats) render(elapsed int) {
-	log.Debug("Total:%10s %10s speed:%6s/s %10s/s max: %s/%s",
+	log.Trace("Total:%10s %10s speed:%6s/s %10s/s max: %s/%s",
 		gofmt.Comma(this.TotalProcessedMsgN),
 		gofmt.ByteSize(this.TotalProcessedBytes),
 		gofmt.Comma(int64(this.PeriodProcessedMsgN/int32(elapsed))),
 		gofmt.ByteSize(this.PeriodProcessedBytes/int64(elapsed)),
 		gofmt.ByteSize(this.PeriodMaxMsgBytes),
 		gofmt.ByteSize(this.TotalMaxMsgBytes))
-	log.Debug("Input:%10s %10s speed:%6s/s %10s/s",
+	log.Trace("Input:%10s %10s speed:%6s/s %10s/s",
 		gofmt.Comma(int64(this.PeriodInputMsgN)),
 		gofmt.ByteSize(this.PeriodInputBytes),
 		gofmt.Comma(int64(this.PeriodInputMsgN/int32(elapsed))),

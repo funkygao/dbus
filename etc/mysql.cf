@@ -29,7 +29,7 @@
         }            
 
         {
-            name: "PubOutput"
+            name: "KafkaOutput"
             zone: "local"
             cluster: "me"
             topic: "foobar"
