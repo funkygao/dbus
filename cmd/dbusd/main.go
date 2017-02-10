@@ -37,8 +37,6 @@ func main() {
 
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
-	globals.Verbose = options.verbose
-	globals.VeryVerbose = options.veryVerbose
 	globals.DryRun = options.dryrun
 
 	e := engine.New(globals).

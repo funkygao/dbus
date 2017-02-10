@@ -304,7 +304,7 @@ func (this *Engine) ServeForever() {
 		for range t.C {
 			inputPoolSize = len(this.inputRecycleChan)
 			filterPoolSize = len(this.filterRecycleChan)
-			if globals.Verbose || inputPoolSize == 0 || filterPoolSize == 0 {
+			if inputPoolSize == 0 || filterPoolSize == 0 {
 				log.Trace("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
 			}
 		}

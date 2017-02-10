@@ -78,16 +78,14 @@ func (this *messageRouter) Start() {
 	ticker = time.NewTicker(globals.WatchdogTick)
 	defer ticker.Stop()
 
-	if globals.Verbose {
-		go func() {
-			t := time.NewTicker(globals.WatchdogTick)
-			defer t.Stop()
+	go func() {
+		t := time.NewTicker(globals.WatchdogTick)
+		defer t.Stop()
 
-			for range t.C {
-				this.reportMatcherQueues()
-			}
-		}()
-	}
+		for range t.C {
+			this.reportMatcherQueues()
+		}
+	}()
 
 	log.Trace("Router started with ticker=%s", globals.WatchdogTick)
 

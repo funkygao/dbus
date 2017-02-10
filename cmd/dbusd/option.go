@@ -11,10 +11,8 @@ import (
 
 var (
 	options struct {
-		verbose     bool
-		veryVerbose bool
-		debug       bool
-		dryrun      bool
+		debug  bool
+		dryrun bool
 
 		configfile    string
 		showversion   bool
@@ -34,8 +32,6 @@ Flags:
 )
 
 func parseFlags() {
-	flag.BoolVar(&options.verbose, "v", false, "verbose")
-	flag.BoolVar(&options.veryVerbose, "vv", false, "very verbose")
 	flag.StringVar(&options.configfile, "conf", "", "main config file")
 	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
@@ -48,14 +44,6 @@ func parseFlags() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-
-	if options.veryVerbose {
-		options.debug = true
-	}
-	if options.debug {
-		options.verbose = true
-	}
-
 }
 
 func showVersionAndExit() {

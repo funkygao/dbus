@@ -28,9 +28,7 @@ func (this *Project) fromConfig(c *conf.Conf) {
 	}
 
 	logOptions := log.Ldate | log.Ltime
-	if Globals().Verbose {
-		logOptions |= log.Lshortfile
-	}
+	logOptions |= log.Lshortfile
 	if Globals().Debug {
 		logOptions |= log.Lmicroseconds
 	}
