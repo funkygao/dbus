@@ -7,7 +7,6 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/model"
 	"github.com/funkygao/dbus/plugins/input/myslave"
-	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -46,8 +45,6 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		panic("invalid configuration")
 	}
 
-	this.initPosition()
-
 	// ack is ignored in async mode
 	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForLocal)))
 	this.async = config.Bool("async", false)
@@ -57,7 +54,9 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		this.sendMessage = this.syncSendMessage
 	}
 	this.compress = config.Bool("compress", false)
-	this.zkzone = zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
+	this.zkzone = engine.Globals().GetOrRegisterZkzone(this.zone)
+
+	this.initPosition()
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
@@ -216,7 +215,7 @@ func (this *KafkaOutput) initPosition() {
 		this.pos.Pos = row.Position
 	}
 
-	log.Debug("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, this.pos)
+	log.Trace("[%s.%s.%s/0] resume from %+v", this.zone, this.cluster, this.topic, *this.pos)
 }
 
 func (this *KafkaOutput) markAsSent(row *model.RowsEvent) {

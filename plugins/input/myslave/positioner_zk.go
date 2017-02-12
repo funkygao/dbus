@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
 	zklib "github.com/samuel/go-zookeeper/zk"
@@ -32,7 +32,7 @@ func newPositionerZk(zone string, masterAddr string, interval time.Duration) *po
 	return &positionerZk{
 		masterAddr: masterAddr,
 		interval:   interval,
-		zkzone:     zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))),
+		zkzone:     engine.Globals().GetOrRegisterZkzone(zone),
 	}
 }
 

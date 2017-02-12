@@ -10,7 +10,6 @@ import (
 	"github.com/funkygao/gafka/cmd/kateway/meta/zkmeta"
 	"github.com/funkygao/gafka/cmd/kateway/store"
 	"github.com/funkygao/gafka/cmd/kateway/store/kafka"
-	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -33,7 +32,7 @@ func (this *PubOutput) Init(config *conf.Conf) {
 		panic("invalid configuration")
 	}
 
-	this.zkzone = zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
+	this.zkzone = engine.Globals().GetOrRegisterZkzone(this.zone)
 
 	meta.Default = zkmeta.New(zkmeta.DefaultConfig(), this.zkzone)
 	meta.Default.Start()

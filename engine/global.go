@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
 )
 
@@ -72,6 +74,19 @@ func (this *GlobalConfig) Registered(k string) interface{} {
 	defer this.regMu.RUnlock()
 
 	return this.registry[k]
+}
+
+func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
+	this.regMu.Lock()
+	defer this.regMu.Unlock()
+
+	key := fmt.Sprintf("zkzone.%s", zone)
+	if _, present := this.registry[key]; !present {
+		zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
+		this.registry[key] = zkzone
+	}
+
+	return this.registry[key].(*zk.ZkZone)
 }
 
 func DefaultGlobals() *GlobalConfig {
