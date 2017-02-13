@@ -28,6 +28,6 @@ _testmain.go
 
 hh/
 target/
+var/
 
 cmd/dbusd/dbusd
-cmd/dbusd/var/

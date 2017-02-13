@@ -1,0 +1,78 @@
+{
+    http_addr: "127.0.0.1:9876"
+    influx_addr: "http://10.1.1.1:8086"
+    influx_db: "dbus"
+    influx_tick: "1m"
+
+    projects: [
+        {
+            name: "mysql"
+        }
+    ]
+
+    plugins: [
+        {
+            name: "zabbix"
+	        class: "MysqlbinlogInput"
+	        zone: "local"
+	        pos_commit_interval: "1s"
+            master_addr: "10.1.1.1:3306"
+            user: "dbus"
+            password: ""
+            server_id: 137
+            GTID: false
+	        event_buffer_len: 100
+	        db_excluded: ["dbslow", ]
+        }
+
+        {
+            name: "activity"
+	        class: "MysqlbinlogInput"
+	        zone: "local"
+            master_addr: "10.1.1.1:3307"
+            user: "dbus"
+            password: ""
+        }
+
+        {
+            name: "platform"
+	        class: "MysqlbinlogInput"
+	        zone: "local"
+            master_addr: "10.1.1.1:3308"
+            user: "dbus"
+            password: ""
+        }
+
+        {
+            name: "zabbix_out"
+	        class: "KafkaOutput"
+            match:  ["zabbix", ]
+	        zone: "local"
+	        cluster: "me"
+	        topic: "foobar"
+            myslave_key: "zabbix"
+        }
+
+        {
+            name: "platform_out"
+	        class: "KafkaOutput"
+            match:  ["platform", ]
+	        zone: "local"
+	        cluster: "me"
+	        topic: "foobar"
+            myslave_key: "platform"
+        }
+
+        {
+            name: "activity_out"
+	        class: "KafkaOutput"
+            match:  ["activity", ]
+	        zone: "local"
+	        cluster: "me"
+	        topic: "foobar"
+            myslave_key: "activity"
+        }
+
+    ]
+
+}

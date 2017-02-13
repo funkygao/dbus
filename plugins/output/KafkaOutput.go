@@ -1,6 +1,7 @@
 package output
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -60,10 +61,12 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	if config.Bool("load_position", true) {
 		this.initPosition()
 	}
+
+	key := fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))
+	this.myslave = engine.Globals().Registered(key).(*myslave.MySlave)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
-	this.myslave = engine.Globals().Registered("myslave").(*myslave.MySlave)
 
 	if err := this.prepareProducer(); err != nil {
 		return err
