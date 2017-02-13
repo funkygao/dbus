@@ -252,9 +252,8 @@ func (this *Engine) ServeForever() {
 		}()
 	}
 
-	log.Trace("launching Output(s)...")
 	for _, runner := range this.OutputRunners {
-		log.Debug("  starting %s...", runner.Name())
+		log.Trace("launching Output[%s]...", runner.Name())
 
 		outputsWg.Add(1)
 		if err = runner.start(this, outputsWg); err != nil {
@@ -262,9 +261,8 @@ func (this *Engine) ServeForever() {
 		}
 	}
 
-	log.Trace("launching Filter(s)...")
 	for _, runner := range this.FilterRunners {
-		log.Debug("  starting %s...", runner.Name())
+		log.Trace("launching Filter[%s]...", runner.Name())
 
 		filtersWg.Add(1)
 		if err = runner.start(this, filtersWg); err != nil {
@@ -318,9 +316,8 @@ func (this *Engine) ServeForever() {
 		project.Start()
 	}
 
-	log.Trace("launching Input(s)...")
 	for _, runner := range this.InputRunners {
-		log.Debug("  starting %s...", runner.Name())
+		log.Trace("launching Input[%s]...", runner.Name())
 
 		inputsWg.Add(1)
 		if err = runner.start(this, inputsWg); err != nil {
