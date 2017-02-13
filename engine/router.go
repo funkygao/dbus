@@ -158,7 +158,6 @@ LOOP:
 		}
 	}
 
-	log.Trace("Router shutdown.")
 }
 
 func (this *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
