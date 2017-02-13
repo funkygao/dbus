@@ -39,5 +39,5 @@ another databus that listens for mysql binlog and distribute to sinks
   - [X] mysql kill process
   - [X] race detection
   - [ ] tc drop network packets and high latency
-  - [ ] reset binlog pos, and check kafka didn't recv dup events
+  - [X] reset binlog pos, and check kafka didn't recv dup events
 - [ ] GTID
