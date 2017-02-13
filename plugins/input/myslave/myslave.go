@@ -1,8 +1,6 @@
 package myslave
 
 import (
-	"net"
-	"strconv"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -26,6 +24,7 @@ type MySlave struct {
 	port       uint16
 	GTID       bool // global tx id
 
+	db                        string
 	dbExcluded, tableExcluded map[string]struct{}
 
 	isMaster  bool
@@ -43,17 +42,7 @@ func New() *MySlave {
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
-	m.masterAddr = m.c.String("master_addr", "localhost:3306")
-	h, p, err := net.SplitHostPort(m.masterAddr)
-	if err != nil {
-		panic(err)
-	}
-	port, err := strconv.Atoi(p)
-	if err != nil {
-		panic(err)
-	}
-	m.host = h
-	m.port = uint16(port)
+	m.masterAddr, m.host, m.port, m.db = configMasterAddr(m.c.String("master_addr", "localhost:3306"))
 	if m.masterAddr == "" || m.host == "" || m.port == 0 {
 		panic("invalid master_addr")
 	}

@@ -9,6 +9,11 @@ import (
 func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *replication.RowsEvent) {
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
+	if len(m.db) > 0 && m.db != schema {
+		log.Debug("[%s] db[%s] ignored: %+v %+v", m.masterAddr, schema, h, e)
+		m.p.MarkAsProcessed(f, h.LogPos)
+		return
+	}
 	if _, present := m.dbExcluded[schema]; present {
 		log.Debug("[%s] db[%s] ignored: %+v %+v", m.masterAddr, schema, h, e)
 		m.p.MarkAsProcessed(f, h.LogPos)
