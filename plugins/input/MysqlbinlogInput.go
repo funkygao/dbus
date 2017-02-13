@@ -23,6 +23,12 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	engine.Globals().Register("myslave", this.slave)
 }
 
+func (this *MysqlbinlogInput) Stop() {
+	log.Trace("stopping...")
+	close(this.stopChan)
+	this.slave.StopReplication()
+}
+
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	backoff := time.Second * 5
 	for {
@@ -56,6 +62,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 			case pack, ok := <-r.InChan():
 				if !ok {
+					log.Trace("yes sir!")
 					return nil
 				}
 
@@ -90,11 +97,6 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	}
 
 	return nil
-}
-
-func (this *MysqlbinlogInput) Stop() {
-	close(this.stopChan)
-	this.slave.StopReplication()
 }
 
 func init() {
