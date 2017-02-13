@@ -8,7 +8,6 @@ import (
 	"github.com/funkygao/dbus/model"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
-	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
 
@@ -61,23 +60,6 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.p = newPositionerZk(m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
-}
-
-func (m *MySlave) Close() {
-	if m.r != nil {
-		m.r.Close()
-	}
-	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.masterAddr, err)
-	}
-	//close(m.errors)
-}
-
-func (m *MySlave) StopReplication() {
-	m.r.Close()
-	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.masterAddr, err)
-	}
 }
 
 func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {

@@ -14,6 +14,10 @@ func masterPath(masterAddr string) string {
 }
 
 func myNodePath(masterAddr string) string {
+	return fmt.Sprintf("%s/ids/%s", posPath(masterAddr), myNode())
+}
+
+func myNode() string {
 	host, _ := os.Hostname()
-	return fmt.Sprintf("%s/nodes/%s-%d", posPath(masterAddr), host, os.Getpid())
+	return fmt.Sprintf("%s-%d", host, os.Getpid())
 }

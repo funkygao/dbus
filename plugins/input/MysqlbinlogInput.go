@@ -24,8 +24,6 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
-	defer this.slave.Close()
-
 	backoff := time.Second * 5
 	for {
 	RESTART_REPLICATION:
@@ -96,6 +94,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 func (this *MysqlbinlogInput) Stop() {
 	close(this.stopChan)
+	this.slave.StopReplication()
 }
 
 func init() {

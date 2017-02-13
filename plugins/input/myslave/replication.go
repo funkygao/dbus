@@ -13,10 +13,19 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
+func (m *MySlave) StopReplication() {
+	m.r.Close()
+	if err := m.p.Flush(); err != nil {
+		log.Error("[%s] flush: %s", m.masterAddr, err)
+	}
+
+	m.disjoin()
+}
+
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	m.registerNodeAndBecomeMaster() // block till become master
+	m.joinAndBecomeMaster() // block till become master
 
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)
