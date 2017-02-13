@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -65,7 +66,9 @@ func (this *messageRouter) reportMatcherQueues() {
 }
 
 // Dispatch pack from Input to MatchRunners
-func (this *messageRouter) Start() {
+func (this *messageRouter) Start(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	var (
 		globals    = Globals()
 		ok         = true

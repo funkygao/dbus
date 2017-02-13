@@ -19,7 +19,7 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] logging
 - [X] share zkzone instance
 - [ ] presence and standby mode
-- [ ] graceful shutdown
+- [X] graceful shutdown
 - [ ] pack.Payload reuse memory
 - [ ] DDL binlog
   - drop table y;
