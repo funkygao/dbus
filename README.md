@@ -41,3 +41,4 @@ another databus that listens for mysql binlog and distribute to sinks
   - [ ] tc drop network packets and high latency
   - [X] reset binlog pos, and check kafka didn't recv dup events
 - [ ] GTID
+- [ ] ugly globals register myslave_key

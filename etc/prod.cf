@@ -49,7 +49,8 @@
             match:  ["zabbix", ]
 	        zone: "local"
 	        cluster: "me"
-	        topic: "dbustest"
+	        topic: "foobar"
+            myslave_key: "zabbix"
         }
 
         {
@@ -58,7 +59,8 @@
             match:  ["platform", ]
 	        zone: "local"
 	        cluster: "me"
-	        topic: "dbus_platform"
+	        topic: "foobar"
+            myslave_key: "platform"
         }
 
         {
@@ -67,7 +69,8 @@
             match:  ["activity", ]
 	        zone: "local"
 	        cluster: "me"
-	        topic: "dbus_activity"
+	        topic: "foobar"
+            myslave_key: "activity"
         }
 
     ]

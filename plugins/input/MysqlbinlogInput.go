@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -20,7 +21,8 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.slave = myslave.New().LoadConfig(config)
 
 	// so that KafkaOutput can reuse
-	engine.Globals().Register("myslave", this.slave)
+	key := fmt.Sprintf("myslave.%s", config.String("name", ""))
+	engine.Globals().Register(key, this.slave)
 }
 
 func (this *MysqlbinlogInput) Stop() {
