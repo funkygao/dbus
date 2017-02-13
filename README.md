@@ -19,7 +19,7 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] logging
 - [X] share zkzone instance
 - [ ] presence and standby mode
-- [ ] graceful shutdown
+- [X] graceful shutdown
 - [ ] pack.Payload reuse memory
 - [ ] DDL binlog
   - drop table y;
@@ -30,13 +30,13 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
 - [ ] bug fix
-  - next log position leads to failure after resume
-  - when repliation stops, mysql show processlist still exists
-  - table id issue
+  - [ ] next log position leads to failure after resume
+  - [ ] when replication stops, mysql show processlist still exists
+  - [ ] table id issue
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process
-  - [ ] race detection
+  - [X] race detection
   - [ ] tc drop network packets and high latency
   - [ ] reset binlog pos, and check kafka didn't recv dup events
 

@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -231,6 +232,7 @@ func (this *Engine) ServeForever() {
 		outputsWg = new(sync.WaitGroup)
 		filtersWg = new(sync.WaitGroup)
 		inputsWg  = new(sync.WaitGroup)
+		routerWg  = new(sync.WaitGroup)
 
 		globals = Globals()
 		err     error
@@ -311,7 +313,8 @@ func (this *Engine) ServeForever() {
 	}()
 
 	log.Trace("launching Router...")
-	go this.router.Start()
+	routerWg.Add(1)
+	go this.router.Start(routerWg)
 
 	for _, project := range this.projects {
 		project.Start()
@@ -337,9 +340,12 @@ func (this *Engine) ServeForever() {
 				log.Info("Reloading...")
 				observer.Publish(RELOAD, nil)
 
-			case syscall.SIGINT:
+			case syscall.SIGINT, syscall.SIGTERM:
 				log.Info("Engine shutdown...")
 				globals.Stopping = true
+				if telemetry.Default != nil {
+					telemetry.Default.Stop()
+				}
 
 			case syscall.SIGUSR1:
 				observer.Publish(SIGUSR1, nil)
@@ -386,8 +392,10 @@ func (this *Engine) ServeForever() {
 	outputsWg.Wait()
 	log.Trace("all Outputs stopped")
 
-	// TODO stop router
-	//close(e.router.hub)
+	// stop router
+	close(this.router.hub)
+	routerWg.Wait()
+	log.Trace("Router stopped")
 
 	this.stopHttpServ()
 
@@ -396,6 +404,6 @@ func (this *Engine) ServeForever() {
 	}
 
 	log.Info("shutdown with input:%s, dispatched:%s",
-		gofmt.Comma(this.router.stats.TotalInputMsgN),
-		gofmt.Comma(this.router.stats.TotalProcessedMsgN))
+		gofmt.Comma(atomic.LoadInt64(&this.router.stats.TotalInputMsgN)),
+		gofmt.Comma(atomic.LoadInt64(&this.router.stats.TotalProcessedMsgN)))
 }
