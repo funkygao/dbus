@@ -40,7 +40,12 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
-		<-ready
+		select {
+		case <-ready:
+		case <-this.stopChan:
+			log.Trace("yes sir!")
+			return nil
+		}
 
 		rows := this.slave.EventStream()
 		errors := this.slave.Errors()
