@@ -20,6 +20,7 @@ type MySlave struct {
 	m *slaveMetrics
 	z *zk.ZkZone
 
+	name       string
 	masterAddr string
 	host       string
 	port       uint16
@@ -55,6 +56,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	if m.masterAddr == "" || m.host == "" || m.port == 0 {
 		panic("invalid master_addr")
 	}
+	m.name = m.c.String("name", m.masterAddr)
 	m.GTID = m.c.Bool("GTID", false)
 	for _, db := range config.StringList("db_excluded", nil) {
 		m.dbExcluded[db] = struct{}{}

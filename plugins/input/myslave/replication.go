@@ -16,7 +16,7 @@ import (
 func (m *MySlave) StopReplication() {
 	m.r.Close()
 	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.masterAddr, err)
+		log.Error("[%s] flush: %s", m.name, err)
 	}
 
 	m.leaveCluster()
@@ -73,7 +73,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	}
 
 	close(ready)
-	log.Trace("[%s] ready to receive binlog stream", m.masterAddr)
+	log.Trace("[%s] ready to receive binlog stream", m.name)
 
 	timeout := time.Second
 	maxTimeout := time.Minute
@@ -107,7 +107,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			}
 
 			if strings.HasPrefix(err.Error(), "invalid table id") {
-				log.Error("[%s] %s", m.masterAddr, err)
+				log.Error("[%s] %s", m.name, err)
 				// TODO how to handle this?
 				continue
 			}
@@ -131,7 +131,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Position: 4
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
-			log.Trace("[%s] rotate to (%s, %d)", m.masterAddr, file, e.Position)
+			log.Trace("[%s] rotate to (%s, %d)", m.name, file, e.Position)
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)
@@ -174,7 +174,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			}
 
 		default:
-			log.Warn("[%s] unexpected event: %+v", m.masterAddr, e)
+			log.Warn("[%s] unexpected event: %+v", m.name, e)
 		}
 	}
 
