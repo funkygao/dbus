@@ -12,8 +12,8 @@
 
     plugins: [
         {
-            name: "MysqlbinlogInput"
-            ident: "binlog"
+            name: "binlog"
+            class: "MysqlbinlogInput"
             // zone is used for positioner
             zone: "local"
             pos_commit_interval: "1s"
@@ -29,7 +29,8 @@
         }            
 
         {
-            name: "KafkaOutput"
+            name: "binlog_out"
+            class: "KafkaOutput"
             load_position: true
             zone: "local"
             cluster: "me"

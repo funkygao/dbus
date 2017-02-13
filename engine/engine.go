@@ -200,11 +200,7 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
-		ident := section.String("ident", "")
-		if ident == "" {
-			panic("empty ident for plugin: " + wrapper.name)
-		}
-		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons, ident)
+		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons)
 		this.inputWrappers[wrapper.name] = wrapper
 
 		return

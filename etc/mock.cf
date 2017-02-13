@@ -12,13 +12,12 @@
             name: "MockInput"
             disabled: false
             comment: "a mock input plugin just for testing and dryrun"
-            ident: "mock"
         }
         
         {
             name:   "MockOutput"
             blackhole: true
-            match:  ["mock", ]
+            match:  ["MockInput", ]
         }
     ]
 
