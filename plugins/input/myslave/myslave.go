@@ -28,6 +28,7 @@ type MySlave struct {
 
 	dbExcluded, tableExcluded map[string]struct{}
 
+	isMaster  bool
 	errors    chan error
 	rowsEvent chan *model.RowsEvent
 }

@@ -29,8 +29,7 @@ func (this *Engine) launchHttpServ() {
 		}).Methods("GET")
 
 	var err error
-	this.httpListener, err = net.Listen("tcp", this.httpServer.Addr)
-	if err != nil {
+	if this.httpListener, err = net.Listen("tcp", this.httpServer.Addr); err != nil {
 		panic(err)
 	}
 

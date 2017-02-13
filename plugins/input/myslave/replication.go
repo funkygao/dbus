@@ -14,18 +14,22 @@ import (
 )
 
 func (m *MySlave) StopReplication() {
-	m.r.Close()
-	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.name, err)
+	if m.isMaster {
+		m.r.Close()
+		if err := m.p.Flush(); err != nil {
+			log.Error("[%s] flush: %s", m.name, err)
+		}
 	}
 
 	m.leaveCluster()
+	m.isMaster = false
 }
 
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.joinClusterAndBecomeMaster() // block till become master
+	m.isMaster = true
 
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)
