@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/funkygao/dbus"
 	log "github.com/funkygao/log4go"
 	"github.com/samuel/go-zookeeper/zk"
 )
@@ -33,7 +34,7 @@ func (m *MySlave) joinClusterAndBecomeMaster() {
 	// become present
 	backoff := time.Second
 	for {
-		if err := m.z.CreateEphemeralZnode(myNodePath(m.masterAddr), nil); err != nil {
+		if err := m.z.CreateEphemeralZnode(myNodePath(m.masterAddr), []byte(dbus.BuildID)); err != nil {
 			log.Error("[%s] unable present: %s", m.name, err)
 
 			time.Sleep(backoff)
