@@ -16,6 +16,8 @@ import (
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
+	m.registerNodeAndBecomeMaster() // block till become master
+
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)
 
