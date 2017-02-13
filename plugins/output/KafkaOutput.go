@@ -56,7 +56,10 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	this.compress = config.Bool("compress", false)
 	this.zkzone = engine.Globals().GetOrRegisterZkzone(this.zone)
 
-	this.initPosition()
+	this.pos = &sentPos{}
+	if config.Bool("load_position", true) {
+		this.initPosition()
+	}
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
@@ -208,7 +211,6 @@ func (this *KafkaOutput) initPosition() {
 		panic(err)
 	}
 
-	this.pos = &sentPos{}
 	if len(b) == 1 {
 		// has checkpoint in kafka
 		row := &model.RowsEvent{}
@@ -220,7 +222,7 @@ func (this *KafkaOutput) initPosition() {
 		this.pos.Pos = row.Position
 	}
 
-	log.Trace("[%s.%s.%s/0] resume from %+v", this.zone, this.cluster, this.topic, *this.pos)
+	log.Trace("[%s.%s.%s/0] resumed at %+v", this.zone, this.cluster, this.topic, *this.pos)
 }
 
 func (this *KafkaOutput) markAsSent(row *model.RowsEvent) {
