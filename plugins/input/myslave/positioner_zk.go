@@ -93,5 +93,6 @@ func (z *positionerZk) Committed() (file string, offset uint32, err error) {
 
 	file = z.File
 	offset = z.Offset
+	z.Owner = myNode()
 	return
 }
