@@ -2,10 +2,8 @@ package myslave
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
-	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
 	zklib "github.com/samuel/go-zookeeper/zk"
@@ -22,17 +20,16 @@ type positionerZk struct {
 	birthCry      sync2.AtomicBool
 	interval      time.Duration
 	lastCommitted time.Time
+
+	posPath string // cache
 }
 
-func newPositionerZk(zone string, masterAddr string, interval time.Duration) *positionerZk {
-	if len(zone) == 0 {
-		panic("zone is required")
-	}
-
+func newPositionerZk(zkzone *zk.ZkZone, masterAddr string, interval time.Duration) *positionerZk {
 	return &positionerZk{
 		masterAddr: masterAddr,
 		interval:   interval,
-		zkzone:     engine.Globals().GetOrRegisterZkzone(zone),
+		posPath:    posPath(masterAddr),
+		zkzone:     zkzone,
 	}
 }
 
@@ -46,8 +43,8 @@ func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
 		// real commit
 		data, _ := json.Marshal(z)
 		var err error
-		if _, err = z.zkzone.Conn().Set(z.path(), data, -1); err == zklib.ErrNoNode {
-			_, err = z.zkzone.Conn().Create(z.path(), data, 0, zklib.WorldACL(zklib.PermAll))
+		if _, err = z.zkzone.Conn().Set(z.posPath, data, -1); err == zklib.ErrNoNode {
+			_, err = z.zkzone.Conn().Create(z.posPath, data, 0, zklib.WorldACL(zklib.PermAll))
 		}
 
 		z.lastCommitted = now
@@ -63,8 +60,8 @@ func (z *positionerZk) Flush() (err error) {
 	}
 
 	data, _ := json.Marshal(z)
-	if _, err = z.zkzone.Conn().Set(z.path(), data, -1); err == zklib.ErrNoNode {
-		_, err = z.zkzone.Conn().Create(z.path(), data, 0, zklib.WorldACL(zklib.PermAll))
+	if _, err = z.zkzone.Conn().Set(z.posPath, data, -1); err == zklib.ErrNoNode {
+		_, err = z.zkzone.Conn().Create(z.posPath, data, 0, zklib.WorldACL(zklib.PermAll))
 	}
 
 	z.lastCommitted = time.Now()
@@ -73,13 +70,18 @@ func (z *positionerZk) Flush() (err error) {
 
 func (z *positionerZk) Committed() (file string, offset uint32, err error) {
 	var data []byte
-	data, _, err = z.zkzone.Conn().Get(z.path())
+	data, _, err = z.zkzone.Conn().Get(z.posPath)
 	if err != nil {
 		if err == zklib.ErrNoNode {
 			data, _ = json.Marshal(z)
-			_, err = z.zkzone.Conn().Create(z.path(), data, 0, zklib.WorldACL(zklib.PermAll))
+			_, err = z.zkzone.Conn().Create(z.posPath, data, 0, zklib.WorldACL(zklib.PermAll))
 		}
 
+		return
+	}
+
+	if len(data) == 0 {
+		// empty data, return default position
 		return
 	}
 
@@ -87,8 +89,4 @@ func (z *positionerZk) Committed() (file string, offset uint32, err error) {
 	file = z.File
 	offset = z.Offset
 	return
-}
-
-func (z *positionerZk) path() string {
-	return fmt.Sprintf("/dbus/pos/%s", z.masterAddr)
 }

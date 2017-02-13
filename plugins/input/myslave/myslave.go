@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/model"
+	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
-	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
 )
 
-// MySlave is a mimic mysql slave that replicates binlog from
-// mysql master using IO thread.
+// MySlave is a mimic mysql slave that replicates binlog from mysql master using IO thread.
 type MySlave struct {
 	c *conf.Conf
 	r *replication.BinlogSyncer
 	p positioner
 	m *slaveMetrics
+	z *zk.ZkZone
 
 	masterAddr string
 	host       string
@@ -50,27 +51,15 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 		m.tableExcluded[table] = struct{}{}
 	}
 
-	m.p = newPositionerZk(m.c.String("zone", ""), m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
-	m.m = newMetrics(fmt.Sprintf("dbus.myslave.%s", m.masterAddr))
+	m.m = newMetrics(m.host, m.port)
+	zone := m.c.String("zone", "")
+	if zone == "" {
+		panic("zone required")
+	}
+	m.z = engine.Globals().GetOrRegisterZkzone(zone)
+	m.p = newPositionerZk(m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
-}
-
-func (m *MySlave) Close() {
-	if m.r != nil {
-		m.r.Close()
-	}
-	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.masterAddr, err)
-	}
-	//close(m.errors)
-}
-
-func (m *MySlave) StopReplication() {
-	m.r.Close()
-	if err := m.p.Flush(); err != nil {
-		log.Error("[%s] flush: %s", m.masterAddr, err)
-	}
 }
 
 func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
