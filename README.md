@@ -30,9 +30,9 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
 - [ ] bug fix
-  - next log position leads to failure after resume
-  - when repliation stops, mysql show processlist still exists
-  - table id issue
+  - [ ] next log position leads to failure after resume
+  - [ ] when replication stops, mysql show processlist still exists
+  - [ ] table id issue
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

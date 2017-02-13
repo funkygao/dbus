@@ -35,6 +35,11 @@ func main() {
 		}
 	}()
 
+	log4go.Info("dbus[%s@%s] starting", dbus.BuildID, dbus.Version)
+
+	agent.HttpAddr = ":10120" // FIXME security issue
+	log4go.Info("pprof agent ready on %s", agent.Start())
+
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
 	globals.DryRun = options.dryrun
@@ -46,9 +51,6 @@ func main() {
 		e.ExportDiagram(options.visualizeFile)
 		return
 	}
-
-	agent.HttpAddr = ":10120" // FIXME security issue
-	log4go.Info("pprof agent ready on %s", agent.Start())
 
 	t0 := time.Now()
 	e.ServeForever()
