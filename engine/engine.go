@@ -316,11 +316,12 @@ func (this *Engine) ServeForever() {
 	routerWg.Add(1)
 	go this.router.Start(routerWg)
 
+	// starting projects
 	for _, project := range this.projects {
 		project.Start()
 	}
 
-	log.Trace("Launching Input(s)...")
+	log.Trace("launching Input(s)...")
 	for _, runner := range this.InputRunners {
 		log.Debug("  starting %s...", runner.Name())
 
