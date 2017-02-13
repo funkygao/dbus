@@ -41,8 +41,6 @@ func (this *diagnosticTracker) Run(interval int) {
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
-	log.Trace("Diagnostic[%s] started with %ds", this.PoolName, interval)
-
 	for ever {
 		select {
 		case <-ticker.C:

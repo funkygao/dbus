@@ -90,9 +90,7 @@ func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 		for poolName := range this.diagnosticTrackers {
 			packs := make([]string, 0, globals.RecyclePoolSize)
 			for _, pack := range this.diagnosticTrackers[poolName].packs {
-				s := fmt.Sprintf("[%s]%s",
-					bjtime.TimeToString(pack.diagnostics.LastAccess),
-					*pack)
+				s := fmt.Sprintf("[%s]%s", bjtime.TimeToString(pack.diagnostics.LastAccess), *pack)
 				packs = append(packs, s)
 			}
 			output[poolName] = packs

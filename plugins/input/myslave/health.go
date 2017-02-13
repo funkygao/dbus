@@ -8,7 +8,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-func (m *MySlave) disjoin() {
+func (m *MySlave) leaveCluster() {
 	if err := m.z.Conn().Delete(myNodePath(m.masterAddr), -1); err != nil {
 		log.Error("[%s] %s", m.masterAddr, err)
 	}
@@ -29,7 +29,7 @@ func (m *MySlave) disjoin() {
 }
 
 // TODO session expire
-func (m *MySlave) joinAndBecomeMaster() {
+func (m *MySlave) joinClusterAndBecomeMaster() {
 	// become present
 	backoff := time.Second
 	for {

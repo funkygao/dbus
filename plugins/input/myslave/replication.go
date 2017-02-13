@@ -19,13 +19,13 @@ func (m *MySlave) StopReplication() {
 		log.Error("[%s] flush: %s", m.masterAddr, err)
 	}
 
-	m.disjoin()
+	m.leaveCluster()
 }
 
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	m.joinAndBecomeMaster() // block till become master
+	m.joinClusterAndBecomeMaster() // block till become master
 
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)

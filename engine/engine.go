@@ -360,8 +360,9 @@ func (this *Engine) ServeForever() {
 	}
 
 	// cleanup after shutdown
-	inputPackTracker.Stop()
-	filterPackTracker.Stop()
+	for _, diag := range this.diagnosticTrackers {
+		diag.Stop()
+	}
 
 	this.Lock()
 	for _, runner := range this.InputRunners {
