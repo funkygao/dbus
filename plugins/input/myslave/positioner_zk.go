@@ -14,6 +14,7 @@ var _ positioner = &positionerZk{}
 type positionerZk struct {
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
+	Owner  string `json:"owner"`
 
 	zkzone        *zk.ZkZone
 	masterAddr    string
@@ -30,6 +31,7 @@ func newPositionerZk(zkzone *zk.ZkZone, masterAddr string, interval time.Duratio
 		interval:   interval,
 		posPath:    posPath(masterAddr),
 		zkzone:     zkzone,
+		Owner:      myNode(),
 	}
 }
 
@@ -64,7 +66,7 @@ func (z *positionerZk) Flush() (err error) {
 		_, err = z.zkzone.Conn().Create(z.posPath, data, 0, zklib.WorldACL(zklib.PermAll))
 	}
 
-	z.lastCommitted = time.Now()
+	z.lastCommitted = time.Now() // FIXME race condition with MarkAsProcessed()
 	return
 }
 

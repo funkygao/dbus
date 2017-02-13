@@ -10,7 +10,7 @@ func posPath(masterAddr string) string {
 }
 
 func masterPath(masterAddr string) string {
-	return fmt.Sprintf("%s/master", posPath(masterAddr))
+	return fmt.Sprintf("%s/owner", posPath(masterAddr))
 }
 
 func myNodePath(masterAddr string) string {
