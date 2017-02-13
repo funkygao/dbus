@@ -316,8 +316,9 @@ func (this *Engine) ServeForever() {
 	routerWg.Add(1)
 	go this.router.Start(routerWg)
 
-	// starting projects
 	for _, project := range this.projects {
+		log.Trace("launching Project %s...", project.Name)
+
 		project.Start()
 	}
 

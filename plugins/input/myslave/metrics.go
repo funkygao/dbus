@@ -3,6 +3,7 @@ package myslave
 import (
 	"fmt"
 
+	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/go-metrics"
 )
 
@@ -13,11 +14,12 @@ type slaveMetrics struct {
 	Events metrics.Meter
 }
 
-func newMetrics(prefix string) *slaveMetrics {
+func newMetrics(host string, port uint16) *slaveMetrics {
 	m := &slaveMetrics{}
 
-	m.Lag = metrics.NewRegisteredGauge(fmt.Sprintf("%s.lag", prefix), metrics.DefaultRegistry)
-	m.TPS = metrics.NewRegisteredMeter(fmt.Sprintf("%s.tps", prefix), metrics.DefaultRegistry)
-	m.Events = metrics.NewRegisteredMeter(fmt.Sprintf("%s.events", prefix), metrics.DefaultRegistry)
+	tag := telemetry.Tag(host, fmt.Sprintf("%d", port), "v1")
+	m.Lag = metrics.NewRegisteredGauge(tag+"mysql.binlog.lag", metrics.DefaultRegistry)
+	m.TPS = metrics.NewRegisteredMeter(tag+"mysql.binlog.tps", metrics.DefaultRegistry)
+	m.Events = metrics.NewRegisteredMeter(tag+"mysql.binlog.evt", metrics.DefaultRegistry)
 	return m
 }

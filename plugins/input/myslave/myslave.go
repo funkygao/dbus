@@ -51,7 +51,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.p = newPositionerZk(m.c.String("zone", ""), m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
-	m.m = newMetrics(fmt.Sprintf("dbus.myslave.%s", m.masterAddr))
+	m.m = newMetrics(m.host, m.port)
 
 	return m
 }
