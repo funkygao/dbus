@@ -1,7 +1,8 @@
 package myslave
 
 import (
-	"fmt"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -40,9 +41,20 @@ func New() *MySlave {
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
-	m.host = m.c.String("master_host", "localhost")
-	m.port = uint16(m.c.Int("master_port", 3306))
-	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
+	m.masterAddr = m.c.String("master_addr", "localhost:3306")
+	h, p, err := net.SplitHostPort(m.masterAddr)
+	if err != nil {
+		panic(err)
+	}
+	port, err := strconv.Atoi(p)
+	if err != nil {
+		panic(err)
+	}
+	m.host = h
+	m.port = uint16(port)
+	if m.masterAddr == "" || m.host == "" || m.port == 0 {
+		panic("invalid master_addr")
+	}
 	m.GTID = m.c.Bool("GTID", false)
 	for _, db := range config.StringList("db_excluded", nil) {
 		m.dbExcluded[db] = struct{}{}

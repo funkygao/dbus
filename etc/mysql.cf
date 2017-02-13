@@ -18,8 +18,7 @@
             zone: "local"
             pos_commit_interval: "1s"
             event_buffer_len: 100
-            master_host: "localhost"
-            master_port: 3306
+            master_addr: "localhost:3306"
             user: "root"
             password: ""
             server_id: 137
