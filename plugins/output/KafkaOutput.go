@@ -67,10 +67,15 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	defer func() {
+		var err error
 		if this.async {
-			this.ap.Close()
+			err = this.ap.Close()
 		} else {
-			this.p.Close()
+			err = this.p.Close()
+		}
+
+		if err != nil {
+			log.Error("[%s.%s.%s] %s", this.zone, this.cluster, this.topic, err)
 		}
 	}()
 
@@ -83,7 +88,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
-				log.Error("bad payload: %+v", pack.Payload)
+				log.Error("[%s.%s.%s] bad payload: %+v", this.zone, this.cluster, this.topic, pack.Payload)
 				continue
 			}
 
@@ -176,20 +181,20 @@ func (this *KafkaOutput) syncSendMessage(row *model.RowsEvent) {
 			break
 		}
 
-		log.Error("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
+		log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 		time.Sleep(time.Second)
 	}
 
 	this.markAsSent(row)
 	if err = this.myslave.MarkAsProcessed(row); err != nil {
-		log.Warn("%s.%s.%s {%s} %v", this.zone, this.cluster, this.topic, row, err)
+		log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 	}
 
-	log.Debug("sync sent [%d/%d] %s", partition, offset, row)
+	log.Debug("[%s.%s.%s] sync sent [%d/%d] %s", this.zone, this.cluster, this.topic, partition, offset, row)
 }
 
 func (this *KafkaOutput) asyncSendMessage(row *model.RowsEvent) {
-	log.Debug("async sending: %s", row)
+	log.Debug("[%s.%s.%s] async sending: %s", this.zone, this.cluster, this.topic, row)
 
 	this.ap.Input() <- &sarama.ProducerMessage{
 		Topic: this.topic,
