@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
 	zklib "github.com/samuel/go-zookeeper/zk"
@@ -24,15 +23,11 @@ type positionerZk struct {
 	lastCommitted time.Time
 }
 
-func newPositionerZk(zone string, masterAddr string, interval time.Duration) *positionerZk {
-	if len(zone) == 0 {
-		panic("zone is required")
-	}
-
+func newPositionerZk(zkzone *zk.ZkZone, masterAddr string, interval time.Duration) *positionerZk {
 	return &positionerZk{
 		masterAddr: masterAddr,
 		interval:   interval,
-		zkzone:     engine.Globals().GetOrRegisterZkzone(zone),
+		zkzone:     zkzone,
 	}
 }
 
