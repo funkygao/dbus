@@ -87,7 +87,10 @@ func (z *positionerZk) Committed() (file string, offset uint32, err error) {
 		return
 	}
 
-	err = json.Unmarshal(data, z)
+	if err = json.Unmarshal(data, z); err != nil {
+		panic(err)
+	}
+
 	file = z.File
 	offset = z.Offset
 	return
