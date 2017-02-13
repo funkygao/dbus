@@ -149,8 +149,9 @@ LOOP:
 
 			if !foundMatch {
 				// Maybe we closed all filter/output inChan, but there
-				// still exits some remnant packs in router.hub
-				log.Warn("no match: %+v", pack)
+				// still exits some remnant packs in router.hub.
+				// To handle this issue, Input/Output should be stateful.
+				log.Debug("no match: %+v", pack)
 			}
 
 			// never forget this!
