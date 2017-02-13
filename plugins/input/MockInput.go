@@ -4,6 +4,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/model"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 type MockInput struct {
@@ -12,6 +13,11 @@ type MockInput struct {
 
 func (this *MockInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
+}
+
+func (this *MockInput) Stop() {
+	log.Trace("stop called")
+	close(this.stopChan)
 }
 
 func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
@@ -31,10 +37,6 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	}
 
 	return nil
-}
-
-func (this *MockInput) Stop() {
-	close(this.stopChan)
 }
 
 func init() {
