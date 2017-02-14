@@ -8,7 +8,9 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/model"
 	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/zk"
+	"github.com/funkygao/go-metrics"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
@@ -26,13 +28,13 @@ type KafkaOutput struct {
 	async    bool
 	compress bool
 
-	p  sarama.SyncProducer
-	ap sarama.AsyncProducer
-
+	p           sarama.SyncProducer
+	ap          sarama.AsyncProducer
 	sendMessage func(row *model.RowsEvent)
 
 	pos            *sentPos
 	loadPosOnStart bool
+	err            metrics.Counter
 
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
@@ -123,6 +125,7 @@ func (this *KafkaOutput) prepareProducer() error {
 		cf.Producer.Compression = sarama.CompressionSnappy
 	}
 
+	this.err = metrics.NewRegisteredCounter(telemetry.Tag(this.zone, this.cluster, this.topic)+"dbus.kafka.err", metrics.DefaultRegistry)
 	zkcluster := this.zkzone.NewCluster(this.cluster)
 
 	if !this.async {
@@ -161,14 +164,21 @@ func (this *KafkaOutput) prepareProducer() error {
 					log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 				}
 
-			case err := <-this.ap.Errors():
+			case err, ok := <-this.ap.Errors():
+				if !ok {
+					return
+				}
+
+				this.err.Inc(1)
+
 				// e,g.
 				// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
+				// kafka server: Unexpected (unknown?) server error. TODO
+				// java.lang.OutOfMemoryError: Direct buffer memory
 				row := err.Msg.Value.(*model.RowsEvent)
 				log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
 			}
 		}
-
 	}()
 
 	return nil
