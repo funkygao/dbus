@@ -1,5 +1,5 @@
 # dbus
-another databus that listens for mysql binlog and distribute to sinks
+yet another databus that listens for mysql binlog and distribute to sinks
 
 ### Plugins
 
