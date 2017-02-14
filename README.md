@@ -28,7 +28,9 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] metrics
 - [X] telemetry and alert
 - [X] visualize pipeline
-  ![dashboard](https://github.com/funkygao/dbus/blob/master/misc/resources/diagram.png)
+
+  - ![dashboard](https://github.com/funkygao/dbus/blob/master/misc/resources/diagram.png)
+
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
