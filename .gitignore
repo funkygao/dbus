@@ -32,3 +32,4 @@ target/
 var/
 
 cmd/dbusd/dbusd
+cmd/apub/apub

@@ -77,6 +77,8 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	defer func() {
+		log.Trace("[%s.%s.%s] start draining...", this.zone, this.cluster, this.topic)
+
 		var err error
 		if this.async {
 			err = this.ap.Close()
@@ -85,7 +87,9 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		}
 
 		if err != nil {
-			log.Error("[%s.%s.%s] %s", this.zone, this.cluster, this.topic, err)
+			log.Error("[%s.%s.%s] drain: %s", this.zone, this.cluster, this.topic, err)
+		} else {
+			log.Trace("[%s.%s.%s] drained ok", this.zone, this.cluster, this.topic)
 		}
 	}()
 
@@ -93,6 +97,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		select {
 		case pack, ok := <-r.InChan():
 			if !ok {
+				log.Trace("[%s.%s.%s] yes sir!", this.zone, this.cluster, this.topic)
 				return nil
 			}
 
@@ -144,7 +149,7 @@ func (this *KafkaOutput) prepareProducer() error {
 	cf.Producer.Return.Successes = true
 	cf.Producer.Retry.Backoff = time.Millisecond * 300
 	cf.Producer.Retry.Max = 3
-	cf.Producer.RequiredAcks = sarama.NoResponse
+	cf.Producer.RequiredAcks = sarama.NoResponse // TODO
 	cf.Producer.Flush.Frequency = time.Second
 	cf.Producer.Flush.Messages = 2000 // TODO
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
@@ -157,7 +162,12 @@ func (this *KafkaOutput) prepareProducer() error {
 	go func() {
 		for {
 			select {
-			case msg := <-this.ap.Successes():
+			case msg, ok := <-this.ap.Successes():
+				if !ok {
+					// producer closed
+					return
+				}
+
 				row := msg.Value.(*model.RowsEvent)
 				this.markAsSent(row)
 				if err := this.myslave.MarkAsProcessed(row); err != nil {
@@ -166,6 +176,7 @@ func (this *KafkaOutput) prepareProducer() error {
 
 			case err, ok := <-this.ap.Errors():
 				if !ok {
+					// producer closed
 					return
 				}
 

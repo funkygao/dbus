@@ -20,8 +20,14 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [X] share zkzone instance
 - [X] presence and standby mode
 - [X] graceful shutdown
+- [X] master must drain before leave cluster
+- [ ] KafkaOutput metrics
+  -  binlog tps
+  -  kafka tps
+  -  lag
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory
+- [ ] kafka sync produce in batch
 - [ ] DDL binlog
   - drop table y;
 - [X] trace async producer Successes channel and mark as processed
