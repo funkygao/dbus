@@ -25,6 +25,7 @@ _testmain.go
 *.swp
 *.tmp
 *.dmp
+.DS_Store
 
 hh/
 target/
