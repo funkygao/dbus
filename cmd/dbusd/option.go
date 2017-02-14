@@ -38,7 +38,7 @@ func parseFlags() {
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
-	flag.StringVar(&options.visualizeFile, "visualize", "", "visualize the pipleline to png file")
+	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, USAGE)
 		flag.PrintDefaults()

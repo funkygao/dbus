@@ -31,7 +31,8 @@ type KafkaOutput struct {
 
 	sendMessage func(row *model.RowsEvent)
 
-	pos *sentPos
+	pos            *sentPos
+	loadPosOnStart bool
 
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
@@ -58,15 +59,16 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	this.zkzone = engine.Globals().GetOrRegisterZkzone(this.zone)
 
 	this.pos = &sentPos{}
-	if config.Bool("load_position", true) {
-		this.initPosition()
-	}
+	this.loadPosOnStart = config.Bool("load_position", true)
 
 	key := fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))
 	this.myslave = engine.Globals().Registered(key).(*myslave.MySlave)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	if this.loadPosOnStart {
+		this.loadPosition()
+	}
 
 	if err := this.prepareProducer(); err != nil {
 		return err
@@ -209,7 +211,7 @@ func (this *KafkaOutput) asyncSendMessage(row *model.RowsEvent) {
 	}
 }
 
-func (this *KafkaOutput) initPosition() {
+func (this *KafkaOutput) loadPosition() {
 	b, err := this.zkzone.NewCluster(this.cluster).TailMessage(this.topic, 0, 1) // FIXME 1 partition allowed only
 	if err != nil {
 		panic(err)

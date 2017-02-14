@@ -5,14 +5,14 @@ another databus that listens for mysql binlog and distribute to sinks
 
 #### Input
 
-- MysqlbinlogInput
 - MockInput
+- MysqlbinlogInput
+- RedisbinlogInput
 
 #### Output
 
-- KafkaOutput
-- PubOutput
 - MockOutput
+- KafkaOutput
 
 ### TODO
 
@@ -20,12 +20,15 @@ another databus that listens for mysql binlog and distribute to sinks
 - [X] share zkzone instance
 - [X] presence and standby mode
 - [X] graceful shutdown
+- [ ] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory
 - [ ] DDL binlog
   - drop table y;
 - [X] trace async producer Successes channel and mark as processed
 - [X] metrics
 - [X] telemetry and alert
+- [X] visualize pipeline
+  ![dashboard](https://github.com/funkygao/dbus/blob/master/misc/resources/diagram.png)
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
