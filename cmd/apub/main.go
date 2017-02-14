@@ -19,6 +19,7 @@ import (
 var (
 	zone, cluster, topic string
 	ack                  string
+	maxErrs              int64
 	messages             int
 )
 
@@ -29,6 +30,7 @@ func init() {
 	flag.StringVar(&cluster, "c", "", "cluster")
 	flag.StringVar(&topic, "t", "", "topic")
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
+	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&messages, "n", 2000, "flush messages")
 	flag.Parse()
 
@@ -81,6 +83,7 @@ func main() {
 	)
 
 	go func() {
+		var errN int64
 		for {
 			select {
 			case <-quit:
@@ -92,6 +95,15 @@ func main() {
 			case err := <-p.Errors():
 				v, _ := err.Msg.Value.Encode()
 				fmt.Println(string(v[:15]), err)
+
+				errN++
+				if maxErrs > 0 && errN >= maxErrs {
+					close(quit)
+					time.Sleep(time.Second)
+
+					fmt.Printf("closed with %v\n", p.Close())
+					close(closed)
+				}
 			}
 		}
 	}()
