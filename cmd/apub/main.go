@@ -14,6 +14,7 @@ import (
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/signal"
+	"github.com/funkygao/golib/sync2"
 )
 
 var (
@@ -68,19 +69,19 @@ func main() {
 		panic(err)
 	}
 
+	var (
+		sent, sentOk sync2.AtomicInt64
+	)
+
 	quit := make(chan struct{})
 	closed := make(chan struct{})
 	signal.RegisterHandler(func(sig os.Signal) {
 		close(quit)
 		time.Sleep(time.Second)
 
-		fmt.Printf("closed with %v\n", p.Close())
+		fmt.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
 		close(closed)
 	}, syscall.SIGINT)
-
-	var (
-		sent, sentOk int64
-	)
 
 	go func() {
 		var errN int64
@@ -90,7 +91,7 @@ func main() {
 				return
 
 			case <-p.Successes():
-				sentOk++
+				sentOk.Add(1)
 
 			case err := <-p.Errors():
 				v, _ := err.Msg.Value.Encode()
@@ -101,7 +102,7 @@ func main() {
 					close(quit)
 					time.Sleep(time.Second)
 
-					fmt.Printf("closed with %v\n", p.Close())
+					fmt.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
 					close(closed)
 				}
 			}
@@ -110,13 +111,13 @@ func main() {
 
 	go func() {
 		for {
-			fmt.Println(gofmt.Comma(sent), gofmt.Comma(sentOk), gofmt.Comma(sent-sentOk))
+			fmt.Println(gofmt.Comma(sent.Get()), gofmt.Comma(sentOk.Get()), gofmt.Comma(sent.Get()-sentOk.Get()))
 			time.Sleep(time.Second)
 		}
 	}()
 
 	for {
-		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent, strings.Repeat("X", 1033)))
+		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(), strings.Repeat("X", 1033)))
 		select {
 		case <-quit:
 			goto BYE
@@ -125,7 +126,7 @@ func main() {
 			Topic: topic,
 			Value: msg,
 		}:
-			sent++
+			sent.Add(1)
 		}
 	}
 
