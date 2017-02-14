@@ -4,8 +4,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -38,6 +40,8 @@ func init() {
 	if len(zone) == 0 || len(cluster) == 0 || len(topic) == 0 {
 		panic("invalid flag")
 	}
+
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 func main() {
@@ -73,37 +77,49 @@ func main() {
 		sent, sentOk sync2.AtomicInt64
 	)
 
-	quit := make(chan struct{})
+	stopProducer := make(chan struct{})
 	closed := make(chan struct{})
-	signal.RegisterHandler(func(sig os.Signal) {
-		close(quit)
-		time.Sleep(time.Second)
+	var once sync.Once
+	quitFn := func() {
+		once.Do(func() {
+			close(stopProducer)
+			time.Sleep(time.Second)
 
-		fmt.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
-		close(closed)
+			log.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
+			close(closed)
+		})
+	}
+
+	signal.RegisterHandler(func(sig os.Signal) {
+		log.Printf("got signal %s", sig)
+		quitFn()
 	}, syscall.SIGINT)
 
 	go func() {
 		var errN int64
 		for {
 			select {
-			case <-quit:
-				return
+			case _, ok := <-p.Successes():
+				if !ok {
+					// p.Close will eat up the success messages
+					log.Println("end of success")
+					return
+				}
 
-			case <-p.Successes():
 				sentOk.Add(1)
 
-			case err := <-p.Errors():
+			case err, ok := <-p.Errors():
+				if !ok {
+					log.Println("end of error")
+					return
+				}
+
 				v, _ := err.Msg.Value.Encode()
-				fmt.Println(string(v[:15]), err)
+				log.Println(string(v[:15]), err)
 
 				errN++
 				if maxErrs > 0 && errN >= maxErrs {
-					close(quit)
-					time.Sleep(time.Second)
-
-					fmt.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
-					close(closed)
+					quitFn()
 				}
 			}
 		}
@@ -111,15 +127,15 @@ func main() {
 
 	go func() {
 		for {
-			fmt.Println(gofmt.Comma(sent.Get()), gofmt.Comma(sentOk.Get()), gofmt.Comma(sent.Get()-sentOk.Get()))
+			log.Println(gofmt.Comma(sent.Get()), gofmt.Comma(sentOk.Get()), gofmt.Comma(sent.Get()-sentOk.Get()))
 			time.Sleep(time.Second)
 		}
 	}()
 
 	for {
-		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(), strings.Repeat("X", 1033)))
+		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(), strings.Repeat("X", 10331)))
 		select {
-		case <-quit:
+		case <-stopProducer:
 			goto BYE
 
 		case p.Input() <- &sarama.ProducerMessage{
