@@ -14,6 +14,11 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - MockOutput
 - KafkaOutput
 
+### Roadmap
+
+- pubsub audit reporter
+- universal kafka listener and outputer
+
 ### TODO
 
 - [X] logging
@@ -26,6 +31,8 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  kafka tps
   -  lag
 - [ ] zk checkpoint vs kafka checkpoint
+  - discard MarkAsProcessed
+- [ ] integration with helix
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory
 - [ ] kafka sync produce in batch
@@ -47,6 +54,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [ ] when replication stops, mysql show processlist still exists
   - [ ] table id issue
   - [ ] what if invalid position
+  - [ ] kill dbusd, dbusd-slave did not leave cluster
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process
@@ -55,3 +63,12 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [X] reset binlog pos, and check kafka didn't recv dup events
 - [ ] GTID
 - [ ] ugly globals register myslave_key
+
+### Memo
+
+- mysqlbinlog input peak with mock output
+  - 140k event per second
+  - 30k row event per second
+  - 150Mb network bandwidth
+  - it takes 3h to zero lag for platform of 2d lag
+

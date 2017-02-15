@@ -21,6 +21,9 @@ var (
 
 		logfile  string
 		loglevel string
+
+		mpoolSize int
+		ppoolSize int
 	}
 )
 
@@ -38,6 +41,8 @@ func parseFlags() {
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
+	flag.IntVar(&options.mpoolSize, "mpool", 100, "memory pool size")
+	flag.IntVar(&options.ppoolSize, "ppool", 150, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, USAGE)
