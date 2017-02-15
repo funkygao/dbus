@@ -64,6 +64,9 @@ func main() {
 	cf.Producer.RequiredAcks = sarama.WaitForLocal
 	cf.Producer.Flush.Frequency = time.Second
 	cf.Producer.Flush.Messages = messages
+	//cf.Producer.Flush.Bytes = 1 << 20
+	//sarama.MaxRequestSize = 1 << 20
+	//cf.Producer.MaxMessageBytes = 1 << 20
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))

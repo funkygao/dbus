@@ -25,6 +25,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  binlog tps
   -  kafka tps
   -  lag
+- [ ] zk checkpoint vs kafka checkpoint
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory
 - [ ] kafka sync produce in batch
@@ -45,6 +46,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [ ] next log position leads to failure after resume
   - [ ] when replication stops, mysql show processlist still exists
   - [ ] table id issue
+  - [ ] what if invalid position
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

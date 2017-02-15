@@ -1,0 +1,25 @@
+package com.alibaba.otter.canal.protocol;
+
+option java_package = "com.alibaba.otter.canal.protocol";
+option java_outer_classname = "KafkaCanalEvent";
+option optimize_for = SPEED;
+import "EntryProtocol.proto";
+
+/****************************************************************
+ * kakfa message model
+ ****************************************************************/
+
+message KafkaLogIdentity{
+    optional string                 host             = 1;  
+    optional int32                  port = 2;
+    optional int64                  slaveId             = 3;  
+}
+
+message Event {
+	/**协议头部信息**/
+	required KafkaLogIdentity		  logIdentity 				= 1;
+	
+	/**打散后的事件类型**/
+	optional Entry					    entry			=  2;
+}
+

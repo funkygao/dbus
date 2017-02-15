@@ -50,7 +50,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 
 	// ack is ignored in async mode
-	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForLocal)))
+	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
 	this.async = config.Bool("async", false)
 	if this.async {
 		this.sendMessage = this.asyncSendMessage
@@ -126,6 +126,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 func (this *KafkaOutput) prepareProducer() error {
 	cf := sarama.NewConfig()
 	cf.ChannelBufferSize = 256 * 2 // default was 256
+	cf.Producer.RequiredAcks = this.ack
 	if this.compress {
 		cf.Producer.Compression = sarama.CompressionSnappy
 	}
@@ -134,7 +135,6 @@ func (this *KafkaOutput) prepareProducer() error {
 	zkcluster := this.zkzone.NewCluster(this.cluster)
 
 	if !this.async {
-		cf.Producer.RequiredAcks = this.ack
 		p, err := sarama.NewSyncProducer(zkcluster.BrokerList(), cf)
 		if err != nil {
 			return err
@@ -149,7 +149,6 @@ func (this *KafkaOutput) prepareProducer() error {
 	cf.Producer.Return.Successes = true
 	cf.Producer.Retry.Backoff = time.Millisecond * 300
 	cf.Producer.Retry.Max = 3
-	cf.Producer.RequiredAcks = sarama.NoResponse // TODO
 	cf.Producer.Flush.Frequency = time.Second
 	cf.Producer.Flush.Messages = 2000 // TODO
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
