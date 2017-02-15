@@ -69,6 +69,6 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - mysqlbinlog input peak with mock output
   - 140k event per second
   - 30k row event per second
-  - 150Mb network bandwidth
-  - it takes 3h to zero lag for platform of 2d lag
+  - 200Mb network bandwidth
+  - it takes 2h25m to zero lag for platform of 2d lag
 
