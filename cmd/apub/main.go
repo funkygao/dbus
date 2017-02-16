@@ -106,10 +106,13 @@ func main() {
 	for {
 		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
 			strings.Repeat("X", 10331)))
-		p.Send(&sarama.ProducerMessage{
+		if err := p.Send(&sarama.ProducerMessage{
 			Topic: topic,
 			Value: msg,
-		})
+		}); err != nil {
+			log.Println(err)
+			break
+		}
 		sent.Add(1)
 	}
 
