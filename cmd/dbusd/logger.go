@@ -33,7 +33,7 @@ func setupLogging() {
 	filer.SetRotateDaily(true)
 	log4go.AddFilter("file", level, filer)
 
-	f, err := os.OpenFile("panic", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile("panic", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
 	}
