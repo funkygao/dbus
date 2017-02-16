@@ -55,6 +55,8 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [ ] table id issue
   - [ ] what if invalid position
   - [ ] kill dbusd, dbusd-slave did not leave cluster
+  - [ ] router stat wrong
+    Total:142,535,625      0.00B speed:22,671/s      0.00B/s max: 0.00B/0.00B
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

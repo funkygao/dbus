@@ -20,6 +20,7 @@ type sentPos struct {
 	Pos uint32
 }
 
+// FIXME tightly coupled with binlog
 type KafkaOutput struct {
 	zone, cluster, topic string
 
@@ -127,6 +128,8 @@ func (this *KafkaOutput) prepareProducer() error {
 	cf := sarama.NewConfig()
 	cf.ChannelBufferSize = 256 * 2 // default was 256
 	cf.Producer.RequiredAcks = this.ack
+	cf.Producer.Retry.Backoff = time.Millisecond * 300
+	cf.Producer.Retry.Max = 5
 	if this.compress {
 		cf.Producer.Compression = sarama.CompressionSnappy
 	}
@@ -147,10 +150,9 @@ func (this *KafkaOutput) prepareProducer() error {
 	// async producer
 	cf.Producer.Return.Errors = true
 	cf.Producer.Return.Successes = true
-	cf.Producer.Retry.Backoff = time.Millisecond * 300
-	cf.Producer.Retry.Max = 3
 	cf.Producer.Flush.Frequency = time.Second
 	cf.Producer.Flush.Messages = 2000 // TODO
+	//cf.Producer.Flush.Bytes = 64 << 10
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
 	ap, err := sarama.NewAsyncProducer(zkcluster.BrokerList(), cf)
 	if err != nil {
