@@ -7,7 +7,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
-	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/dbus/pkg/myslave"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/go-metrics"

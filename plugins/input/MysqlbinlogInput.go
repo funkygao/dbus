@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )

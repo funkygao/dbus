@@ -3,7 +3,7 @@ package output
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
-	"github.com/funkygao/dbus/plugins/input/myslave"
+	"github.com/funkygao/dbus/pkg/myslave"
 	"github.com/funkygao/gafka/cmd/kateway/hh"
 	"github.com/funkygao/gafka/cmd/kateway/hh/disk"
 	"github.com/funkygao/gafka/cmd/kateway/meta"
