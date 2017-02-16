@@ -12,6 +12,8 @@ type RedisbinlogInput struct {
 }
 
 func (this *RedisbinlogInput) Init(config *conf.Conf) {
+	panic("Not implemented")
+
 	this.stopChan = make(chan struct{})
 }
 
