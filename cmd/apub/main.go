@@ -18,6 +18,7 @@ import (
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/signal"
 	"github.com/funkygao/golib/sync2"
+	"github.com/funkygao/log4go"
 )
 
 var (
@@ -41,6 +42,8 @@ func init() {
 	if len(zone) == 0 || len(cluster) == 0 || len(topic) == 0 {
 		panic("invalid flag")
 	}
+
+	log4go.SetLevel(log4go.TRACE)
 }
 
 func main() {
