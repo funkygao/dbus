@@ -61,7 +61,6 @@ func main() {
 	default:
 		panic("invalid: " + ack)
 	}
-	cf.Producer.RequiredAcks = sarama.WaitForLocal
 	cf.Producer.Flush.Frequency = time.Second
 	cf.Producer.Flush.Messages = messages
 	//cf.Producer.Flush.Bytes = 1 << 20
