@@ -53,10 +53,6 @@ func (c *Config) AsyncMode() *Config {
 	return c
 }
 
-func (c *Config) Validate() error {
-	return nil
-}
-
 func init() {
 	ctx.LoadFromHome()
 	log.SetFlags(log.LstdFlags | log.Lshortfile) // for sarama

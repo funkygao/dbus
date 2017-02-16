@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/gofmt"
@@ -40,37 +41,21 @@ func init() {
 	if len(zone) == 0 || len(cluster) == 0 || len(topic) == 0 {
 		panic("invalid flag")
 	}
-
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 func main() {
-	cf := sarama.NewConfig()
-	cf.ChannelBufferSize = 256 * 4 // default was 256
-	cf.Producer.Return.Errors = true
-	cf.Producer.Return.Successes = true
-	cf.Producer.Retry.Backoff = time.Millisecond * 300
-	cf.Producer.Retry.Max = 3
+	cf := kafka.DefaultConfig()
 	switch ack {
 	case "none":
-		cf.Producer.RequiredAcks = sarama.NoResponse
+		cf.Ack(sarama.NoResponse)
 	case "local":
-		cf.Producer.RequiredAcks = sarama.WaitForLocal
+		cf.Ack(sarama.WaitForLocal)
 	case "all":
-		cf.Producer.RequiredAcks = sarama.WaitForAll
+		cf.Ack(sarama.WaitForAll)
 	default:
 		panic("invalid: " + ack)
 	}
-	cf.Producer.Flush.Frequency = time.Second
-	cf.Producer.Flush.Messages = messages
-	//cf.Producer.Flush.Bytes = 1 << 20
-	//sarama.MaxRequestSize = 1 << 20
-	//cf.Producer.MaxMessageBytes = 1 << 20
-	cf.Producer.Flush.MaxMessages = 0 // unlimited
-
-	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-	zkcluster := zkzone.NewCluster(cluster)
-	p, err := sarama.NewAsyncProducer(zkcluster.BrokerList(), cf)
+	p, err := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
 	if err != nil {
 		panic(err)
 	}
@@ -78,6 +63,17 @@ func main() {
 	var (
 		sent, sentOk sync2.AtomicInt64
 	)
+
+	p.SetErrorHandler(func(err *sarama.ProducerError) {
+		v, _ := err.Msg.Value.Encode()
+		log.Println(string(v[:12]), err)
+	})
+	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
+		sentOk.Add(1)
+	})
+	if err := p.Start(); err != nil {
+		panic(err)
+	}
 
 	stopProducer := make(chan struct{})
 	closed := make(chan struct{})
@@ -87,7 +83,7 @@ func main() {
 			close(stopProducer)
 			time.Sleep(time.Second)
 
-			log.Printf("%d/%d, closed with %v\n", sentOk.Get(), sent.Get(), p.Close())
+			log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
 			close(closed)
 		})
 	}
@@ -98,36 +94,6 @@ func main() {
 	}, syscall.SIGINT)
 
 	go func() {
-		var errN int64
-		for {
-			select {
-			case _, ok := <-p.Successes():
-				if !ok {
-					// p.Close will eat up the success messages
-					log.Println("end of success")
-					return
-				}
-
-				sentOk.Add(1)
-
-			case err, ok := <-p.Errors():
-				if !ok {
-					log.Println("end of error")
-					return
-				}
-
-				v, _ := err.Msg.Value.Encode()
-				log.Println(string(v[:15]), err)
-
-				errN++
-				if maxErrs > 0 && errN >= maxErrs {
-					quitFn()
-				}
-			}
-		}
-	}()
-
-	go func() {
 		for {
 			log.Println(gofmt.Comma(sent.Get()), gofmt.Comma(sentOk.Get()), gofmt.Comma(sent.Get()-sentOk.Get()))
 			time.Sleep(time.Second)
@@ -135,19 +101,14 @@ func main() {
 	}()
 
 	for {
-		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(), strings.Repeat("X", 10331)))
-		select {
-		case <-stopProducer:
-			goto BYE
-
-		case p.Input() <- &sarama.ProducerMessage{
+		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
+			strings.Repeat("X", 10331)))
+		p.Send(&sarama.ProducerMessage{
 			Topic: topic,
 			Value: msg,
-		}:
-			sent.Add(1)
-		}
+		})
+		sent.Add(1)
 	}
 
-BYE:
 	<-closed
 }

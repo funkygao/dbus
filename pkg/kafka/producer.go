@@ -7,8 +7,9 @@ import (
 
 // Producer is a kafka producer that is transparent for sync/async mode.
 type Producer struct {
-	cf   *Config
-	name string
+	cf      *Config
+	name    string
+	stopper chan struct{}
 
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
@@ -22,8 +23,9 @@ type Producer struct {
 func NewProducer(name string, brokers []string, cf *Config) (*Producer, error) {
 	var err error
 	p := &Producer{
-		name: name,
-		cf:   cf,
+		name:    name,
+		cf:      cf,
+		stopper: make(chan struct{}),
 	}
 	if cf.async {
 		p.ap, err = sarama.NewAsyncProducer(brokers, cf.Sarama)
@@ -72,7 +74,9 @@ func (p *Producer) Start() error {
 }
 
 // Close will drain and close the Producer.
-func (p *Producer) Stop() error {
+func (p *Producer) Close() error {
+	close(p.stopper)
+
 	if p.cf.async {
 		return p.ap.Close()
 	}
@@ -99,7 +103,6 @@ func (p *Producer) SetSuccessHandler(f func(err *sarama.ProducerMessage)) error 
 }
 
 // Send will send a kafka message.
-// For async mode, will never return error.
 func (p *Producer) Send(m *sarama.ProducerMessage) error {
 	return p.sendMessage(m)
 }
@@ -107,7 +110,12 @@ func (p *Producer) Send(m *sarama.ProducerMessage) error {
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 	log.Debug("[%s] async sending: %+v", p.name, m)
 
-	p.ap.Input() <- m
+	select {
+	case <-p.stopper:
+		return ErrStopping
+
+	case p.ap.Input() <- m:
+	}
 	return nil
 }
 
