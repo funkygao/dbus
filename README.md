@@ -33,6 +33,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [ ] zk checkpoint vs kafka checkpoint
   - discard MarkAsProcessed
 - [ ] integration with helix
+  - place config to central zk znode and watch changes
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory
 - [ ] kafka sync produce in batch
