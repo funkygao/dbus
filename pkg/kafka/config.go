@@ -45,6 +45,13 @@ func (c *Config) Ack(ack sarama.RequiredAcks) *Config {
 
 func (c *Config) SyncMode() *Config {
 	c.async = false
+
+	// explicitly zero batch
+	c.Sarama.Producer.Flush.Frequency = 0
+	c.Sarama.Producer.Flush.Bytes = 0
+	c.Sarama.Producer.Flush.Messages = 0
+
+	c.Sarama.Producer.Return.Successes = false
 	return c
 }
 
