@@ -6,6 +6,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	"github.com/funkygao/gafka/telemetry"
@@ -24,14 +25,8 @@ type sentPos struct {
 type KafkaOutput struct {
 	zone, cluster, topic string
 
-	zkzone   *zk.ZkZone
-	ack      sarama.RequiredAcks
-	async    bool
-	compress bool
-
-	p           sarama.SyncProducer
-	ap          sarama.AsyncProducer
-	sendMessage func(row *model.RowsEvent)
+	zkzone *zk.ZkZone
+	p      *kafka.Producer
 
 	pos            *sentPos
 	loadPosOnStart bool
@@ -50,44 +45,57 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		panic("invalid configuration")
 	}
 
-	// ack is ignored in async mode
-	this.ack = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
-	this.async = config.Bool("async", false)
-	if this.async {
-		this.sendMessage = this.asyncSendMessage
-	} else {
-		this.sendMessage = this.syncSendMessage
-	}
-	this.compress = config.Bool("compress", false)
 	this.zkzone = engine.Globals().GetOrRegisterZkzone(this.zone)
 
-	this.pos = &sentPos{}
-	this.loadPosOnStart = config.Bool("load_position", true)
+	// ack is ignored in async mode
+	cf := kafka.DefaultConfig()
+	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
+	if !config.Bool("async", true) {
+		cf.SyncMode()
+	}
+
+	zkcluster := this.zkzone.NewCluster(this.cluster)
+	this.p = kafka.NewProducer(fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic), zkcluster.BrokerList(), cf)
 
 	key := fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))
 	this.myslave = engine.Globals().Registered(key).(*myslave.MySlave)
+
+	this.pos = &sentPos{}
+	this.loadPosOnStart = config.Bool("load_position", true)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+	this.err = metrics.NewRegisteredCounter(telemetry.Tag(this.zone, this.cluster, this.topic)+"dbus.kafka.err", metrics.DefaultRegistry)
+
 	if this.loadPosOnStart {
 		this.loadPosition()
 	}
 
-	if err := this.prepareProducer(); err != nil {
+	this.p.SetErrorHandler(func(err *sarama.ProducerError) {
+		this.err.Inc(1)
+
+		// e,g.
+		// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
+		// kafka server: Unexpected (unknown?) server error. TODO
+		// java.lang.OutOfMemoryError: Direct buffer memory
+		row := err.Msg.Value.(*model.RowsEvent)
+		log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
+	})
+	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
+		row := msg.Value.(*model.RowsEvent)
+		this.markAsSent(row)
+		if err := this.myslave.MarkAsProcessed(row); err != nil {
+			log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
+		}
+	})
+	if err := this.p.Start(); err != nil {
 		return err
 	}
 
 	defer func() {
 		log.Trace("[%s.%s.%s] start draining...", this.zone, this.cluster, this.topic)
 
-		var err error
-		if this.async {
-			err = this.ap.Close()
-		} else {
-			err = this.p.Close()
-		}
-
-		if err != nil {
+		if err := this.p.Close(); err != nil {
 			log.Error("[%s.%s.%s] drain: %s", this.zone, this.cluster, this.topic, err)
 		} else {
 			log.Trace("[%s.%s.%s] drained ok", this.zone, this.cluster, this.topic)
@@ -111,7 +119,18 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			// best effort to reduce dup message to kafka
 			if row.Log > this.pos.Log ||
 				(row.Log == this.pos.Log && row.Position > this.pos.Pos) {
-				this.sendMessage(row)
+				for {
+					if err := this.p.Send(&sarama.ProducerMessage{
+						Topic: this.topic,
+						Value: row,
+					}); err == nil {
+						break
+					} else {
+						log.Error("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, err)
+
+						time.Sleep(time.Millisecond * 500)
+					}
+				}
 			} else {
 				this.markAsSent(row)
 				log.Debug("[%s.%s.%s] skipped {%s}", this.zone, this.cluster, this.topic, row)
@@ -122,115 +141,6 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	return nil
-}
-
-func (this *KafkaOutput) prepareProducer() error {
-	cf := sarama.NewConfig()
-	cf.ChannelBufferSize = 256 * 2 // default was 256
-	cf.Producer.RequiredAcks = this.ack
-	cf.Producer.Retry.Backoff = time.Millisecond * 300
-	cf.Producer.Retry.Max = 5
-	if this.compress {
-		cf.Producer.Compression = sarama.CompressionSnappy
-	}
-
-	this.err = metrics.NewRegisteredCounter(telemetry.Tag(this.zone, this.cluster, this.topic)+"dbus.kafka.err", metrics.DefaultRegistry)
-	zkcluster := this.zkzone.NewCluster(this.cluster)
-
-	if !this.async {
-		p, err := sarama.NewSyncProducer(zkcluster.BrokerList(), cf)
-		if err != nil {
-			return err
-		}
-
-		this.p = p
-		return nil
-	}
-
-	// async producer
-	cf.Producer.Return.Errors = true
-	cf.Producer.Return.Successes = true
-	cf.Producer.Flush.Frequency = time.Second
-	cf.Producer.Flush.Messages = 2000 // TODO
-	//cf.Producer.Flush.Bytes = 64 << 10
-	cf.Producer.Flush.MaxMessages = 0 // unlimited
-	ap, err := sarama.NewAsyncProducer(zkcluster.BrokerList(), cf)
-	if err != nil {
-		return err
-	}
-
-	this.ap = ap
-	go func() {
-		for {
-			select {
-			case msg, ok := <-this.ap.Successes():
-				if !ok {
-					// producer closed
-					return
-				}
-
-				row := msg.Value.(*model.RowsEvent)
-				this.markAsSent(row)
-				if err := this.myslave.MarkAsProcessed(row); err != nil {
-					log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
-				}
-
-			case err, ok := <-this.ap.Errors():
-				if !ok {
-					// producer closed
-					return
-				}
-
-				this.err.Inc(1)
-
-				// e,g.
-				// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
-				// kafka server: Unexpected (unknown?) server error. TODO
-				// java.lang.OutOfMemoryError: Direct buffer memory
-				row := err.Msg.Value.(*model.RowsEvent)
-				log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
-			}
-		}
-	}()
-
-	return nil
-}
-
-func (this *KafkaOutput) syncSendMessage(row *model.RowsEvent) {
-	var (
-		msg = &sarama.ProducerMessage{
-			Topic: this.topic,
-			Value: row,
-		}
-
-		partition int32
-		offset    int64
-		err       error
-	)
-	for {
-		if partition, offset, err = this.p.SendMessage(msg); err == nil {
-			break
-		}
-
-		log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
-		time.Sleep(time.Second)
-	}
-
-	this.markAsSent(row)
-	if err = this.myslave.MarkAsProcessed(row); err != nil {
-		log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
-	}
-
-	log.Debug("[%s.%s.%s] sync sent [%d/%d] %s", this.zone, this.cluster, this.topic, partition, offset, row)
-}
-
-func (this *KafkaOutput) asyncSendMessage(row *model.RowsEvent) {
-	log.Debug("[%s.%s.%s] async sending: %s", this.zone, this.cluster, this.topic, row)
-
-	this.ap.Input() <- &sarama.ProducerMessage{
-		Topic: this.topic,
-		Value: row,
-	}
 }
 
 func (this *KafkaOutput) loadPosition() {

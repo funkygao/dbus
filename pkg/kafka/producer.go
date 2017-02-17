@@ -9,6 +9,7 @@ import (
 type Producer struct {
 	cf      *Config
 	name    string
+	brokers []string
 	stopper chan struct{}
 
 	p  sarama.SyncProducer
@@ -20,25 +21,30 @@ type Producer struct {
 	onSuccess func(*sarama.ProducerMessage)
 }
 
-func NewProducer(name string, brokers []string, cf *Config) (*Producer, error) {
-	var err error
+func NewProducer(name string, brokers []string, cf *Config) *Producer {
 	p := &Producer{
 		name:    name,
+		brokers: brokers,
 		cf:      cf,
 		stopper: make(chan struct{}),
 	}
-	if cf.async {
-		p.ap, err = sarama.NewAsyncProducer(brokers, cf.Sarama)
-		p.sendMessage = p.asyncSend
-	} else {
-		p.p, err = sarama.NewSyncProducer(brokers, cf.Sarama)
-		p.sendMessage = p.syncSend
-	}
 
-	return p, err
+	return p
 }
 
 func (p *Producer) Start() error {
+	var err error
+	if p.cf.async {
+		p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama)
+		p.sendMessage = p.asyncSend
+	} else {
+		p.p, err = sarama.NewSyncProducer(p.brokers, p.cf.Sarama)
+		p.sendMessage = p.syncSend
+	}
+	if err != nil {
+		return err
+	}
+
 	if !p.cf.async {
 		return nil
 	}
