@@ -47,7 +47,7 @@ func init() {
 }
 
 func main() {
-	cf := kafka.DefaultConfig()
+	cf := kafka.DefaultConfig().SyncMode()
 	switch ack {
 	case "none":
 		cf.Ack(sarama.NoResponse)
@@ -78,22 +78,15 @@ func main() {
 		panic(err)
 	}
 
-	stopProducer := make(chan struct{})
 	closed := make(chan struct{})
 	var once sync.Once
-	quitFn := func() {
-		once.Do(func() {
-			close(stopProducer)
-			time.Sleep(time.Second)
+	signal.RegisterHandler(func(sig os.Signal) {
+		log.Printf("got signal %s", sig)
 
+		once.Do(func() {
 			log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
 			close(closed)
 		})
-	}
-
-	signal.RegisterHandler(func(sig os.Signal) {
-		log.Printf("got signal %s", sig)
-		quitFn()
 	}, syscall.SIGINT)
 
 	go func() {
@@ -113,6 +106,7 @@ func main() {
 			log.Println(err)
 			break
 		}
+
 		sent.Add(1)
 	}
 
