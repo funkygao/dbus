@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/funkygao/dbus/model"
+	"github.com/funkygao/dbus/pkg/model"
 	log "github.com/funkygao/log4go"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"

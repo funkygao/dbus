@@ -30,7 +30,14 @@ type RowsEvent struct {
 	// for update v0, only one row for a event, and we don't support this version.
 	Rows [][]interface{} `json:"rows"`
 
-	bytes []byte
+	encoded []byte
+	err     error
+}
+
+func (r *RowsEvent) ensureEncoded() {
+	if r.encoded == nil {
+		r.encoded, r.err = json.Marshal(r)
+	}
 }
 
 // Implements engine.Payloader.
@@ -44,14 +51,8 @@ func (r *RowsEvent) MetaInfo() string {
 
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Encode() (b []byte, err error) {
-	if len(r.bytes) > 0 {
-		return r.bytes, nil
-	}
-
-	b, err = json.Marshal(r)
-	r.bytes = b
-
-	return
+	r.ensureEncoded()
+	return r.encoded, r.err
 }
 
 func (r *RowsEvent) Decode(b []byte) error {
@@ -60,9 +61,6 @@ func (r *RowsEvent) Decode(b []byte) error {
 
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Length() int {
-	if len(r.bytes) == 0 {
-		r.bytes, _ = json.Marshal(r)
-	}
-
-	return len(r.bytes)
+	r.ensureEncoded()
+	return len(r.encoded)
 }

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/funkygao/dbus/engine"
-	"github.com/funkygao/dbus/model"
+	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
 	"github.com/siddontang/go-mysql/replication"
