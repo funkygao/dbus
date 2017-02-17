@@ -39,6 +39,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  lag
 - [ ] zk checkpoint vs kafka checkpoint
   - discard MarkAsProcessed
+- [ ] visualized flow throughput like nifi
 - [ ] integration with helix
   - place config to central zk znode and watch changes
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
