@@ -15,6 +15,7 @@ import (
 	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
+	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/signal"
 	"github.com/funkygao/golib/sync2"
@@ -24,6 +25,7 @@ import (
 var (
 	zone, cluster, topic string
 	ack                  string
+	syncMode             bool
 	maxErrs              int64
 	messages             int
 )
@@ -35,6 +37,7 @@ func init() {
 	flag.StringVar(&cluster, "c", "", "cluster")
 	flag.StringVar(&topic, "t", "", "topic")
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
+	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&messages, "n", 2000, "flush messages")
 	flag.Parse()
@@ -43,11 +46,16 @@ func init() {
 		panic("invalid flag")
 	}
 
+	sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
 	log4go.SetLevel(log4go.TRACE)
 }
 
 func main() {
-	cf := kafka.DefaultConfig().SyncMode()
+	cf := kafka.DefaultConfig()
+	cf.Sarama.Producer.Flush.Messages = messages
+	if syncMode {
+		cf.SyncMode()
+	}
 	switch ack {
 	case "none":
 		cf.Ack(sarama.NoResponse)
@@ -84,7 +92,6 @@ func main() {
 		log.Printf("got signal %s", sig)
 
 		once.Do(func() {
-			log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
 			close(closed)
 		})
 	}, syscall.SIGINT)
@@ -97,6 +104,12 @@ func main() {
 	}()
 
 	for {
+		select {
+		case <-closed:
+			goto BYE
+		default:
+		}
+
 		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
 			strings.Repeat("X", 10331)))
 		if err := p.Send(&sarama.ProducerMessage{
@@ -110,5 +123,7 @@ func main() {
 		sent.Add(1)
 	}
 
-	<-closed
+BYE:
+	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
+
 }
