@@ -31,5 +31,6 @@ hh/
 target/
 var/
 
-cmd/dbusd/dbusd
-cmd/apub/apub
+dbusd
+kpub
+

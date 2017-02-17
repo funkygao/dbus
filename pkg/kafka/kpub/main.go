@@ -66,10 +66,7 @@ func main() {
 	default:
 		panic("invalid: " + ack)
 	}
-	p, err := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
-	if err != nil {
-		panic(err)
-	}
+	p := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
 
 	var (
 		sent, sentOk sync2.AtomicInt64
