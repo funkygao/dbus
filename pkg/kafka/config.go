@@ -50,8 +50,6 @@ func (c *Config) SyncMode() *Config {
 	c.Sarama.Producer.Flush.Frequency = 0
 	c.Sarama.Producer.Flush.Bytes = 0
 	c.Sarama.Producer.Flush.Messages = 0
-
-	c.Sarama.Producer.Return.Successes = false
 	return c
 }
 
