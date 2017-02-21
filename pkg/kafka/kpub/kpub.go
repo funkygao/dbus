@@ -28,6 +28,7 @@ var (
 	syncMode             bool
 	maxErrs              int64
 	messages             int
+	sleep                time.Duration
 )
 
 func init() {
@@ -40,6 +41,7 @@ func init() {
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&messages, "n", 2000, "flush messages")
+	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
 
 	if len(zone) == 0 || len(cluster) == 0 || len(topic) == 0 {
@@ -118,6 +120,9 @@ func main() {
 		}
 
 		sent.Add(1)
+		if sleep > 0 {
+			time.Sleep(sleep)
+		}
 	}
 
 BYE:
