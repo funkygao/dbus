@@ -54,21 +54,22 @@ func (p *Producer) Start() error {
 	}
 
 	go func() {
-		// loop till Producer closed
+		// loop till Producer success channel closed
+		errChan := p.ap.Errors()
 		for {
 			select {
 			case msg, ok := <-p.ap.Successes():
 				if !ok {
-					log.Trace("[%s] closed", p.name)
+					log.Trace("[%s] success chan closed", p.name)
 					return
 				}
 
 				p.onSuccess(msg)
 
-			case err, ok := <-p.ap.Errors():
+			case err, ok := <-errChan:
 				if !ok {
-					log.Trace("[%s] closed", p.name)
-					return
+					log.Trace("[%s] err chan closed", p.name)
+					errChan = nil
 				}
 
 				p.onError(err)
@@ -84,10 +85,30 @@ func (p *Producer) Close() error {
 	close(p.stopper)
 
 	if p.cf.async {
-		return p.ap.Close()
+		p.ap.AsyncClose()
+
+		// drain successes
+		if p.onSuccess != nil {
+			for msg := range p.ap.Successes() {
+				p.onSuccess(msg)
+			}
+		}
+
+		// drain errors
+		if p.onError != nil {
+			for err := range p.ap.Errors() {
+				p.onError(err)
+			}
+		}
+
+		return nil
 	}
 
 	return p.p.Close()
+}
+
+func (p *Producer) ClientID() string {
+	return p.cf.Sarama.ClientID
 }
 
 func (p *Producer) SetErrorHandler(f func(err *sarama.ProducerError)) error {
@@ -95,6 +116,9 @@ func (p *Producer) SetErrorHandler(f func(err *sarama.ProducerError)) error {
 		return ErrNotAllowed
 	}
 
+	if f == nil {
+		p.cf.Sarama.Producer.Return.Errors = false
+	}
 	p.onError = f
 	return nil
 }
@@ -104,6 +128,9 @@ func (p *Producer) SetSuccessHandler(f func(err *sarama.ProducerMessage)) error 
 		return ErrNotAllowed
 	}
 
+	if f == nil {
+		p.cf.Sarama.Producer.Return.Successes = false
+	}
 	p.onSuccess = f
 	return nil
 }
