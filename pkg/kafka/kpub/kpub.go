@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -36,6 +37,8 @@ var (
 	_ sarama.Encoder = &payload{}
 
 	inChan = make(chan sarama.Encoder)
+
+	sentIDs = make([]int, 0, 10<<20)
 )
 
 type payload struct {
@@ -124,6 +127,7 @@ func main() {
 		v := msg.Value.(*payload)
 		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
+		sentIDs = append(sentIDs, int(v.i))
 	})
 
 	if err := p.Start(); err != nil {
@@ -177,5 +181,39 @@ func main() {
 
 BYE:
 	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
+
+	// assert data not lost
+	missings := make(map[int]struct{})
+	sort.Ints(sentIDs)
+	for i, v := range sentIDs {
+		fmt.Printf("%7d ", v)
+		if (i+1)%20 == 0 {
+			fmt.Println()
+		}
+
+		if i < len(sentIDs)-2 {
+			foundNext := false
+			for _, n := range sentIDs[i+1:] {
+				if n == v+1 {
+					foundNext = true
+					break
+				}
+			}
+			if !foundNext {
+				missings[v] = struct{}{}
+			}
+		}
+	}
+
+	sortedMissings := make([]int, 0, len(missings))
+	for k := range missings {
+		sortedMissings = append(sortedMissings, k)
+	}
+	sort.Ints(sortedMissings)
+	fmt.Println()
+	fmt.Println(color.Red("missings"))
+	for _, v := range sortedMissings {
+		fmt.Println(v)
+	}
 
 }
