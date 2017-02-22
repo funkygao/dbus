@@ -13,8 +13,8 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/pkg/kafka"
-	"github.com/funkygao/dbus/pkg/rb"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/diagnostics/agent"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
@@ -23,7 +23,20 @@ import (
 	"github.com/funkygao/log4go"
 )
 
-var _ sarama.Encoder = &payload{}
+var (
+	zone, cluster, topic string
+	ack                  string
+	syncMode             bool
+	maxErrs              int64
+	msgSize              int
+	messages             int
+	sleep                time.Duration
+	slient               bool
+
+	_ sarama.Encoder = &payload{}
+
+	inChan = make(chan sarama.Encoder)
+)
 
 type payload struct {
 	i int64
@@ -43,22 +56,15 @@ func (p *payload) Length() int {
 	return len(p.b)
 }
 
+func (p *payload) String() string {
+	return fmt.Sprintf("%8d", p.i)
+}
+
 func (p *payload) ensureEncoded() {
 	if len(p.b) == 0 {
 		p.b, p.err = sarama.StringEncoder(fmt.Sprintf("{%09d} %s", p.i, p.s)).Encode()
 	}
 }
-
-var (
-	zone, cluster, topic string
-	ack                  string
-	syncMode             bool
-	maxErrs              int64
-	msgSize              int
-	messages             int
-	sleep                time.Duration
-	slient               bool
-)
 
 func init() {
 	ctx.LoadFromHome()
@@ -70,7 +76,7 @@ func init() {
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
-	flag.IntVar(&messages, "n", 1000, "flush messages")
+	flag.IntVar(&messages, "n", 1024, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
 	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
@@ -83,12 +89,9 @@ func init() {
 		sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
 	}
 	log4go.SetLevel(log4go.TRACE)
-}
 
-var (
-	inChan = make(chan sarama.Encoder)
-	buffer = rb.New(4096)
-)
+	agent.Start()
+}
 
 func main() {
 	cf := kafka.DefaultConfig()
@@ -106,6 +109,7 @@ func main() {
 	default:
 		panic("invalid: " + ack)
 	}
+
 	p := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
 
 	var (
@@ -146,6 +150,7 @@ func main() {
 	go func() {
 		var i int64
 		for {
+			log4go.Info(color.Blue("->> %d", i))
 			inChan <- &payload{i: i, s: strings.Repeat("X", msgSize)}
 			i++
 		}
@@ -166,6 +171,7 @@ func main() {
 			if sleep > 0 {
 				time.Sleep(sleep)
 			}
+
 		}
 	}
 

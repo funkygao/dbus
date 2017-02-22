@@ -2,8 +2,10 @@ package kafka
 
 import (
 	"sync"
+	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/funkygao/golib/ringbuffer"
 	log "github.com/funkygao/log4go"
 )
 
@@ -14,6 +16,7 @@ type Producer struct {
 	brokers []string
 	stopper chan struct{}
 	wg      sync.WaitGroup
+	rb      *ringbuffer.RingBuffer
 
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
@@ -51,8 +54,11 @@ func (p *Producer) Start() error {
 		return ErrNotReady
 	}
 
-	p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama)
-	if err != nil {
+	if p.rb, err = ringbuffer.New(uint64(p.cf.Sarama.Producer.Flush.Messages)); err != nil {
+		return err
+	}
+
+	if p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama); err != nil {
 		return err
 	}
 
@@ -60,6 +66,8 @@ func (p *Producer) Start() error {
 
 	p.wg.Add(1)
 	go p.dispatchCallbacks()
+	p.wg.Add(1)
+	go p.asyncSendWorker()
 
 	return nil
 }
@@ -132,9 +140,26 @@ func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 	case <-p.stopper:
 		return ErrStopping
 
-	case p.ap.Input() <- m:
+	default:
+		p.rb.Write(m)
 	}
 	return nil
+}
+
+func (p *Producer) asyncSendWorker() {
+	defer p.wg.Done()
+
+	for {
+		select {
+		case <-p.stopper:
+			return
+
+		default:
+			if msg, ok := p.rb.ReadTimeout(time.Second); ok {
+				p.ap.Input() <- msg.(*sarama.ProducerMessage)
+			}
+		}
+	}
 }
 
 func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
@@ -161,6 +186,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				okChan = nil
 			} else {
+				p.rb.Advance()
 				p.onSuccess(msg)
 			}
 
@@ -168,6 +194,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
+				p.rb.Rewind()
 				p.onError(err)
 			}
 		}

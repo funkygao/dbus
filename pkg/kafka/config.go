@@ -50,7 +50,7 @@ func DefaultConfig() *Config {
 	cf.Producer.Return.Errors = true
 	cf.Producer.Return.Successes = true
 	cf.Producer.Flush.Frequency = time.Second / 2
-	cf.Producer.Flush.Messages = 2000 // TODO
+	cf.Producer.Flush.Messages = 1024 // TODO
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
 	//cf.Producer.Flush.Bytes = 64 << 10
 
