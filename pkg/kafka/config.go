@@ -1,16 +1,17 @@
 package kafka
 
 import (
-	"crypto/rand"
 	"fmt"
-	"io"
 	"log"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/gafka/ctx"
 )
+
+var clientID uint32
 
 // Config is the configuration of kafka pkg.
 type Config struct {
@@ -84,23 +85,12 @@ func (c *Config) AsyncMode() *Config {
 }
 
 func generateClientID() (string, error) {
-	uuid := make([]byte, 16)
-	n, err := io.ReadFull(rand.Reader, uuid)
-	if n != len(uuid) || err != nil {
-		return "", err
-	}
-
-	// variant bits; see section 4.1.1
-	uuid[8] = uuid[8]&^0xc0 | 0x80
-	// version 4 (pseudo-random); see section 4.1.3
-	uuid[6] = uuid[6]&^0xf0 | 0x40
-
 	host, err := os.Hostname()
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s:%s", host, fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])), nil
+	return fmt.Sprintf("%s-%s", host, fmt.Sprintf("%d", atomic.AddUint32(&clientID, 1))), nil
 }
 
 func init() {
