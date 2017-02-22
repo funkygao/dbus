@@ -60,11 +60,13 @@ func DefaultConfig() *Config {
 	}
 }
 
+// Ack sets the kafka producer required ack parameter.
 func (c *Config) Ack(ack sarama.RequiredAcks) *Config {
 	c.Sarama.Producer.RequiredAcks = ack
 	return c
 }
 
+// SyncMode will switch the kafka producer to sync mode.
 func (c *Config) SyncMode() *Config {
 	c.async = false
 
@@ -75,6 +77,7 @@ func (c *Config) SyncMode() *Config {
 	return c
 }
 
+// SyncMode will switch the kafka producer to async mode.
 func (c *Config) AsyncMode() *Config {
 	c.async = true
 	return c
