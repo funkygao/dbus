@@ -156,6 +156,7 @@ func (p *Producer) asyncSendWorker() {
 
 		default:
 			if msg, ok := p.rb.ReadTimeout(time.Second); ok {
+				// FIXME what if msg is nil
 				p.ap.Input() <- msg.(*sarama.ProducerMessage)
 			}
 		}

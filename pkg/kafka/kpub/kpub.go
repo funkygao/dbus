@@ -38,7 +38,8 @@ var (
 
 	inChan = make(chan sarama.Encoder)
 
-	sentIDs = make([]int, 0, 10<<20)
+	sentIDs   = make([]int, 0, 10<<20)
+	sentIDsMu sync.RWMutex
 )
 
 type payload struct {
@@ -127,7 +128,10 @@ func main() {
 		v := msg.Value.(*payload)
 		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
+
+		sentIDsMu.Lock()
 		sentIDs = append(sentIDs, int(v.i))
+		sentIDsMu.Unlock()
 	})
 
 	if err := p.Start(); err != nil {
@@ -154,7 +158,6 @@ func main() {
 	go func() {
 		var i int64
 		for {
-			log4go.Info(color.Blue("->> %d", i))
 			inChan <- &payload{i: i, s: strings.Repeat("X", msgSize)}
 			i++
 		}
@@ -165,13 +168,19 @@ func main() {
 		case <-closed:
 			goto BYE
 
-		case msg := <-inChan:
+		case msg, ok := <-inChan:
+			if !ok {
+				goto BYE
+			}
+
 			if err := p.Send(&sarama.ProducerMessage{Topic: topic, Value: msg}); err != nil {
 				log.Println(err)
 				goto BYE
 			}
 
+			log4go.Info(color.Blue("->> %d", msg.(*payload).i))
 			sent.Add(1)
+			time.Sleep(time.Millisecond * 50)
 			if sleep > 0 {
 				time.Sleep(sleep)
 			}
@@ -183,6 +192,8 @@ BYE:
 	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
 
 	// assert data not lost
+	sentIDsMu.RLock()
+	defer sentIDsMu.RUnlock()
 	missings := make(map[int]struct{})
 	sort.Ints(sentIDs)
 	for i, v := range sentIDs {
@@ -199,10 +210,18 @@ BYE:
 					break
 				}
 			}
+
 			if !foundNext {
 				missings[v] = struct{}{}
 			}
 		}
+	}
+
+	fmt.Println()
+
+	if len(missings) == 0 {
+		fmt.Println(color.Green("no missing found"))
+		return
 	}
 
 	sortedMissings := make([]int, 0, len(missings))
@@ -210,7 +229,6 @@ BYE:
 		sortedMissings = append(sortedMissings, k)
 	}
 	sort.Ints(sortedMissings)
-	fmt.Println()
 	fmt.Println(color.Red("missings"))
 	for _, v := range sortedMissings {
 		fmt.Println(v)
