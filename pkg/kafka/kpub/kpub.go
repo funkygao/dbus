@@ -178,7 +178,7 @@ func main() {
 				goto BYE
 			}
 
-			log4go.Info(color.Blue("->> %d", msg.(*payload).i))
+			log.Println(color.Blue("->> %d", msg.(*payload).i))
 			sent.Add(1)
 			time.Sleep(time.Millisecond * 50)
 			if sleep > 0 {
@@ -202,7 +202,7 @@ BYE:
 			fmt.Println()
 		}
 
-		if i < len(sentIDs)-2 {
+		if i < len(sentIDs)-1 {
 			foundNext := false
 			for _, n := range sentIDs[i+1:] {
 				if n == v+1 {
