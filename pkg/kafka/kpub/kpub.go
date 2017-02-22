@@ -30,6 +30,7 @@ var (
 	msgSize              int
 	messages             int
 	sleep                time.Duration
+	slient               bool
 )
 
 func init() {
@@ -43,6 +44,7 @@ func init() {
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
 	flag.IntVar(&messages, "n", 2000, "flush messages")
+	flag.BoolVar(&slient, "s", true, "silent mode")
 	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
 
@@ -50,7 +52,9 @@ func init() {
 		panic("invalid flag")
 	}
 
-	sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
+	if !slient {
+		sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
+	}
 	log4go.SetLevel(log4go.TRACE)
 }
 
@@ -78,9 +82,11 @@ func main() {
 
 	p.SetErrorHandler(func(err *sarama.ProducerError) {
 		v, _ := err.Msg.Value.Encode()
-		log.Println(string(v[:12]), err)
+		log.Println(color.Red("no %s, %s", string(v[:12]), err))
 	})
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
+		v, _ := msg.Value.Encode()
+		log.Println(color.Green("ok -> %s", string(v[:12])))
 		sentOk.Add(1)
 	})
 	if err := p.Start(); err != nil {
