@@ -14,6 +14,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/diagnostics/agent"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
@@ -31,7 +32,39 @@ var (
 	messages             int
 	sleep                time.Duration
 	slient               bool
+
+	_ sarama.Encoder = &payload{}
+
+	inChan = make(chan sarama.Encoder)
 )
+
+type payload struct {
+	i int64
+	s string
+
+	b   []byte
+	err error
+}
+
+func (p *payload) Encode() ([]byte, error) {
+	p.ensureEncoded()
+	return p.b, p.err
+}
+
+func (p *payload) Length() int {
+	p.ensureEncoded()
+	return len(p.b)
+}
+
+func (p *payload) String() string {
+	return fmt.Sprintf("%8d", p.i)
+}
+
+func (p *payload) ensureEncoded() {
+	if len(p.b) == 0 {
+		p.b, p.err = sarama.StringEncoder(fmt.Sprintf("{%09d} %s", p.i, p.s)).Encode()
+	}
+}
 
 func init() {
 	ctx.LoadFromHome()
@@ -43,7 +76,7 @@ func init() {
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
-	flag.IntVar(&messages, "n", 2000, "flush messages")
+	flag.IntVar(&messages, "n", 1024, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
 	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
@@ -56,6 +89,8 @@ func init() {
 		sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
 	}
 	log4go.SetLevel(log4go.TRACE)
+
+	agent.Start()
 }
 
 func main() {
@@ -74,6 +109,7 @@ func main() {
 	default:
 		panic("invalid: " + ack)
 	}
+
 	p := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
 
 	var (
@@ -81,14 +117,15 @@ func main() {
 	)
 
 	p.SetErrorHandler(func(err *sarama.ProducerError) {
-		v, _ := err.Msg.Value.Encode()
-		log.Println(color.Red("no %s, %s", string(v[:12]), err))
+		v := err.Msg.Value.(*payload)
+		log.Println(color.Red("no -> %d %s", v.i, err))
 	})
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
-		v, _ := msg.Value.Encode()
-		log.Println(color.Green("ok -> %s", string(v[:12])))
+		v := msg.Value.(*payload)
+		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
 	})
+
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
@@ -110,26 +147,31 @@ func main() {
 		}
 	}()
 
+	go func() {
+		var i int64
+		for {
+			log4go.Info(color.Blue("->> %d", i))
+			inChan <- &payload{i: i, s: strings.Repeat("X", msgSize)}
+			i++
+		}
+	}()
+
 	for {
 		select {
 		case <-closed:
 			goto BYE
-		default:
-		}
 
-		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
-			strings.Repeat("X", msgSize)))
-		if err := p.Send(&sarama.ProducerMessage{
-			Topic: topic,
-			Value: msg,
-		}); err != nil {
-			log.Println(err)
-			break
-		}
+		case msg := <-inChan:
+			if err := p.Send(&sarama.ProducerMessage{Topic: topic, Value: msg}); err != nil {
+				log.Println(err)
+				goto BYE
+			}
 
-		sent.Add(1)
-		if sleep > 0 {
-			time.Sleep(sleep)
+			sent.Add(1)
+			if sleep > 0 {
+				time.Sleep(sleep)
+			}
+
 		}
 	}
 

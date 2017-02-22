@@ -50,7 +50,7 @@ func DefaultConfig() *Config {
 	cf.Producer.Return.Errors = true
 	cf.Producer.Return.Successes = true
 	cf.Producer.Flush.Frequency = time.Second / 2
-	cf.Producer.Flush.Messages = 2000 // TODO
+	cf.Producer.Flush.Messages = 1024 // TODO
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
 	//cf.Producer.Flush.Bytes = 64 << 10
 
@@ -60,11 +60,13 @@ func DefaultConfig() *Config {
 	}
 }
 
+// Ack sets the kafka producer required ack parameter.
 func (c *Config) Ack(ack sarama.RequiredAcks) *Config {
 	c.Sarama.Producer.RequiredAcks = ack
 	return c
 }
 
+// SyncMode will switch the kafka producer to sync mode.
 func (c *Config) SyncMode() *Config {
 	c.async = false
 
@@ -75,6 +77,7 @@ func (c *Config) SyncMode() *Config {
 	return c
 }
 
+// SyncMode will switch the kafka producer to async mode.
 func (c *Config) AsyncMode() *Config {
 	c.async = true
 	return c
