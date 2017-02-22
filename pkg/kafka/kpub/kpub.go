@@ -13,6 +13,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/pkg/kafka"
+	"github.com/funkygao/dbus/pkg/rb"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
@@ -21,6 +22,32 @@ import (
 	"github.com/funkygao/golib/sync2"
 	"github.com/funkygao/log4go"
 )
+
+var _ sarama.Encoder = &payload{}
+
+type payload struct {
+	i int64
+	s string
+
+	b   []byte
+	err error
+}
+
+func (p *payload) Encode() ([]byte, error) {
+	p.ensureEncoded()
+	return p.b, p.err
+}
+
+func (p *payload) Length() int {
+	p.ensureEncoded()
+	return len(p.b)
+}
+
+func (p *payload) ensureEncoded() {
+	if len(p.b) == 0 {
+		p.b, p.err = sarama.StringEncoder(fmt.Sprintf("{%09d} %s", p.i, p.s)).Encode()
+	}
+}
 
 var (
 	zone, cluster, topic string
@@ -60,6 +87,7 @@ func init() {
 
 var (
 	inChan = make(chan sarama.Encoder)
+	buffer = rb.New(4096)
 )
 
 func main() {
@@ -85,12 +113,12 @@ func main() {
 	)
 
 	p.SetErrorHandler(func(err *sarama.ProducerError) {
-		v, _ := err.Msg.Value.Encode()
-		log.Println(color.Red("no %s, %s", string(v[:12]), err))
+		v := err.Msg.Value.(*payload)
+		log.Println(color.Red("no -> %d %s", v.i, err))
 	})
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
-		v, _ := msg.Value.Encode()
-		log.Println(color.Green("ok -> %s", string(v[:12])))
+		v := msg.Value.(*payload)
+		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
 	})
 
@@ -118,7 +146,7 @@ func main() {
 	go func() {
 		var i int64
 		for {
-			inChan <- sarama.StringEncoder(fmt.Sprintf("{%09d} %s", i, strings.Repeat("X", msgSize)))
+			inChan <- &payload{i: i, s: strings.Repeat("X", msgSize)}
 			i++
 		}
 	}()
