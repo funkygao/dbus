@@ -35,7 +35,8 @@ func DefaultConfig() *Config {
 	cf.Net.MaxOpenRequests = 5
 
 	// common for sync and async
-	cf.ChannelBufferSize = 256 * 4 // default was 256
+	cf.ChannelBufferSize = 256 * 4        // default was 256
+	cf.Producer.MaxMessageBytes = 1000000 // 1MB
 	cf.Producer.Timeout = time.Second * 30
 	cf.Producer.Compression = sarama.CompressionNone
 	cf.Producer.Retry.Max = 5
@@ -43,7 +44,7 @@ func DefaultConfig() *Config {
 	cf.Producer.RequiredAcks = sarama.WaitForLocal // default ack
 	cf.Metadata.RefreshFrequency = time.Minute * 10
 	cf.Metadata.Retry.Max = 5
-	cf.Metadata.Retry.Backoff = time.Millisecond * 500
+	cf.Metadata.Retry.Backoff = time.Second
 
 	// async specific
 	cf.Producer.Return.Errors = true

@@ -37,9 +37,16 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  binlog tps
   -  kafka tps
   -  lag
+- [ ] hub is shared, what if a plugin blocks others
 - [ ] zk checkpoint vs kafka checkpoint
   - discard MarkAsProcessed
 - [ ] visualized flow throughput like nifi
+- [ ] kafka follower stops replication
+    [2017-02-17 07:59:52,581] INFO Reconnect due to socket error: java.lang.OutOfMemoryError: Direct buffer memory (kafka.consumer.SimpleConsumer)
+    [2017-02-17 07:59:52,780] WARN [ReplicaFetcherThread-2-1], Error in fetch Name: FetchRequest; Version: 0; CorrelationId: 4; ClientId: ReplicaFetcherThread-2-1; ReplicaId: 0; MaxWait: 500 ms; MinBytes: 1 bytes; RequestInfo: [pubaudit,0] -> PartitionFetchInfo(257984707,1048576). Possible cause: java.lang.OutOfMemoryError: Direct buffer memory (kafka.server.ReplicaFetcherThread)
+
+    [2017-02-06 11:45:07,387] INFO [ReplicaFetcherManager on broker 6] Removed fetcher for partitions [nginx_access_log,4] (kafka.server.ReplicaFetcherManager)
+    [2017-02-17 07:59:52,781] INFO Reconnect due to socket error: java.nio.channels.ClosedChannelException (kafka.consumer.SimpleConsumer)
 - [ ] integration with helix
   - place config to central zk znode and watch changes
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?

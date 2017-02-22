@@ -1,5 +1,5 @@
-all:build
-	./kpub -z local -c me -t foobar -ack all -sync=false -sleep 3s
+all:
+	go run kpub.go -z local -c me -t foobar -ack all -sync=false -sleep 5s -sz 20
 
-build:
-	@go build
+race:
+	go run -race kpub.go -z local -c me -t foobar -ack all -sync=false -sleep 5s -sz 20

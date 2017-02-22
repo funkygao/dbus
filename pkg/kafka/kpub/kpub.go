@@ -27,6 +27,7 @@ var (
 	ack                  string
 	syncMode             bool
 	maxErrs              int64
+	msgSize              int
 	messages             int
 	sleep                time.Duration
 )
@@ -40,6 +41,7 @@ func init() {
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
+	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
 	flag.IntVar(&messages, "n", 2000, "flush messages")
 	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
@@ -97,8 +99,8 @@ func main() {
 
 	go func() {
 		for {
-			log.Println(gofmt.Comma(sent.Get()), gofmt.Comma(sentOk.Get()), gofmt.Comma(sent.Get()-sentOk.Get()))
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
+			log.Println(gofmt.Comma(sent.Get()), "->", gofmt.Comma(sentOk.Get()))
 		}
 	}()
 
@@ -110,7 +112,7 @@ func main() {
 		}
 
 		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
-			strings.Repeat("X", 10331)))
+			strings.Repeat("X", msgSize)))
 		if err := p.Send(&sarama.ProducerMessage{
 			Topic: topic,
 			Value: msg,
