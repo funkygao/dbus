@@ -43,7 +43,7 @@ func init() {
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
 	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
-	flag.IntVar(&messages, "n", 2000, "flush messages")
+	flag.IntVar(&messages, "n", 1000, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
 	flag.DurationVar(&sleep, "sleep", 0, "sleep between producing messages")
 	flag.Parse()
@@ -93,6 +93,7 @@ func main() {
 		log.Println(color.Green("ok -> %s", string(v[:12])))
 		sentOk.Add(1)
 	})
+
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
@@ -120,7 +121,6 @@ func main() {
 			inChan <- sarama.StringEncoder(fmt.Sprintf("{%09d} %s", i, strings.Repeat("X", msgSize)))
 			i++
 		}
-
 	}()
 
 	for {
@@ -129,10 +129,7 @@ func main() {
 			goto BYE
 
 		case msg := <-inChan:
-			if err := p.Send(&sarama.ProducerMessage{
-				Topic: topic,
-				Value: msg,
-			}); err != nil {
+			if err := p.Send(&sarama.ProducerMessage{Topic: topic, Value: msg}); err != nil {
 				log.Println(err)
 				goto BYE
 			}
@@ -142,7 +139,6 @@ func main() {
 				time.Sleep(sleep)
 			}
 		}
-
 	}
 
 BYE:
