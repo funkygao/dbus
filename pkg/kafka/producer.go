@@ -70,9 +70,10 @@ func (p *Producer) Start() error {
 				if !ok {
 					log.Trace("[%s] err chan closed", p.name)
 					errChan = nil
+				} else {
+					p.onError(err)
 				}
 
-				p.onError(err)
 			}
 		}
 	}()
@@ -111,6 +112,9 @@ func (p *Producer) ClientID() string {
 	return p.cf.Sarama.ClientID
 }
 
+// SetErrorHandler setup the async producer unretriable errors, e.g:
+// ErrInvalidPartition, ErrMessageSizeTooLarge, ErrIncompleteResponse
+// ErrBreakerOpen(e,g. update leader fails)
 func (p *Producer) SetErrorHandler(f func(err *sarama.ProducerError)) error {
 	if !p.cf.async {
 		return ErrNotAllowed
