@@ -58,6 +58,10 @@ func init() {
 	log4go.SetLevel(log4go.TRACE)
 }
 
+var (
+	inChan = make(chan sarama.Encoder)
+)
+
 func main() {
 	cf := kafka.DefaultConfig()
 	cf.Sarama.Producer.Flush.Messages = messages
@@ -110,27 +114,35 @@ func main() {
 		}
 	}()
 
+	go func() {
+		var i int64
+		for {
+			inChan <- sarama.StringEncoder(fmt.Sprintf("{%09d} %s", i, strings.Repeat("X", msgSize)))
+			i++
+		}
+
+	}()
+
 	for {
 		select {
 		case <-closed:
 			goto BYE
-		default:
+
+		case msg := <-inChan:
+			if err := p.Send(&sarama.ProducerMessage{
+				Topic: topic,
+				Value: msg,
+			}); err != nil {
+				log.Println(err)
+				break
+			}
+
+			sent.Add(1)
+			if sleep > 0 {
+				time.Sleep(sleep)
+			}
 		}
 
-		msg := sarama.StringEncoder(fmt.Sprintf("{%d} %s", sent.Get(),
-			strings.Repeat("X", msgSize)))
-		if err := p.Send(&sarama.ProducerMessage{
-			Topic: topic,
-			Value: msg,
-		}); err != nil {
-			log.Println(err)
-			break
-		}
-
-		sent.Add(1)
-		if sleep > 0 {
-			time.Sleep(sleep)
-		}
 	}
 
 BYE:
