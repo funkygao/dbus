@@ -134,7 +134,7 @@ func main() {
 				Value: msg,
 			}); err != nil {
 				log.Println(err)
-				break
+				goto BYE
 			}
 
 			sent.Add(1)
