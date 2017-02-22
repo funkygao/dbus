@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"sync"
+
 	"github.com/Shopify/sarama"
 	log "github.com/funkygao/log4go"
 )
@@ -11,6 +13,7 @@ type Producer struct {
 	name    string
 	brokers []string
 	stopper chan struct{}
+	wg      sync.WaitGroup
 
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
@@ -53,27 +56,32 @@ func (p *Producer) Start() error {
 		return ErrNotReady
 	}
 
+	p.wg.Add(1)
 	go func() {
-		// loop till Producer success channel closed
+		defer p.wg.Done()
+
 		errChan := p.ap.Errors()
+		okChan := p.ap.Successes()
 		for {
 			select {
-			case msg, ok := <-p.ap.Successes():
+			case msg, ok := <-okChan:
 				if !ok {
-					log.Trace("[%s] success chan closed", p.name)
-					return
+					okChan = nil
+				} else {
+					p.onSuccess(msg)
 				}
-
-				p.onSuccess(msg)
 
 			case err, ok := <-errChan:
 				if !ok {
-					log.Trace("[%s] err chan closed", p.name)
 					errChan = nil
 				} else {
 					p.onError(err)
 				}
+			}
 
+			if okChan == nil && errChan == nil {
+				log.Trace("[%s] success & err chan both closed", p.name)
+				return
 			}
 		}
 	}()
@@ -87,21 +95,7 @@ func (p *Producer) Close() error {
 
 	if p.cf.async {
 		p.ap.AsyncClose()
-
-		// drain successes
-		if p.onSuccess != nil {
-			for msg := range p.ap.Successes() {
-				p.onSuccess(msg)
-			}
-		}
-
-		// drain errors
-		if p.onError != nil {
-			for err := range p.ap.Errors() {
-				p.onError(err)
-			}
-		}
-
+		p.wg.Wait()
 		return nil
 	}
 
