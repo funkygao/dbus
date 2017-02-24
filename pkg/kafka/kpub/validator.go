@@ -52,7 +52,7 @@ func main() {
 		}
 
 		if last >= 0 && n != last+1 {
-			fmt.Println(color.Red("%d %d", last, n))
+			fmt.Println(color.Red("%d %d %d", last, n, n-last))
 		}
 
 		last = n

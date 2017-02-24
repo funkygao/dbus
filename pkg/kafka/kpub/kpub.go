@@ -4,6 +4,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -31,6 +32,7 @@ var (
 	messages             int
 	sleep                time.Duration
 	slient               bool
+	mute                 bool
 
 	_ sarama.Encoder = &payload{}
 
@@ -73,6 +75,7 @@ func init() {
 	flag.StringVar(&topic, "t", "", "topic")
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
+	flag.BoolVar(&mute, "mute", false, "mute")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
 	flag.IntVar(&messages, "n", 1024, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
@@ -87,6 +90,11 @@ func init() {
 		sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
 	}
 	log4go.SetLevel(log4go.TRACE)
+	log.SetOutput(os.Stdout)
+	if mute {
+		log.SetOutput(ioutil.Discard)
+		log4go.SetLevel(log4go.DEBUG)
+	}
 
 	agent.Start()
 }
@@ -108,9 +116,9 @@ func main() {
 		panic("invalid: " + ack)
 	}
 
-	p := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
-
 	var (
+		p = kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
+
 		sent, sentOk sync2.AtomicInt64
 	)
 
@@ -177,5 +185,6 @@ func main() {
 	}
 
 BYE:
-	log.Printf("tried %d, ok %d, closed with %v", sent.Get(), sentOk.Get(), p.Close())
+	log4go.Info("tried %d, ok %d, closed with %v", sent.Get(), sentOk.Get(), p.Close())
+	log4go.Close()
 }

@@ -127,9 +127,12 @@ func (p *Producer) SetSuccessHandler(f func(err *sarama.ProducerMessage)) error 
 	return nil
 }
 
-func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
-	log.Debug("[%s] async sending: %+v", p.name, m)
+func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
+	_, _, err := p.p.SendMessage(m)
+	return err
+}
 
+func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 	select {
 	case <-p.stopper:
 		return ErrStopping
@@ -151,20 +154,15 @@ func (p *Producer) asyncSendWorker() {
 		default:
 			if msg, err := p.batcher.ReadOne(); err == nil {
 				// FIXME what if msg is nil
-				p.ap.Input() <- msg.(*sarama.ProducerMessage)
+				pm := msg.(*sarama.ProducerMessage)
+				log.Debug("[%s] batcher-> %+v", p.name, pm.Value)
+				p.ap.Input() <- pm
 			} else {
 				log.Trace("[%s] batcher closed", p.name)
 				return
 			}
 		}
 	}
-}
-
-func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
-	log.Debug("[%s] sync sending: %+v", p.name, m)
-
-	_, _, err := p.p.SendMessage(m)
-	return err
 }
 
 func (p *Producer) dispatchCallbacks() {
