@@ -2,21 +2,25 @@
 package main
 
 import (
+	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/funkygao/dbus/pkg/batcher"
 	"github.com/funkygao/gafka/diagnostics/agent"
 	"github.com/funkygao/golib/color"
+	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/sampling"
 	"github.com/funkygao/golib/sequence"
 )
 
-const (
-	msgN        = 1 << 5
-	batcherSize = 16
-	batchSize   = 5
+var (
+	benchmark bool
+	msgN      = 1 << 5
+	batchSize = 5
 )
 
 type producer struct {
@@ -30,6 +34,7 @@ type producer struct {
 	kafkaSentOk *sequence.Sequence
 
 	failBatchN int
+	okN        int
 }
 
 func newProducer() *producer {
@@ -65,16 +70,20 @@ func (p *producer) batcherWorker() {
 		}
 
 		i := msg.(int)
-		if _, present := history[i]; present {
-			log.Println(color.Yellow("batcher read <- %d", i))
-		} else {
-			log.Printf("batcher read <- %d", i)
-		}
-		history[i] = struct{}{}
 
-		// got data from ringbatcherfer and pass it to kafka worker
-		// if some batch fails, ringbatcherfer will feed us again
-		p.kafkaOutDatas = append(p.kafkaOutDatas, i)
+		if !benchmark {
+			if _, present := history[i]; present {
+				log.Println(color.Yellow("batcher read <- %d", i))
+			} else {
+				log.Printf("batcher read <- %d", i)
+			}
+			history[i] = struct{}{}
+
+			// got data from ringbatcherfer and pass it to kafka worker
+			// if some batch fails, ringbatcherfer will feed us again
+			p.kafkaOutDatas = append(p.kafkaOutDatas, i)
+		}
+
 		p.kafkaOut <- i
 	}
 }
@@ -89,7 +98,7 @@ func (p *producer) kafkaWorker() {
 
 		batchIdx++
 		if batchIdx == batchSize {
-			if sampling.SampleRateSatisfied(1800) {
+			if !benchmark && sampling.SampleRateSatisfied(1800) {
 				// fails
 				p.failBatchN++
 				log.Println(color.Red("%+v", batch))
@@ -104,9 +113,12 @@ func (p *producer) kafkaWorker() {
 
 				for j := 0; j < batchSize; j++ {
 					p.batcher.Advance()
-					p.kafkaSentOk.Add(batch[j])
+					p.okN++
+
+					if !benchmark {
+						p.kafkaSentOk.Add(batch[j])
+					}
 				}
-				log.Println(color.Green("%+v", p.batcher))
 			}
 
 			batchIdx = 0
@@ -115,11 +127,11 @@ func (p *producer) kafkaWorker() {
 	}
 }
 
-func (p *producer) close() {
+func (p *producer) Close() {
 	p.wg.Wait()
 }
 
-func (p *producer) printResult() {
+func (p *producer) PrintResult() {
 	log.Printf("failed=%d, msg=%d, kafka sent ok=%d, kafka tried=%d", p.failBatchN, msgN, p.kafkaSentOk.Length(), len(p.kafkaOutDatas))
 	min, max, loss := p.kafkaSentOk.Summary()
 	log.Println("kafka sent ok:", p.kafkaSentOk, min, max)
@@ -134,15 +146,31 @@ func (p *producer) printResult() {
 
 }
 
+func init() {
+	flag.BoolVar(&benchmark, "b", false, "benchmark mode")
+	flag.Parse()
+}
+
 func main() {
-	log.SetOutput(os.Stdout)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	if benchmark {
+		if true {
+			log.SetOutput(ioutil.Discard)
+
+		}
+		msgN = 10 << 20
+		batchSize = 2 << 10
+	} else {
+		log.SetOutput(os.Stdout)
+	}
+
 	agent.Start()
 
 	inChan := make(chan int)
 
 	p := newProducer()
 
+	t0 := time.Now()
 	go func() {
 		for i := 0; i < msgN; i++ {
 			inChan <- i
@@ -156,6 +184,10 @@ func main() {
 		p.Send(i)
 	}
 
-	p.close()
-	p.printResult()
+	p.Close()
+	if benchmark {
+		println(gofmt.Comma(int64(p.okN)/int64(time.Since(t0).Seconds())), "per second")
+	} else {
+		p.PrintResult()
+	}
 }
