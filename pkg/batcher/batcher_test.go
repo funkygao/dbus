@@ -13,8 +13,12 @@ func TestBatcherBasic(t *testing.T) {
 	}
 	go func() {
 		for {
-			v := b.Read()
-			t.Logf("%v", v)
+			v, err := b.ReadOne()
+			if err != nil {
+				return
+			}
+
+			t.Logf("read<- %v", v)
 		}
 	}()
 	t.Logf("%+v", b)
@@ -26,6 +30,9 @@ func TestBatcherBasic(t *testing.T) {
 	// [3, ...] fails
 	b.Rollback()
 	t.Logf("%+v", b)
+
+	time.Sleep(time.Second)
+	b.Close()
 
 	time.Sleep(time.Second)
 }
