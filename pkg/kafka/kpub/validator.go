@@ -10,8 +10,6 @@ import (
 	"github.com/funkygao/golib/io"
 )
 
-const width = 17
-
 // Usage:
 // go run kpub.go -z test -c test -t test -ack all -n 1024 -sz 25
 // gk peek -z test -c test -t test -body > test.txt
@@ -28,9 +26,8 @@ func main() {
 
 	min, max := 1<<10, 0
 	lineN := 0
-	buf := make([]int, width)
-	bufIdx := 0
 	reader := bufio.NewReader(f)
+	last := -98734
 	for {
 		l, err := io.ReadLine(reader)
 		if err != nil {
@@ -41,7 +38,7 @@ func main() {
 		// {000000019} XXXXXXXXXXXXXXXXXXXXXXXXX
 		n, err := strconv.Atoi(string(l[1:10]))
 		if err != nil {
-			println(string(l), err.Error())
+			fmt.Printf("%s for `%s`\n", err, string(l))
 			break
 		}
 
@@ -52,25 +49,11 @@ func main() {
 			min = n
 		}
 
-		buf[bufIdx] = n
-		bufIdx = (bufIdx + 1) % width
-		lineN++
-		if lineN%width == 0 {
-			// output the buf
-			last := buf[0]
-			s := fmt.Sprintf("%9d ", last)
-			for _, d := range buf[1:] {
-				if d == last {
-					s += color.Red("%9d ", d)
-				} else {
-					s += fmt.Sprintf("%9d ", d)
-				}
-			}
-			fmt.Println(s)
-
-			buf = buf[0:]
+		if last >= 0 && n != last+1 {
+			fmt.Println(color.Red("%d %d", last, n))
 		}
 
+		last = n
 	}
 
 	fmt.Printf("min=%d, max=%d, lines=%d\n", min, max, lineN)
@@ -78,6 +61,6 @@ func main() {
 		// kpub always starts with 0
 		fmt.Println("passed")
 	} else {
-		fmt.Println("fails")
+		fmt.Println("failed")
 	}
 }
