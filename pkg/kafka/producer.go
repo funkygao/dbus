@@ -21,7 +21,8 @@ type Producer struct {
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
 
-	sendMessage func(*sarama.ProducerMessage) error
+	// Send will send a kafka message.
+	Send func(*sarama.ProducerMessage) error
 
 	onError   func(*sarama.ProducerError)
 	onSuccess func(*sarama.ProducerMessage)
@@ -45,7 +46,7 @@ func (p *Producer) Start() error {
 	if !p.cf.async {
 		// sync mode
 		p.p, err = sarama.NewSyncProducer(p.brokers, p.cf.Sarama)
-		p.sendMessage = p.syncSend
+		p.Send = p.syncSend
 		return err
 	}
 
@@ -62,7 +63,7 @@ func (p *Producer) Start() error {
 		return err
 	}
 
-	p.sendMessage = p.asyncSend
+	p.Send = p.asyncSend
 
 	p.wg.Add(1)
 	go p.dispatchCallbacks()
@@ -126,11 +127,6 @@ func (p *Producer) SetSuccessHandler(f func(err *sarama.ProducerMessage)) error 
 	}
 	p.onSuccess = f
 	return nil
-}
-
-// Send will send a kafka message.
-func (p *Producer) Send(m *sarama.ProducerMessage) error {
-	return p.sendMessage(m)
 }
 
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
