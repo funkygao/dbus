@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"syscall"
@@ -19,6 +18,7 @@ import (
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
+	"github.com/funkygao/golib/sequence"
 	"github.com/funkygao/golib/signal"
 	"github.com/funkygao/golib/sync2"
 	"github.com/funkygao/log4go"
@@ -38,8 +38,7 @@ var (
 
 	inChan = make(chan sarama.Encoder)
 
-	sentIDs   = make([]int, 0, 10<<20)
-	sentIDsMu sync.RWMutex
+	seq = sequence.New()
 )
 
 type payload struct {
@@ -128,10 +127,7 @@ func main() {
 		v := msg.Value.(*payload)
 		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
-
-		sentIDsMu.Lock()
-		sentIDs = append(sentIDs, int(v.i))
-		sentIDsMu.Unlock()
+		seq.Add(int(v.i))
 	})
 
 	if err := p.Start(); err != nil {
@@ -180,7 +176,6 @@ func main() {
 
 			log.Println(color.Blue("->> %d", msg.(*payload).i))
 			sent.Add(1)
-			time.Sleep(time.Millisecond * 50)
 			if sleep > 0 {
 				time.Sleep(sleep)
 			}
@@ -191,47 +186,7 @@ func main() {
 BYE:
 	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
 
-	// assert data not lost
-	sentIDsMu.RLock()
-	defer sentIDsMu.RUnlock()
-	missings := make(map[int]struct{})
-	sort.Ints(sentIDs)
-	for i, v := range sentIDs {
-		fmt.Printf("%7d ", v)
-		if (i+1)%20 == 0 {
-			fmt.Println()
-		}
-
-		if i < len(sentIDs)-1 {
-			foundNext := false
-			for _, n := range sentIDs[i+1:] {
-				if n == v+1 {
-					foundNext = true
-					break
-				}
-			}
-
-			if !foundNext {
-				missings[v] = struct{}{}
-			}
-		}
-	}
-
-	fmt.Println()
-
-	if len(missings) == 0 {
-		fmt.Println(color.Green("no missing found"))
-		return
-	}
-
-	sortedMissings := make([]int, 0, len(missings))
-	for k := range missings {
-		sortedMissings = append(sortedMissings, k)
-	}
-	sort.Ints(sortedMissings)
-	fmt.Println(color.Red("missings"))
-	for _, v := range sortedMissings {
-		fmt.Println(v)
-	}
-
+	min, max, loss := seq.Summary()
+	fmt.Printf("%+v\n", seq)
+	fmt.Printf("min:%d max:%d loss:\n%+v\n", min, max, loss)
 }
