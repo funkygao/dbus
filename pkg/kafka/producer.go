@@ -2,10 +2,9 @@ package kafka
 
 import (
 	"sync"
-	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/funkygao/golib/ringbuffer"
+	"github.com/funkygao/dbus/pkg/batcher"
 	log "github.com/funkygao/log4go"
 )
 
@@ -16,7 +15,8 @@ type Producer struct {
 	brokers []string
 	stopper chan struct{}
 	wg      sync.WaitGroup
-	rb      *ringbuffer.RingBuffer
+
+	batcher *batcher.Batcher
 
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
@@ -55,10 +55,7 @@ func (p *Producer) Start() error {
 		return ErrNotReady
 	}
 
-	if p.rb, err = ringbuffer.New(uint64(p.cf.Sarama.Producer.Flush.Messages)); err != nil {
-		return err
-	}
-
+	p.batcher = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
 	if p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama); err != nil {
 		return err
 	}
@@ -79,6 +76,7 @@ func (p *Producer) Close() error {
 
 	if p.cf.async {
 		p.ap.AsyncClose()
+		p.batcher.Close()
 		p.wg.Wait()
 		return nil
 	}
@@ -137,7 +135,7 @@ func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 		return ErrStopping
 
 	default:
-		p.rb.Write(m)
+		p.batcher.Write(m)
 	}
 	return nil
 }
@@ -151,9 +149,12 @@ func (p *Producer) asyncSendWorker() {
 			return
 
 		default:
-			if msg, ok := p.rb.ReadTimeout(time.Second); ok {
+			if msg, err := p.batcher.ReadOne(); err == nil {
 				// FIXME what if msg is nil
 				p.ap.Input() <- msg.(*sarama.ProducerMessage)
+			} else {
+				log.Trace("[%s] batcher closed", p.name)
+				return
 			}
 		}
 	}
@@ -183,7 +184,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				okChan = nil
 			} else {
-				p.rb.Advance()
+				p.batcher.Advance()
 				p.onSuccess(msg)
 			}
 
@@ -191,7 +192,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
-				p.rb.Rewind()
+				p.batcher.Rollback()
 				p.onError(err)
 			}
 		}
