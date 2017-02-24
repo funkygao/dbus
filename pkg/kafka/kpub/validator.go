@@ -60,8 +60,8 @@ func main() {
 	fmt.Printf("min=%d, max=%d, lines=%d\n", min, max, lineN)
 	if lineN-max == 1 {
 		// kpub always starts with 0
-		fmt.Println("passed")
+		fmt.Println(color.Green("passed"))
 	} else {
-		fmt.Println("failed")
+		fmt.Println(color.Red("failed"))
 	}
 }
