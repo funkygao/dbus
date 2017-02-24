@@ -35,8 +35,6 @@ func main() {
 			break
 		}
 
-		lineN++
-
 		// {000000019} XXXXXXXXXXXXXXXXXXXXXXXXX
 		n, err := strconv.Atoi(string(l[1:10]))
 		if err != nil {
@@ -50,6 +48,7 @@ func main() {
 		if n < min {
 			min = n
 		}
+		lineN++
 
 		if last >= 0 && n != last+1 {
 			fmt.Println(color.Red("%d %d %d", last, n, n-last))
