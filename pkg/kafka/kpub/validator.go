@@ -35,6 +35,8 @@ func main() {
 			break
 		}
 
+		lineN++
+
 		// {000000019} XXXXXXXXXXXXXXXXXXXXXXXXX
 		n, err := strconv.Atoi(string(l[1:10]))
 		if err != nil {
