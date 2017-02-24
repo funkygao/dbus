@@ -18,7 +18,6 @@ import (
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
-	"github.com/funkygao/golib/sequence"
 	"github.com/funkygao/golib/signal"
 	"github.com/funkygao/golib/sync2"
 	"github.com/funkygao/log4go"
@@ -28,7 +27,6 @@ var (
 	zone, cluster, topic string
 	ack                  string
 	syncMode             bool
-	maxErrs              int64
 	msgSize              int
 	messages             int
 	sleep                time.Duration
@@ -37,8 +35,6 @@ var (
 	_ sarama.Encoder = &payload{}
 
 	inChan = make(chan sarama.Encoder)
-
-	seq = sequence.New()
 )
 
 type payload struct {
@@ -77,7 +73,6 @@ func init() {
 	flag.StringVar(&topic, "t", "", "topic")
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
-	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
 	flag.IntVar(&messages, "n", 1024, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
@@ -127,7 +122,6 @@ func main() {
 		v := msg.Value.(*payload)
 		log.Println(color.Green("ok -> %d", v.i))
 		sentOk.Add(1)
-		seq.Add(int(v.i))
 	})
 
 	if err := p.Start(); err != nil {
@@ -179,14 +173,9 @@ func main() {
 			if sleep > 0 {
 				time.Sleep(sleep)
 			}
-
 		}
 	}
 
 BYE:
-	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
-
-	min, max, loss := seq.Summary()
-	fmt.Printf("%+v\n", seq)
-	fmt.Printf("min:%d max:%d loss:\n%+v\n", min, max, loss)
+	log.Printf("tried %d, ok %d, closed with %v", sent.Get(), sentOk.Get(), p.Close())
 }
