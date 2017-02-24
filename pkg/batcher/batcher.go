@@ -9,11 +9,11 @@ import (
 const backoff = time.Millisecond
 
 type Batcher struct {
-	size     uint32
-	w, r     uint32
-	okN      uint32
-	stopped  uint32
-	contents []interface{}
+	size       uint32
+	w, r       uint32
+	okN, failN uint32
+	stopped    uint32
+	contents   []interface{}
 }
 
 func NewBatcher(size int) *Batcher {
@@ -67,12 +67,25 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 func (b *Batcher) Advance() {
 	ok := atomic.AddUint32(&b.okN, 1)
 	if ok == b.size {
+		// batch commit
 		atomic.StoreUint32(&b.okN, 0)
+		atomic.StoreUint32(&b.failN, 0)
+		atomic.StoreUint32(&b.r, 0)
 		atomic.StoreUint32(&b.w, 0)
+	} else if ok+atomic.LoadUint32(&b.failN) == b.size {
+		// batch rollback, reset reader cursor, retry the batch, hold writer
+		atomic.StoreUint32(&b.okN, 0)
+		atomic.StoreUint32(&b.failN, 0)
 		atomic.StoreUint32(&b.r, 0)
 	}
 }
 
 func (b *Batcher) Rollback() {
-	atomic.StoreUint32(&b.r, 0)
+	fail := atomic.AddUint32(&b.failN, 1)
+	if fail+atomic.LoadUint32(&b.okN) == b.size {
+		// batch rollback
+		atomic.StoreUint32(&b.okN, 0)
+		atomic.StoreUint32(&b.failN, 0)
+		atomic.StoreUint32(&b.r, 0)
+	}
 }

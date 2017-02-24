@@ -7,10 +7,18 @@ import (
 
 func TestBatcherBasic(t *testing.T) {
 	b := NewBatcher(8)
-	//
+	// inject [0, 8)
 	for i := 0; i < 8; i++ {
 		b.Write(i)
 	}
+	t.Logf("[0, 8) injected, %+v", b)
+
+	// [0, 1] ok
+	for i := 0; i < 2; i++ {
+		b.Advance()
+	}
+	t.Logf("[0, 1] ok, %+v", b)
+
 	go func() {
 		for {
 			v, err := b.ReadOne()
@@ -18,21 +26,21 @@ func TestBatcherBasic(t *testing.T) {
 				return
 			}
 
-			t.Logf("read<- %v", v)
+			t.Logf("ReadOne<- %v, %+v", v, b)
 		}
 	}()
-	t.Logf("%+v", b)
-	// [0, 1] ok
-	for i := 0; i < 2; i++ {
-		b.Advance()
-	}
-	t.Logf("%+v", b)
-	// [3, ...] fails
-	b.Rollback()
-	t.Logf("%+v", b)
 
+	// [3, ...] fails
+	for i := 2; i < 8; i++ {
+		b.Rollback()
+		t.Logf("[%d] fail, %+v", i, b)
+	}
+
+	//b.Write(5) // will block
+
+	t.Logf("sleep 1s for reader catch up")
 	time.Sleep(time.Second)
+	t.Logf("closeing batcher")
 	b.Close()
 
-	time.Sleep(time.Second)
 }
