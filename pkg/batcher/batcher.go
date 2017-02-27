@@ -53,7 +53,7 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 		if r == b.size ||
 			// batch tail reached, but not committed
 			r >= w {
-			// reader overrun writer
+			// reader out-run writer
 			time.Sleep(backoff)
 		} else {
 			break
