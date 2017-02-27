@@ -44,3 +44,20 @@ func TestBatcherBasic(t *testing.T) {
 	b.Close()
 
 }
+
+func BenchmarkBatcherReadWrite1kInBatch(b *testing.B) {
+	batcher := NewBatcher(1 << 10)
+	go func() {
+		for {
+			batcher.Write(1)
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		_, err := batcher.ReadOne()
+		if err != nil {
+			panic(err)
+		}
+		batcher.Advance()
+	}
+}
