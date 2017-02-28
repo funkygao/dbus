@@ -34,6 +34,8 @@ var (
 	slient               bool
 	mute                 bool
 
+	lastOk int64 = -1
+
 	_ sarama.Encoder = &payload{}
 
 	inChan = make(chan sarama.Encoder)
@@ -129,6 +131,10 @@ func main() {
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		v := msg.Value.(*payload)
 		log.Println(color.Green("ok -> %d", v.i))
+		if lastOk > 0 && v.i != lastOk+1 {
+			log.Println(color.Cyan("broken ok sequence: last=%d curr=%d", lastOk, v.i))
+		}
+		lastOk = v.i
 		sentOk.Add(1)
 	})
 
