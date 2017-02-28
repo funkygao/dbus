@@ -2,6 +2,8 @@
 package batcher
 
 import (
+	"log"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -12,16 +14,19 @@ type Batcher struct {
 	size       uint32
 	w, r       uint32
 	okN, failN uint32
+	barrier    sync.WaitGroup
 	stopped    uint32
 	contents   []interface{}
 }
 
 func NewBatcher(size int) *Batcher {
-	return &Batcher{
+	b := &Batcher{
 		size:     uint32(size),
 		stopped:  0,
 		contents: make([]interface{}, size),
 	}
+	b.barrier.Add(1)
+	return b
 }
 
 func (b *Batcher) Close() {
@@ -29,17 +34,21 @@ func (b *Batcher) Close() {
 }
 
 func (b *Batcher) Write(v interface{}) error {
-	for atomic.LoadUint32(&b.w) == b.size {
-		// wait for the batch commit
-		if atomic.LoadUint32(&b.stopped) == 1 {
-			return ErrStopping
-		}
+	if atomic.LoadUint32(&b.w) == b.size {
+		// wait for the batch complete
+		b.barrier.Wait()
 
-		time.Sleep(backoff)
+		// start a new batch
+		b.barrier.Add(1)
 	}
 
-	idx := atomic.AddUint32(&b.w, 1) - 1 // lock step
+	if atomic.LoadUint32(&b.stopped) == 1 {
+		return ErrStopping
+	}
+
+	idx := atomic.AddUint32(&b.w, 1) - 1
 	b.contents[idx] = v
+	log.Printf("%d %+v", idx, v)
 	return nil
 }
 
@@ -50,6 +59,7 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 		}
 
 		r, w := atomic.LoadUint32(&b.r), atomic.LoadUint32(&b.w)
+		log.Printf("r=%d w=%d", r, w)
 		if r == b.size ||
 			// batch tail reached, but not committed
 			r >= w {
@@ -70,14 +80,16 @@ func (b *Batcher) Advance() {
 		// batch commit
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.r, 0)
 		atomic.StoreUint32(&b.w, 0)
+		atomic.StoreUint32(&b.r, 0)
+		b.barrier.Done()
 	} else if ok+atomic.LoadUint32(&b.failN) == b.size {
 		// batch rollback, reset reader cursor, retry the batch, hold writer
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)
 		atomic.StoreUint32(&b.r, 0)
 	}
+
 }
 
 func (b *Batcher) Rollback() {
