@@ -27,6 +27,8 @@ _testmain.go
 *.dmp
 .DS_Store
 
+*.pprof
+
 hh/
 target/
 var/
