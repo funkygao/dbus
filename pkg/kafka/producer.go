@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	gl "log"
 	"sync"
 
 	"github.com/Shopify/sarama"
@@ -155,7 +156,7 @@ func (p *Producer) asyncSendWorker() {
 			if msg, err := p.batcher.ReadOne(); err == nil {
 				// FIXME what if msg is nil
 				pm := msg.(*sarama.ProducerMessage)
-				log.Debug("[%s] batcher-> %+v", p.name, pm.Value)
+				gl.Printf("[%s] sarama-> %+v", p.name, pm.Value)
 				p.ap.Input() <- pm
 			} else {
 				log.Trace("[%s] batcher closed", p.name)
@@ -182,7 +183,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				okChan = nil
 			} else {
-				p.batcher.Advance()
+				p.batcher.Succeed()
 				p.onSuccess(msg)
 			}
 
@@ -190,7 +191,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
-				p.batcher.Rollback()
+				p.batcher.Fail()
 				p.onError(err)
 			}
 		}

@@ -104,7 +104,7 @@ func (p *producer) kafkaWorker() {
 				log.Println(color.Red("%+v", batch))
 
 				for j := 0; j < batchSize; j++ {
-					p.batcher.Rollback()
+					p.batcher.Fail()
 				}
 				log.Println(color.Red("%+v", p.batcher))
 			} else {
@@ -112,7 +112,7 @@ func (p *producer) kafkaWorker() {
 				log.Println(color.Green("%+v", batch))
 
 				for j := 0; j < batchSize; j++ {
-					p.batcher.Advance()
+					p.batcher.Succeed()
 					p.okN++
 
 					if !benchmark {

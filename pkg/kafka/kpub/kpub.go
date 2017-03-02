@@ -34,6 +34,8 @@ var (
 	slient               bool
 	mute                 bool
 
+	lastOk int64 = -1
+
 	_ sarama.Encoder = &payload{}
 
 	inChan = make(chan sarama.Encoder)
@@ -117,18 +119,22 @@ func main() {
 	}
 
 	var (
-		p = kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
+		p = kafka.NewProducer("kpub", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
 
 		sent, sentOk sync2.AtomicInt64
 	)
 
 	p.SetErrorHandler(func(err *sarama.ProducerError) {
 		v := err.Msg.Value.(*payload)
-		log.Println(color.Red("no -> %d %s", v.i, err))
+		log.Printf("no -> %d %s", v.i, err)
 	})
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		v := msg.Value.(*payload)
-		log.Println(color.Green("ok -> %d", v.i))
+		log.Printf("ok -> %d", v.i)
+		if lastOk > 0 && v.i != lastOk+1 {
+			log.Printf("broken ok sequence: last=%d curr=%d, %d", lastOk, v.i, lastOk-v.i)
+		}
+		lastOk = v.i
 		sentOk.Add(1)
 	})
 
@@ -146,6 +152,7 @@ func main() {
 		})
 	}, syscall.SIGINT)
 
+	// stats reporter
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
@@ -153,6 +160,7 @@ func main() {
 		}
 	}()
 
+	// generate messages
 	go func() {
 		var i int64
 		for {
@@ -161,6 +169,7 @@ func main() {
 		}
 	}()
 
+	// send messages to kafka
 	for {
 		select {
 		case <-closed:
@@ -171,12 +180,12 @@ func main() {
 				goto BYE
 			}
 
+			log.Printf("producer ->> %d", msg.(*payload).i)
 			if err := p.Send(&sarama.ProducerMessage{Topic: topic, Value: msg}); err != nil {
 				log.Println(err)
 				goto BYE
 			}
 
-			log.Println(color.Blue("->> %d", msg.(*payload).i))
 			sent.Add(1)
 			if sleep > 0 {
 				time.Sleep(sleep)
