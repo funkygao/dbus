@@ -51,7 +51,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [ ] integration with helix
   - place config to central zk znode and watch changes
 - [ ] can a mysql instance with miltiple databases have multiple Log/Position?
-- [ ] pack.Payload reuse memory
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] kafka sync produce in batch
 - [ ] DDL binlog
   - drop table y;

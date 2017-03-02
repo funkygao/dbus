@@ -183,7 +183,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				okChan = nil
 			} else {
-				p.batcher.Advance()
+				p.batcher.Succeed()
 				p.onSuccess(msg)
 			}
 
@@ -191,7 +191,7 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
-				p.batcher.Rollback()
+				p.batcher.Fail()
 				p.onError(err)
 			}
 		}

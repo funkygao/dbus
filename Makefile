@@ -29,6 +29,7 @@ help:
 	@echo "    make misspell    : Detect commonly misspelled words in source files"
 	@echo "    make astscan     : GO AST scanner"
 	@echo "    make loc         : Line of code"
+	@echo "    make generate    : Recursively invoke go generate"
 	@echo ""
 	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
 	@echo ""
@@ -122,6 +123,9 @@ clean:
 nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
+
+generate:
+	@go generate ./...
 
 # Report the golang line of code
 loc:
