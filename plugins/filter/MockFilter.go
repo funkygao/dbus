@@ -5,6 +5,10 @@ import (
 	conf "github.com/funkygao/jsconf"
 )
 
+var (
+	_ engine.Filter = &MockFilter{}
+)
+
 type MockFilter struct {
 	ident string
 }

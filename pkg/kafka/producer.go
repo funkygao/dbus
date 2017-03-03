@@ -30,6 +30,10 @@ type Producer struct {
 
 // NewProducer creates a uniform kafka producer.
 func NewProducer(name string, brokers []string, cf *Config) *Producer {
+	if len(brokers) == 0 {
+		panic(name + " empty brokers")
+	}
+
 	p := &Producer{
 		name:    name,
 		brokers: brokers,
@@ -140,13 +144,7 @@ func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 }
 
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
-	select {
-	case <-p.stopper:
-		return ErrStopping
-
-	default:
-		p.b.Write(m)
-	}
+	p.b.Write(m)
 	return nil
 }
 
@@ -161,6 +159,7 @@ func (p *Producer) asyncSendWorker() {
 		default:
 			if msg, err := p.b.ReadOne(); err == nil {
 				// FIXME what if msg is nil
+				// FIXME a batch of 10, msg7 is too big message size, lead to dead loop
 				pm := msg.(*sarama.ProducerMessage)
 				p.ap.Input() <- pm
 				p.m.asyncSend.Mark(1)

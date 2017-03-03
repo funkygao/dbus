@@ -7,6 +7,11 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Input = &KafkaInput{}
+)
+
+// KafkaInput is an input plugin that consumes data stream from a single specified kafka topic.
 type KafkaInput struct {
 	stopChan chan struct{}
 }
