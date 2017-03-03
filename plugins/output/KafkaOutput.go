@@ -99,6 +99,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				continue
 			}
 
+			// loop is for sync mode only: async send will never return error
 			for {
 				if err := this.p.Send(&sarama.ProducerMessage{
 					Topic: this.topic,

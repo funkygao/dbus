@@ -144,13 +144,7 @@ func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 }
 
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
-	select {
-	case <-p.stopper:
-		return ErrStopping
-
-	default:
-		p.b.Write(m)
-	}
+	p.b.Write(m)
 	return nil
 }
 
