@@ -60,6 +60,10 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		row := msg.Value.(*model.RowsEvent)
+		// FIXME what if:
+		// [1, 2, 3, 4, 5] sent
+		// [1, 2, 4, 5] ok, [3] fails
+		// then shutdown dbusd? 3 might be lost
 		if err := this.myslave.MarkAsProcessed(row); err != nil {
 			log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 		}
