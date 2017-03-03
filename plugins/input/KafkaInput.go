@@ -22,8 +22,8 @@ func (this *KafkaInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 }
 
-func (this *KafkaInput) Stop() {
-	log.Trace("stop called")
+func (this *KafkaInput) Stop(r engine.InputRunner) {
+	log.Trace("[%s] stopping...", r.Name())
 	close(this.stopChan)
 }
 

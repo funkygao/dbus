@@ -15,7 +15,7 @@ type Input interface {
 	Plugin
 
 	Run(r InputRunner, h PluginHelper) (err error)
-	Stop()
+	Stop(InputRunner)
 }
 
 type InputRunner interface {

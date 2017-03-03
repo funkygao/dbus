@@ -19,8 +19,8 @@ func (this *MockInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 }
 
-func (this *MockInput) Stop() {
-	log.Trace("stop called")
+func (this *MockInput) Stop(r engine.InputRunner) {
+	log.Trace("[%s] stopping...", r.Name())
 	close(this.stopChan)
 }
 
