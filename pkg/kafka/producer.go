@@ -1,7 +1,6 @@
 package kafka
 
 import (
-	gl "log"
 	"sync"
 
 	"github.com/Shopify/sarama"
@@ -16,8 +15,8 @@ type Producer struct {
 	brokers []string
 	stopper chan struct{}
 	wg      sync.WaitGroup
-
-	batcher *batcher.Batcher
+	b       *batcher.Batcher
+	m       *producerMetrics
 
 	p  sarama.SyncProducer
 	ap sarama.AsyncProducer
@@ -43,6 +42,8 @@ func NewProducer(name string, brokers []string, cf *Config) *Producer {
 
 // Start is REQUIRED before the producer is able to produce.
 func (p *Producer) Start() error {
+	p.m = newMetrics(p.name)
+
 	var err error
 	if !p.cf.async {
 		// sync mode
@@ -56,7 +57,7 @@ func (p *Producer) Start() error {
 		return ErrNotReady
 	}
 
-	p.batcher = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
+	p.b = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
 	if p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama); err != nil {
 		return err
 	}
@@ -77,7 +78,7 @@ func (p *Producer) Close() error {
 
 	if p.cf.async {
 		p.ap.AsyncClose()
-		p.batcher.Close()
+		p.b.Close()
 		p.wg.Wait()
 		return nil
 	}
@@ -130,6 +131,11 @@ func (p *Producer) SetSuccessHandler(f func(err *sarama.ProducerMessage)) error 
 
 func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 	_, _, err := p.p.SendMessage(m)
+	if err != nil {
+		p.m.syncFail.Mark(1)
+	} else {
+		p.m.syncOk.Mark(1)
+	}
 	return err
 }
 
@@ -139,7 +145,7 @@ func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 		return ErrStopping
 
 	default:
-		p.batcher.Write(m)
+		p.b.Write(m)
 	}
 	return nil
 }
@@ -153,11 +159,11 @@ func (p *Producer) asyncSendWorker() {
 			return
 
 		default:
-			if msg, err := p.batcher.ReadOne(); err == nil {
+			if msg, err := p.b.ReadOne(); err == nil {
 				// FIXME what if msg is nil
 				pm := msg.(*sarama.ProducerMessage)
-				gl.Printf("[%s] sarama-> %+v", p.name, pm.Value)
 				p.ap.Input() <- pm
+				p.m.asyncSend.Mark(1)
 			} else {
 				log.Trace("[%s] batcher closed", p.name)
 				return
@@ -183,7 +189,8 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				okChan = nil
 			} else {
-				p.batcher.Succeed()
+				p.b.Succeed()
+				p.m.asyncOk.Mark(1)
 				p.onSuccess(msg)
 			}
 
@@ -191,7 +198,8 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
-				p.batcher.Fail()
+				p.b.Fail()
+				p.m.asyncFail.Mark(1)
 				p.onError(err)
 			}
 		}
