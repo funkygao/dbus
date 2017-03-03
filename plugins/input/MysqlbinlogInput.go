@@ -57,7 +57,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			return nil
 		}
 
-		rows := this.slave.EventStream()
+		rows := this.slave.Events()
 		errors := this.slave.Errors()
 		for {
 			select {

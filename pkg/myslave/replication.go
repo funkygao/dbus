@@ -13,9 +13,11 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
+// StopReplication stops the slave and do neccessary cleanups.
 func (m *MySlave) StopReplication() {
 	if m.isMaster {
 		m.r.Close()
+
 		if err := m.p.Flush(); err != nil {
 			log.Error("[%s] flush: %s", m.name, err)
 		}
@@ -25,6 +27,7 @@ func (m *MySlave) StopReplication() {
 	m.isMaster = false
 }
 
+// StartReplication start the mysql binlog replication.
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
@@ -36,14 +39,15 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
 		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough?
-		Flavor:          "mysql",                           // currently mariadb not implemented
+		Flavor:          m.c.String("flavor", "mysql"),
 		Host:            m.host,
 		Port:            m.port,
 		User:            m.c.String("user", "root"),
 		Password:        m.c.String("password", ""),
-		SemiSyncEnabled: false,
+		SemiSyncEnabled: m.c.Bool("semi_sync", false),
 	})
 
+	// resume replication position from the checkpoint
 	file, offset, err := m.p.Committed()
 	if err != nil {
 		close(ready)
@@ -59,7 +63,6 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// 07c93cd7-a7d3-12a5-94e1-a0369a7c3790:1-313225133
 		set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUuid.String(), 1, 2))
 		syncer, err = m.r.StartSyncGTID(set)
-		panic("not implemented") // TODO
 	} else {
 		syncer, err = m.r.StartSync(mysql.Position{
 			Name: file,
@@ -123,7 +126,6 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		m.m.Events.Mark(1)
 
-		log.Debug("-> %T", ev.Event)
 		// insert into tbtest values(1) will trigger the following events:
 		// QueryEvent    BEGIN, Log position: 4800
 		// TableMapEvent Schema: mydb, Table: tbtest, TableID: 81, Log position: 4844
@@ -173,9 +175,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// known misc types of event
 
 		case *replication.GTIDEvent:
-			if m.GTID {
-				// TODO
-			}
+			// only GTID mode will recv this event
 
 		default:
 			log.Warn("[%s] unexpected event: %+v", m.name, e)
