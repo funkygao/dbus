@@ -32,18 +32,20 @@ func (this *MysqlbinlogInput) Stop() {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	name := r.Name()
 	backoff := time.Second * 5
+
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("starting replication")
+		log.Info("[%s] starting replication", name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
 		select {
 		case <-ready:
 		case <-this.stopChan:
-			log.Trace("yes sir!")
+			log.Trace("[%s] yes sir!", name)
 			return nil
 		}
 
@@ -52,47 +54,47 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
-				log.Trace("yes sir!")
+				log.Trace("[%s] yes sir!", name)
 				return nil
 
 			case err := <-errors:
 				// e,g.
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
-				log.Error("backoff %s: %v", backoff, err)
+				log.Error("[%s] backoff %s: %v", name, backoff, err)
 				this.slave.StopReplication()
 
 				select {
 				case <-time.After(backoff):
 				case <-this.stopChan:
-					log.Trace("yes sir!")
+					log.Trace("[%s] yes sir!", name)
 					return nil
 				}
 				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
 				if !ok {
-					log.Trace("yes sir!")
+					log.Trace("[%s] yes sir!", name)
 					return nil
 				}
 
 				select {
 				case err := <-errors:
 					// TODO is this neccessary?
-					log.Error("backoff %s: %v", backoff, err)
+					log.Error("[%s] backoff %s: %v", name, backoff, err)
 					this.slave.StopReplication()
 
 					select {
 					case <-time.After(backoff):
 					case <-this.stopChan:
-						log.Trace("yes sir!")
+						log.Trace("[%s] yes sir!", name)
 						return nil
 					}
 					goto RESTART_REPLICATION
 
 				case row, ok := <-rows:
 					if !ok {
-						log.Info("event stream closed")
+						log.Info("[%s] event stream closed", name)
 						return nil
 					}
 
@@ -100,7 +102,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					r.Inject(pack)
 
 				case <-this.stopChan:
-					log.Trace("yes sir!")
+					log.Trace("[%s] yes sir!", name)
 					return nil
 				}
 			}
