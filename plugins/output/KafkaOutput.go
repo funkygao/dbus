@@ -81,6 +81,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		row := err.Msg.Value.(*model.RowsEvent)
 		log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
 	})
+
 	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		row := msg.Value.(*model.RowsEvent)
 		this.markAsSent(row)
