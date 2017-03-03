@@ -16,11 +16,10 @@ type slaveMetrics struct {
 }
 
 func newMetrics(host string, port uint16) *slaveMetrics {
-	m := &slaveMetrics{}
-
 	tag := telemetry.Tag(strings.Replace(host, ".", "_", -1), fmt.Sprintf("%d", port), "v1")
-	m.Lag = metrics.NewRegisteredGauge(tag+"mysql.binlog.lag", metrics.DefaultRegistry)
-	m.TPS = metrics.NewRegisteredMeter(tag+"mysql.binlog.tps", metrics.DefaultRegistry)
-	m.Events = metrics.NewRegisteredMeter(tag+"mysql.binlog.evt", metrics.DefaultRegistry)
-	return m
+	return &slaveMetrics{
+		Lag:    metrics.NewRegisteredGauge(tag+"mysql.binlog.lag", metrics.DefaultRegistry),
+		TPS:    metrics.NewRegisteredMeter(tag+"mysql.binlog.tps", metrics.DefaultRegistry),
+		Events: metrics.NewRegisteredMeter(tag+"mysql.binlog.evt", metrics.DefaultRegistry),
+	}
 }

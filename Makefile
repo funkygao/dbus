@@ -1,7 +1,7 @@
 # List special make targets that are not associated with files
 .PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
-VERSION=0.1.2-rc
+VERSION=0.2.0-rc
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
@@ -29,6 +29,7 @@ help:
 	@echo "    make misspell    : Detect commonly misspelled words in source files"
 	@echo "    make astscan     : GO AST scanner"
 	@echo "    make loc         : Line of code"
+	@echo "    make generate    : Recursively invoke go generate"
 	@echo ""
 	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
 	@echo ""
@@ -113,6 +114,7 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/gordonklaus/ineffassign
 	GOPATH=$(GOPATH) go get github.com/client9/misspell/cmd/misspell
 	GOPATH=$(GOPATH) go get github.com/HewlettPackard/gas
+	GOPATH=$(GOPATH) go get github.com/dominikh/go-tools
 
 # Remove any build artifact
 clean:
@@ -122,6 +124,9 @@ clean:
 nuke:
 	rm -rf ./target
 	GOPATH=$(GOPATH) go clean -i ./...
+
+generate:
+	@go generate ./...
 
 # Report the golang line of code
 loc:

@@ -2,6 +2,7 @@ package myslave
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/funkygao/gafka/zk"
@@ -82,7 +83,7 @@ func (z *positionerZk) Committed() (file string, offset uint32, err error) {
 		return
 	}
 
-	if len(data) == 0 {
+	if len(strings.TrimSpace(string(data))) == 0 {
 		// empty data, return default position
 		return
 	}

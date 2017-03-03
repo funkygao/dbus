@@ -40,7 +40,7 @@ func DefaultConfig() *Config {
 	cf.Producer.MaxMessageBytes = 1000000 // 1MB
 	cf.Producer.Timeout = time.Second * 30
 	cf.Producer.Compression = sarama.CompressionNone
-	cf.Producer.Retry.Max = 5
+	cf.Producer.Retry.Max = 3
 	cf.Producer.Retry.Backoff = time.Millisecond * 350
 	cf.Producer.RequiredAcks = sarama.WaitForLocal // default ack
 	cf.Metadata.RefreshFrequency = time.Minute * 10

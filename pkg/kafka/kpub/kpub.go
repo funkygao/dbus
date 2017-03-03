@@ -4,6 +4,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -18,7 +19,6 @@ import (
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/color"
 	"github.com/funkygao/golib/gofmt"
-	"github.com/funkygao/golib/sequence"
 	"github.com/funkygao/golib/signal"
 	"github.com/funkygao/golib/sync2"
 	"github.com/funkygao/log4go"
@@ -28,17 +28,17 @@ var (
 	zone, cluster, topic string
 	ack                  string
 	syncMode             bool
-	maxErrs              int64
 	msgSize              int
 	messages             int
 	sleep                time.Duration
 	slient               bool
+	mute                 bool
+
+	lastOk int64 = -1
 
 	_ sarama.Encoder = &payload{}
 
 	inChan = make(chan sarama.Encoder)
-
-	seq = sequence.New()
 )
 
 type payload struct {
@@ -77,7 +77,7 @@ func init() {
 	flag.StringVar(&topic, "t", "", "topic")
 	flag.StringVar(&ack, "ack", "local", "local|none|all")
 	flag.BoolVar(&syncMode, "sync", false, "sync mode")
-	flag.Int64Var(&maxErrs, "e", 10, "max errors before quit")
+	flag.BoolVar(&mute, "mute", false, "mute")
 	flag.IntVar(&msgSize, "sz", 1024*10, "message size")
 	flag.IntVar(&messages, "n", 1024, "flush messages")
 	flag.BoolVar(&slient, "s", true, "silent mode")
@@ -92,6 +92,11 @@ func init() {
 		sarama.Logger = log.New(os.Stdout, color.Magenta("[Sarama]"), log.LstdFlags|log.Lshortfile)
 	}
 	log4go.SetLevel(log4go.TRACE)
+	log.SetOutput(os.Stdout)
+	if mute {
+		log.SetOutput(ioutil.Discard)
+		log4go.SetLevel(log4go.DEBUG)
+	}
 
 	agent.Start()
 }
@@ -113,21 +118,24 @@ func main() {
 		panic("invalid: " + ack)
 	}
 
-	p := kafka.NewProducer("tester", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
-
 	var (
+		p = kafka.NewProducer("kpub", zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone))).NewCluster(cluster).BrokerList(), cf)
+
 		sent, sentOk sync2.AtomicInt64
 	)
 
 	p.SetErrorHandler(func(err *sarama.ProducerError) {
 		v := err.Msg.Value.(*payload)
-		log.Println(color.Red("no -> %d %s", v.i, err))
+		log.Printf("no -> %d %s", v.i, err)
 	})
 	p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		v := msg.Value.(*payload)
-		log.Println(color.Green("ok -> %d", v.i))
+		log.Printf("ok -> %d", v.i)
+		if lastOk > 0 && v.i != lastOk+1 {
+			log.Printf("broken ok sequence: last=%d curr=%d, %d", lastOk, v.i, lastOk-v.i)
+		}
+		lastOk = v.i
 		sentOk.Add(1)
-		seq.Add(int(v.i))
 	})
 
 	if err := p.Start(); err != nil {
@@ -144,6 +152,7 @@ func main() {
 		})
 	}, syscall.SIGINT)
 
+	// stats reporter
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
@@ -151,6 +160,7 @@ func main() {
 		}
 	}()
 
+	// generate messages
 	go func() {
 		var i int64
 		for {
@@ -159,6 +169,7 @@ func main() {
 		}
 	}()
 
+	// send messages to kafka
 	for {
 		select {
 		case <-closed:
@@ -169,24 +180,20 @@ func main() {
 				goto BYE
 			}
 
+			log.Printf("producer ->> %d", msg.(*payload).i)
 			if err := p.Send(&sarama.ProducerMessage{Topic: topic, Value: msg}); err != nil {
 				log.Println(err)
 				goto BYE
 			}
 
-			log.Println(color.Blue("->> %d", msg.(*payload).i))
 			sent.Add(1)
 			if sleep > 0 {
 				time.Sleep(sleep)
 			}
-
 		}
 	}
 
 BYE:
-	log.Printf("%d/%d, closed with %v", sentOk.Get(), sent.Get(), p.Close())
-
-	min, max, loss := seq.Summary()
-	fmt.Printf("%+v\n", seq)
-	fmt.Printf("min:%d max:%d loss:\n%+v\n", min, max, loss)
+	log4go.Info("tried %d, ok %d, closed with %v", sent.Get(), sentOk.Get(), p.Close())
+	log4go.Close()
 }
