@@ -17,14 +17,16 @@ var (
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
 // slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
-	stopChan       chan struct{}
+	name           string
 	maxEventLength int
+	stopChan       chan struct{}
 
 	slave *myslave.MySlave
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
+	this.name = config.String("name", "")
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
 
@@ -33,26 +35,25 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Stop() {
-	log.Trace("stopping...")
+	log.Trace("[%s] stopping...", this.name)
 	close(this.stopChan)
 	this.slave.StopReplication()
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
-	name := r.Name()
 	backoff := time.Second * 5
 
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("[%s] starting replication...", name)
+		log.Info("[%s] starting replication...", this.name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
 		select {
 		case <-ready:
 		case <-this.stopChan:
-			log.Trace("[%s] yes sir!", name)
+			log.Trace("[%s] yes sir!", this.name)
 			return nil
 		}
 
@@ -61,47 +62,47 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
-				log.Trace("[%s] yes sir!", name)
+				log.Trace("[%s] yes sir!", this.name)
 				return nil
 
 			case err := <-errors:
 				// e,g.
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
-				log.Error("[%s] backoff %s: %v", name, backoff, err)
+				log.Error("[%s] backoff %s: %v", this.name, backoff, err)
 				this.slave.StopReplication()
 
 				select {
 				case <-time.After(backoff):
 				case <-this.stopChan:
-					log.Trace("[%s] yes sir!", name)
+					log.Trace("[%s] yes sir!", this.name)
 					return nil
 				}
 				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
 				if !ok {
-					log.Trace("[%s] yes sir!", name)
+					log.Trace("[%s] yes sir!", this.name)
 					return nil
 				}
 
 				select {
 				case err := <-errors:
 					// TODO is this neccessary?
-					log.Error("[%s] backoff %s: %v", name, backoff, err)
+					log.Error("[%s] backoff %s: %v", this.name, backoff, err)
 					this.slave.StopReplication()
 
 					select {
 					case <-time.After(backoff):
 					case <-this.stopChan:
-						log.Trace("[%s] yes sir!", name)
+						log.Trace("[%s] yes sir!", this.name)
 						return nil
 					}
 					goto RESTART_REPLICATION
 
 				case row, ok := <-rows:
 					if !ok {
-						log.Info("[%s] event stream closed", name)
+						log.Info("[%s] event stream closed", this.name)
 						return nil
 					}
 
@@ -109,12 +110,12 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						pack.Payload = row
 						r.Inject(pack)
 					} else {
-						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
+						log.Warn("[%s] ignored len=%d %s", this.name, row.Length(), row.MetaInfo())
 						pack.Recycle()
 					}
 
 				case <-this.stopChan:
-					log.Trace("[%s] yes sir!", name)
+					log.Trace("[%s] yes sir!", this.name)
 					return nil
 				}
 			}
