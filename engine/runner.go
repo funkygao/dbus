@@ -114,7 +114,13 @@ func (this *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
 }
 
 func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
-	defer wg.Done()
+	defer func() {
+		if err := recover(); err != nil {
+			log.Critical("[%s] %v", this.name, err)
+		}
+
+		wg.Done()
+	}()
 
 	var (
 		pluginType string
