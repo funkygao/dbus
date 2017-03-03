@@ -1,21 +1,22 @@
-// Package batcher provides retriable batch buffer: all succeed or rollback for all.
+// Package batcher provides retriable batch queue: all succeed or rollback for all.
 package batcher
 
 import (
-	"fmt"
 	"sync/atomic"
-	"time"
 )
 
-const backoff = time.Microsecond
-
-// Batcher is a batched lockless queue that borrows design from disruptor.
 //go:generate structlayout github.com/funkygao/dbus/pkg/batcher Batcher
-// TODO padding
+
+// Batcher is a batched lock free queue that borrows design from disruptor.
+// It maintains a queue with the sematics of all succeed and advance or any fails and retry.
 type Batcher struct {
-	capacity   uint32
-	stopped    uint32 // FIXME too much overhead
-	w, r, c    uint32
+	capacity uint32
+	stopped  uint32 // FIXME too much overhead
+
+	// cursors
+	w, r, c uint32
+
+	// counters
 	okN, failN uint32
 
 	// [nil, item1, item2, ..., itemN]
@@ -34,36 +35,32 @@ func NewBatcher(capacity int) *Batcher {
 	}
 }
 
-// String mainly used for debugging.
-func (b *Batcher) String() string {
-	return fmt.Sprintf("%+v", b.contents)
-}
-
-// TODO drain
+// Close closes the batcher from R/W.
 func (b *Batcher) Close() {
 	atomic.StoreUint32(&b.stopped, 1)
 }
 
-func (b *Batcher) Write(v interface{}) error {
-	if atomic.LoadUint32(&b.stopped) == 1 {
-		return ErrStopping
-	}
-
+// Write writes an item to the batcher. If queue is full, it will block till
+// all inflight items marked success.
+func (b *Batcher) Write(item interface{}) error {
 	for atomic.LoadUint32(&b.w) == b.capacity+1 {
-		// tail reached, wait for the current batch complete
-		// FIXME what if Close called
-		time.Sleep(backoff)
+		if atomic.LoadUint32(&b.stopped) == 1 {
+			return ErrStopping
+		}
+
+		// tail reached, wait for the current batch successful completion
+		yield()
 	}
 
 	myIndex := atomic.AddUint32(&b.w, 1) - 1
-	b.contents[myIndex] = v
+	b.contents[myIndex] = item
 
 	// mark the item available for reading
 	atomic.StoreUint32(&b.c, myIndex)
-
 	return nil
 }
 
+// ReadOne read an item from the batcher.
 func (b *Batcher) ReadOne() (interface{}, error) {
 	for {
 		if atomic.LoadUint32(&b.stopped) == 1 {
@@ -75,7 +72,7 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 			// tail reached, but not committed
 			r >= w {
 			// reader out-run writer
-			time.Sleep(backoff)
+			yield()
 		} else {
 			break
 		}
@@ -83,12 +80,18 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 
 	myIndex := atomic.AddUint32(&b.r, 1) - 1
 	for myIndex > atomic.LoadUint32(&b.c) {
-		time.Sleep(backoff)
+		if atomic.LoadUint32(&b.stopped) == 1 {
+			return nil, ErrStopping
+		}
+
+		// reader out-run commit sequence
+		yield()
 	}
 
 	return b.contents[int(myIndex)], nil
 }
 
+// Succeed marks an item handling success.
 func (b *Batcher) Succeed() {
 	ok := atomic.AddUint32(&b.okN, 1)
 	if ok == b.capacity {
@@ -107,6 +110,7 @@ func (b *Batcher) Succeed() {
 
 }
 
+// Fail marks an item handling failure.
 func (b *Batcher) Fail() {
 	fail := atomic.AddUint32(&b.failN, 1)
 	if fail+atomic.LoadUint32(&b.okN) == b.capacity {

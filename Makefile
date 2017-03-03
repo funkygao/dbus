@@ -114,6 +114,7 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/gordonklaus/ineffassign
 	GOPATH=$(GOPATH) go get github.com/client9/misspell/cmd/misspell
 	GOPATH=$(GOPATH) go get github.com/HewlettPackard/gas
+	GOPATH=$(GOPATH) go get github.com/dominikh/go-tools
 
 # Remove any build artifact
 clean:
