@@ -44,7 +44,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	// get the bootstrap broker list
 	zkzone := engine.Globals().GetOrRegisterZkzone(this.zone)
 	zkcluster := zkzone.NewCluster(this.cluster)
-	this.p = kafka.NewProducer(fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic), zkcluster.BrokerList(), cf)
+	this.p = kafka.NewProducer(config.String("name", "undefined"), zkcluster.BrokerList(), cf)
 	this.myslave = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
 }
 
