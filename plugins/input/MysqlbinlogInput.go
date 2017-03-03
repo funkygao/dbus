@@ -56,6 +56,9 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				return nil
 
 			case err := <-errors:
+				// e,g.
+				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
+				// ERROR 1236 (HY000): Could not open log file
 				log.Error("backoff %s: %v", backoff, err)
 				this.slave.StopReplication()
 
@@ -75,6 +78,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 				select {
 				case err := <-errors:
+					// TODO is this neccessary?
 					log.Error("backoff %s: %v", backoff, err)
 					this.slave.StopReplication()
 

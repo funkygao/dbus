@@ -39,6 +39,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  lag
 - [ ] hub is shared, what if a plugin blocks others
 - [ ] Batcher padding
+- [ ] shutdown kafka
 - [ ] filter to dispatch dbs of a single binlog to different output
 - [ ] zk checkpoint vs kafka checkpoint
   - discard MarkAsProcessed
