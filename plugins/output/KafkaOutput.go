@@ -9,7 +9,6 @@ import (
 	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
-	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
@@ -21,7 +20,6 @@ var (
 // KafkaOutput is an Output plugin that send pack to a single specified kafka topic.
 type KafkaOutput struct {
 	zone, cluster, topic string
-	maxMessageSize       int
 	p                    *kafka.Producer
 
 	// FIXME should be shared with MysqlbinlogInput
@@ -38,7 +36,6 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	if this.cluster == "" || this.zone == "" || this.topic == "" {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
-	this.maxMessageSize = config.Int("max_message_size", 1<<20)
 
 	cf := kafka.DefaultConfig()
 	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))

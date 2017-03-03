@@ -17,12 +17,14 @@ var (
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
 // slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
-	stopChan chan struct{}
+	stopChan       chan struct{}
+	maxEventLength int
 
 	slave *myslave.MySlave
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
+	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
 
@@ -104,8 +106,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						return nil
 					}
 
-					pack.Payload = row
-					r.Inject(pack)
+					if row.Length() < this.maxEventLength {
+						pack.Payload = row
+						r.Inject(pack)
+					} else {
+						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
+						pack.Recycle()
+					}
 
 				case <-this.stopChan:
 					log.Trace("[%s] yes sir!", name)
