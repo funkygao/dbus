@@ -10,6 +10,12 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Input = &MysqlbinlogInput{}
+)
+
+// MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
+// slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
 	stopChan chan struct{}
 

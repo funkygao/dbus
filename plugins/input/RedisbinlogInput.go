@@ -7,6 +7,10 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Input = &RedisbinlogInput{}
+)
+
 type RedisbinlogInput struct {
 	stopChan chan struct{}
 }
