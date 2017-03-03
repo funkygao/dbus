@@ -63,15 +63,16 @@ func (b *Batcher) Write(item interface{}) error {
 // ReadOne read an item from the batcher.
 func (b *Batcher) ReadOne() (interface{}, error) {
 	for {
-		if atomic.LoadUint32(&b.stopped) == 1 {
-			return nil, ErrStopping
-		}
-
 		r, w := atomic.LoadUint32(&b.r), atomic.LoadUint32(&b.w)
 		if r == b.capacity+1 ||
 			// tail reached, but not committed
 			r >= w {
 			// reader out-run writer
+
+			if atomic.LoadUint32(&b.stopped) == 1 {
+				return nil, ErrStopping
+			}
+
 			yield()
 		} else {
 			break
