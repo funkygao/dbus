@@ -16,21 +16,13 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-type sentPos struct {
-	Log string
-	Pos uint32
-}
-
 // FIXME tightly coupled with binlog
 type KafkaOutput struct {
 	zone, cluster, topic string
 
 	zkzone *zk.ZkZone
 	p      *kafka.Producer
-
-	pos            *sentPos
-	loadPosOnStart bool
-	err            metrics.Counter
+	err    metrics.Counter
 
 	// FIXME should be shared with MysqlbinlogInput
 	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
@@ -59,17 +51,10 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 
 	key := fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))
 	this.myslave = engine.Globals().Registered(key).(*myslave.MySlave)
-
-	this.pos = &sentPos{}
-	this.loadPosOnStart = config.Bool("load_position", true)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	this.err = metrics.NewRegisteredCounter(telemetry.Tag(this.zone, this.cluster, this.topic)+"dbus.kafka.err", metrics.DefaultRegistry)
-
-	if this.loadPosOnStart {
-		this.loadPosition()
-	}
 
 	this.p.SetErrorHandler(func(err *sarama.ProducerError) {
 		this.err.Inc(1)
@@ -84,7 +69,6 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		row := msg.Value.(*model.RowsEvent)
-		this.markAsSent(row)
 		if err := this.myslave.MarkAsProcessed(row); err != nil {
 			log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 		}
@@ -117,24 +101,17 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				continue
 			}
 
-			// best effort to reduce dup message to kafka
-			if row.Log > this.pos.Log ||
-				(row.Log == this.pos.Log && row.Position > this.pos.Pos) {
-				for {
-					if err := this.p.Send(&sarama.ProducerMessage{
-						Topic: this.topic,
-						Value: row,
-					}); err == nil {
-						break
-					} else {
-						log.Error("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, err)
+			for {
+				if err := this.p.Send(&sarama.ProducerMessage{
+					Topic: this.topic,
+					Value: row,
+				}); err == nil {
+					break
+				} else {
+					log.Error("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, err)
 
-						time.Sleep(time.Millisecond * 500)
-					}
+					time.Sleep(time.Millisecond * 500)
 				}
-			} else {
-				this.markAsSent(row)
-				log.Debug("[%s.%s.%s] skipped {%s}", this.zone, this.cluster, this.topic, row)
 			}
 
 			pack.Recycle()
@@ -142,31 +119,6 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	return nil
-}
-
-func (this *KafkaOutput) loadPosition() {
-	b, err := this.zkzone.NewCluster(this.cluster).TailMessage(this.topic, 0, 1) // FIXME 1 partition allowed only
-	if err != nil {
-		panic(err)
-	}
-
-	if len(b) == 1 {
-		// has checkpoint in kafka
-		row := &model.RowsEvent{}
-		if err := row.Decode(b[0]); err != nil {
-			panic(err)
-		}
-
-		this.pos.Log = row.Log
-		this.pos.Pos = row.Position
-	}
-
-	log.Trace("[%s.%s.%s/0] resumed at %+v", this.zone, this.cluster, this.topic, *this.pos)
-}
-
-func (this *KafkaOutput) markAsSent(row *model.RowsEvent) {
-	this.pos.Log = row.Log
-	this.pos.Pos = row.Position
 }
 
 func init() {

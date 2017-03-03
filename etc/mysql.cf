@@ -30,7 +30,6 @@
         {
             name: "binlog_out"
             class: "KafkaOutput"
-            load_position: true
             zone: "local"
             cluster: "me"
             topic: "foobar"
