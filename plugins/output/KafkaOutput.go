@@ -20,11 +20,9 @@ var (
 // KafkaOutput is an Output plugin that send pack to a single specified kafka topic.
 type KafkaOutput struct {
 	zone, cluster, topic string
-	p                    *kafka.Producer
 
-	// FIXME should be shared with MysqlbinlogInput
-	// currently, KafkaOutput MUST setup master_host/master_port to correctly checkpoint position
-	myslave *myslave.MySlave
+	myslave *myslave.MySlave // FIXME ugly design, coupled with other plugin
+	p       *kafka.Producer
 }
 
 // Init setup KafkaOutput state according to config section.
@@ -47,10 +45,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	zkzone := engine.Globals().GetOrRegisterZkzone(this.zone)
 	zkcluster := zkzone.NewCluster(this.cluster)
 	this.p = kafka.NewProducer(fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic), zkcluster.BrokerList(), cf)
-
-	// FIXME ugly design
-	key := fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))
-	this.myslave = engine.Globals().Registered(key).(*myslave.MySlave)
+	this.myslave = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
 }
 
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {

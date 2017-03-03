@@ -29,8 +29,7 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.slave = myslave.New().LoadConfig(config)
 
 	// so that KafkaOutput can reuse
-	key := fmt.Sprintf("myslave.%s", config.String("name", ""))
-	engine.Globals().Register(key, this.slave)
+	engine.Globals().Register(fmt.Sprintf("myslave.%s", config.String("name", "")), this.slave)
 }
 
 func (this *MysqlbinlogInput) Stop() {
@@ -46,7 +45,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("[%s] starting replication", name)
+		log.Info("[%s] starting replication...", name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
