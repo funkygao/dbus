@@ -9,4 +9,4 @@ build:
 	@mkdir -p var
 
 pprof:
-	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=30
+	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=60

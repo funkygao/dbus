@@ -26,9 +26,6 @@ type PipelinePack struct {
 
 	input bool
 
-	// Used internally to stamp diagnostic information
-	diagnostics *PacketTracking
-
 	// For routing
 	Ident string
 
@@ -40,7 +37,6 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 		recycleChan: recycleChan,
 		refCount:    int32(1),
 		input:       false,
-		diagnostics: NewPacketTracking(),
 	}
 }
 
@@ -55,7 +51,6 @@ func (this PipelinePack) String() string {
 func (this *PipelinePack) Reset() {
 	this.refCount = int32(1)
 	this.input = false
-	this.diagnostics.Reset()
 
 	this.Ident = ""
 	this.Payload = nil

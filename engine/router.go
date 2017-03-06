@@ -113,7 +113,6 @@ LOOP:
 
 			this.stats.update(pack)
 
-			pack.diagnostics.Reset()
 			foundMatch = false
 
 			// If we send pack to filterMatchers and then outputMatchers
@@ -128,7 +127,6 @@ LOOP:
 					foundMatch = true
 
 					pack.incRef()
-					pack.diagnostics.AddStamp(matcher.runner)
 					matcher.InChan() <- pack
 				}
 			}
@@ -142,7 +140,6 @@ LOOP:
 					foundMatch = true
 
 					pack.incRef()
-					pack.diagnostics.AddStamp(matcher.runner)
 					matcher.InChan() <- pack
 				}
 			}

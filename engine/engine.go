@@ -51,9 +51,6 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*pluginWrapper
 
-	// inputPackTracker, filterPackTracker
-	diagnosticTrackers map[string]*diagnosticTracker
-
 	top    *topology
 	router *messageRouter
 
@@ -87,7 +84,6 @@ func New(globals *GlobalConfig) (this *Engine) {
 	this.inputRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
 	this.filterRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
 
-	this.diagnosticTrackers = make(map[string]*diagnosticTracker)
 	this.projects = make(map[string]*Project)
 	this.httpPaths = make([]string, 0, 6)
 
@@ -270,25 +266,14 @@ func (this *Engine) ServeForever() {
 		}
 	}
 
-	// setup the diagnostic trackers
-	inputPackTracker := newDiagnosticTracker("inputPackTracker")
-	this.diagnosticTrackers[inputPackTracker.PoolName] = inputPackTracker
-	filterPackTracker := newDiagnosticTracker("filterPackTracker")
-	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
-
 	log.Trace("initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
 		inputPack := NewPipelinePack(this.inputRecycleChan)
-		inputPackTracker.AddPack(inputPack)
 		this.inputRecycleChan <- inputPack
 
 		filterPack := NewPipelinePack(this.filterRecycleChan)
-		filterPackTracker.AddPack(filterPack)
 		this.filterRecycleChan <- filterPack
 	}
-
-	go inputPackTracker.Run(this.Int("diagnostic_interval", 20))
-	go filterPackTracker.Run(this.Int("diagnostic_interval", 20))
 
 	// check if we have enough recycle pool reservation
 	go func() {
@@ -350,11 +335,6 @@ func (this *Engine) ServeForever() {
 				observer.Publish(SIGUSR2, nil)
 			}
 		}
-	}
-
-	// cleanup after shutdown
-	for _, diag := range this.diagnosticTrackers {
-		diag.Stop()
 	}
 
 	this.Lock()
