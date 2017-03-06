@@ -10,9 +10,10 @@ import (
 	zklib "github.com/samuel/go-zookeeper/zk"
 )
 
-var _ positioner = &positionerZk{}
+var _ positioner = &PositionerZk{}
 
-type positionerZk struct {
+type PositionerZk struct {
+	Name   string `json:"name"`
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 	Owner  string `json:"owner"`
@@ -26,17 +27,18 @@ type positionerZk struct {
 	posPath string // cache
 }
 
-func newPositionerZk(zkzone *zk.ZkZone, masterAddr string, interval time.Duration) *positionerZk {
-	return &positionerZk{
+func newPositionerZk(name string, zkzone *zk.ZkZone, masterAddr string, interval time.Duration) *PositionerZk {
+	return &PositionerZk{
 		masterAddr: masterAddr,
 		interval:   interval,
 		posPath:    posPath(masterAddr),
 		zkzone:     zkzone,
 		Owner:      myNode(),
+		Name:       name,
 	}
 }
 
-func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
+func (z *PositionerZk) MarkAsProcessed(file string, offset uint32) error {
 	z.File = file
 	z.Offset = offset
 	z.birthCry.Set(true)
@@ -49,7 +51,7 @@ func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
 	return nil
 }
 
-func (z *positionerZk) Flush() (err error) {
+func (z *PositionerZk) Flush() (err error) {
 	if !z.birthCry.Get() {
 		return
 	}
@@ -63,7 +65,7 @@ func (z *positionerZk) Flush() (err error) {
 	return
 }
 
-func (z *positionerZk) Committed() (file string, offset uint32, err error) {
+func (z *PositionerZk) Committed() (file string, offset uint32, err error) {
 	var data []byte
 	data, _, err = z.zkzone.Conn().Get(z.posPath)
 	if err != nil {

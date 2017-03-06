@@ -66,7 +66,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 		panic("zone required")
 	}
 	m.z = engine.Globals().GetOrRegisterZkzone(zone)
-	m.p = newPositionerZk(m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+	m.p = newPositionerZk(m.name, m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }
