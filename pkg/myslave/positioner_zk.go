@@ -43,15 +43,7 @@ func (z *positionerZk) MarkAsProcessed(file string, offset uint32) error {
 
 	now := time.Now()
 	if now.Sub(z.lastCommitted) > z.interval {
-		// real commit
-		data, _ := json.Marshal(z)
-		var err error
-		if _, err = z.zkzone.Conn().Set(z.posPath, data, -1); err == zklib.ErrNoNode {
-			_, err = z.zkzone.Conn().Create(z.posPath, data, 0, zklib.WorldACL(zklib.PermAll))
-		}
-
-		z.lastCommitted = now
-		return err
+		return z.Flush()
 	}
 
 	return nil
