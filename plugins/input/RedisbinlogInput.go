@@ -7,6 +7,10 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Input = &RedisbinlogInput{}
+)
+
 type RedisbinlogInput struct {
 	stopChan chan struct{}
 }
@@ -17,8 +21,8 @@ func (this *RedisbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 }
 
-func (this *RedisbinlogInput) Stop() {
-	log.Trace("stop called")
+func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
+	log.Trace("[%s] stopping...", r.Name())
 	close(this.stopChan)
 }
 

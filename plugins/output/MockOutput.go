@@ -9,6 +9,10 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Output = &MockOutput{}
+)
+
 type MockOutput struct {
 	blackhole bool
 }

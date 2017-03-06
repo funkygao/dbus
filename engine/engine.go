@@ -365,7 +365,7 @@ func (this *Engine) ServeForever() {
 		}
 
 		log.Trace("Stop message sent to %s", runner.Name())
-		runner.Input().Stop()
+		runner.Input().Stop(runner)
 	}
 	this.Unlock()
 	inputsWg.Wait() // wait for all inputs done

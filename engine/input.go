@@ -15,7 +15,7 @@ type Input interface {
 	Plugin
 
 	Run(r InputRunner, h PluginHelper) (err error)
-	Stop()
+	Stop(InputRunner)
 }
 
 type InputRunner interface {
@@ -73,7 +73,13 @@ func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 }
 
 func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
-	defer wg.Done()
+	defer func() {
+		if err := recover(); err != nil {
+			log.Critical("[%s] %v", this.name, err)
+		}
+
+		wg.Done()
+	}()
 
 	globals := Globals()
 	for {

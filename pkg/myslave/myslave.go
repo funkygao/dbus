@@ -32,6 +32,7 @@ type MySlave struct {
 	rowsEvent chan *model.RowsEvent
 }
 
+// New creates a MySlave instance.
 func New() *MySlave {
 	return &MySlave{
 		dbExcluded:    map[string]struct{}{},
@@ -39,6 +40,7 @@ func New() *MySlave {
 	}
 }
 
+// LoadConfig initialize internal state according to the config section.
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
@@ -48,6 +50,9 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 	m.name = m.c.String("name", m.masterAddr)
 	m.GTID = m.c.Bool("GTID", false)
+	if m.GTID {
+		panic("GTID not implemented")
+	}
 	for _, db := range config.StringList("db_excluded", nil) {
 		m.dbExcluded[db] = struct{}{}
 	}
@@ -61,19 +66,23 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 		panic("zone required")
 	}
 	m.z = engine.Globals().GetOrRegisterZkzone(zone)
-	m.p = newPositionerZk(m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+	m.p = newPositionerZk(m.name, m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }
 
+// MarkAsProcessed notifies the positioner that a certain binlog event
+// has been successfully processed and should be committed.
 func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
 	return m.p.MarkAsProcessed(r.Log, r.Position)
 }
 
-func (m *MySlave) EventStream() <-chan *model.RowsEvent {
+// Events returns the iterator of mysql binlog rows event.
+func (m *MySlave) Events() <-chan *model.RowsEvent {
 	return m.rowsEvent
 }
 
+// Errors returns the iterator of unexpected errors.
 func (m *MySlave) Errors() <-chan error {
 	return m.errors
 }

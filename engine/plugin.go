@@ -50,7 +50,6 @@ type pluginCommons struct {
 	name     string
 	class    string
 	disabled bool
-	comment  string
 }
 
 func (this *pluginCommons) loadConfig(section *conf.Conf) {
@@ -61,6 +60,5 @@ func (this *pluginCommons) loadConfig(section *conf.Conf) {
 	if this.class = section.String("class", ""); this.class == "" {
 		this.class = this.name
 	}
-	this.comment = section.String("comment", "")
 	this.disabled = section.Bool("disabled", false)
 }

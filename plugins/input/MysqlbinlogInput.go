@@ -10,23 +10,31 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+var (
+	_ engine.Input = &MysqlbinlogInput{}
+)
+
+// MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
+// slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
-	stopChan chan struct{}
+	maxEventLength int
+	stopChan       chan struct{}
 
 	slave *myslave.MySlave
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
+	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
 
 	// so that KafkaOutput can reuse
-	key := fmt.Sprintf("myslave.%s", config.String("name", ""))
-	engine.Globals().Register(key, this.slave)
+	engine.Globals().Register(fmt.Sprintf("myslave.%s", config.String("name", "")), this.slave)
 }
 
-func (this *MysqlbinlogInput) Stop() {
-	log.Trace("stopping...")
+func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
+	log.Trace("[%s] stopping...", r.Name())
+
 	close(this.stopChan)
 	this.slave.StopReplication()
 }
@@ -38,7 +46,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("[%s] starting replication", name)
+		log.Info("[%s] starting replication...", name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
@@ -49,7 +57,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			return nil
 		}
 
-		rows := this.slave.EventStream()
+		rows := this.slave.Events()
 		errors := this.slave.Errors()
 		for {
 			select {
@@ -98,8 +106,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						return nil
 					}
 
-					pack.Payload = row
-					r.Inject(pack)
+					if row.Length() < this.maxEventLength {
+						pack.Payload = row
+						r.Inject(pack)
+					} else {
+						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
+						pack.Recycle()
+					}
 
 				case <-this.stopChan:
 					log.Trace("[%s] yes sir!", name)
