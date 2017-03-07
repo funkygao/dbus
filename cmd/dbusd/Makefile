@@ -11,3 +11,7 @@ build:
 
 pprof:
 	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=60
+
+flame:
+	@go-torch -u http://localhost:10120/debug/pprof/profile --title=dbusd
+	@open torch.svg
