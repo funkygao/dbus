@@ -18,3 +18,13 @@ func BenchmarkPackRecycle(b *testing.B) {
 		p.Recycle()
 	}
 }
+
+func BenchmarkMapGetItem(b *testing.B) {
+	m := map[string]struct{}{
+		"hello": struct{}{},
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = m["hello"]
+	}
+}

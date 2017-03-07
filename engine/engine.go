@@ -339,7 +339,7 @@ func (e *Engine) ServeForever() {
 	e.Lock()
 	for _, inputRunner := range e.InputRunners {
 		if inputRunner == nil {
-			// e Input plugin already exit
+			// the Input plugin already exit
 			continue
 		}
 

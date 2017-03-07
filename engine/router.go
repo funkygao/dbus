@@ -10,6 +10,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
+// messageRouter is the router/hub shared among all plugins.
 type messageRouter struct {
 	hub chan *PipelinePack
 
