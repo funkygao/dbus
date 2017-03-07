@@ -12,7 +12,7 @@ import (
 
 // messageRouter is the router/hub shared among all plugins.
 type messageRouter struct {
-	hub chan *PipelinePack
+	hub chan *Packet
 
 	stats routerStats
 
@@ -25,7 +25,7 @@ type messageRouter struct {
 
 func newMessageRouter() *messageRouter {
 	return &messageRouter{
-		hub:                 make(chan *PipelinePack, Globals().PluginChanSize),
+		hub:                 make(chan *Packet, Globals().PluginChanSize),
 		stats:               routerStats{},
 		removeFilterMatcher: make(chan *matcher),
 		removeOutputMatcher: make(chan *matcher),
@@ -72,7 +72,7 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 	var (
 		globals    = Globals()
 		ok         = true
-		pack       *PipelinePack
+		pack       *Packet
 		ticker     *time.Ticker
 		matcher    *matcher
 		foundMatch bool
@@ -183,7 +183,7 @@ type routerStats struct {
 	PeriodMaxMsgBytes    int64
 }
 
-func (rs *routerStats) update(pack *PipelinePack) {
+func (rs *routerStats) update(pack *Packet) {
 	atomic.AddInt64(&rs.TotalProcessedMsgN, 1)
 	atomic.AddInt32(&rs.PeriodProcessedMsgN, 1)
 

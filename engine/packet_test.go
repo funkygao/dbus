@@ -6,9 +6,9 @@ import (
 
 func BenchmarkPackRecycle(b *testing.B) {
 	poolSize := 100
-	inChan := make(chan *PipelinePack, poolSize)
+	inChan := make(chan *Packet, poolSize)
 	for i := 0; i < poolSize; i++ {
-		pack := NewPipelinePack(inChan)
+		pack := NewPacket(inChan)
 		inChan <- pack
 	}
 

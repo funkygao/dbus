@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 )
 
-//go:generate structlayout github.com/funkygao/dbus/engine PipelinePack
+//go:generate structlayout github.com/funkygao/dbus/engine Packet
 
-// Payloader defines the contract of PipelinePack payload.
+// Payloader defines the contract of Packet payload.
 // Any plugin transferrable data must implement this interface.
 type Payloader interface {
 	// Length returns the size of the payload in bytes.
@@ -21,10 +21,10 @@ type Payloader interface {
 	String() string
 }
 
-// PipelinePack is the pipeline data structure that is transferred between plugins.
+// Packet is the pipeline data structure that is transferred between plugins.
 // TODO padding, false sharing
-type PipelinePack struct {
-	recycleChan chan *PipelinePack
+type Packet struct {
+	recycleChan chan *Packet
 
 	refCount int32
 	input    bool
@@ -33,32 +33,33 @@ type PipelinePack struct {
 	Ident string
 
 	Payload Payloader
+	//	buf     []byte TODO
 }
 
-func NewPipelinePack(recycleChan chan *PipelinePack) *PipelinePack {
-	return &PipelinePack{
+func NewPacket(recycleChan chan *Packet) *Packet {
+	return &Packet{
 		recycleChan: recycleChan,
 		refCount:    int32(1),
 		input:       false,
 	}
 }
 
-func (p *PipelinePack) incRef() {
+func (p *Packet) incRef() {
 	atomic.AddInt32(&p.refCount, 1)
 }
 
-func (p PipelinePack) String() string {
+func (p Packet) String() string {
 	return fmt.Sprintf("{%s, %+v, %s}", p.Ident, p.input, p.Payload)
 }
 
-func (p *PipelinePack) Reset() {
+func (p *Packet) Reset() {
 	p.refCount = int32(1)
 	p.input = false
 	p.Ident = ""
 	p.Payload = nil
 }
 
-func (p *PipelinePack) Recycle() {
+func (p *Packet) Recycle() {
 	if atomic.AddInt32(&p.refCount, -1) == 0 {
 		p.Reset()
 

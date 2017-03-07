@@ -21,21 +21,21 @@ type Input interface {
 type InputRunner interface {
 	PluginRunner
 
-	// InChan returns input channel from which Inputs can get fresh PipelinePacks.
-	InChan() chan *PipelinePack
+	// InChan returns input channel from which Inputs can get fresh Packets.
+	InChan() chan *Packet
 
 	// Input returns the associated Input plugin object.
 	Input() Input
 
-	// Injects PipelinePack into the Router's input channel for delivery
+	// Injects Packet into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
-	Inject(pack *PipelinePack)
+	Inject(pack *Packet)
 }
 
 type iRunner struct {
 	pRunnerBase
 
-	inChan chan *PipelinePack
+	inChan chan *Packet
 }
 
 func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
@@ -48,7 +48,7 @@ func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r I
 	}
 }
 
-func (ir *iRunner) Inject(pack *PipelinePack) {
+func (ir *iRunner) Inject(pack *Packet) {
 	pack.input = true
 	if pack.Ident == "" {
 		pack.Ident = ir.name
@@ -56,7 +56,7 @@ func (ir *iRunner) Inject(pack *PipelinePack) {
 	ir.engine.router.hub <- pack
 }
 
-func (ir *iRunner) InChan() chan *PipelinePack {
+func (ir *iRunner) InChan() chan *Packet {
 	return ir.inChan
 }
 

@@ -54,8 +54,8 @@ type Engine struct {
 	top    *topology
 	router *messageRouter
 
-	inputRecycleChan  chan *PipelinePack
-	filterRecycleChan chan *PipelinePack
+	inputRecycleChan  chan *Packet
+	filterRecycleChan chan *Packet
 
 	hostname string
 	pid      int
@@ -82,8 +82,8 @@ func New(globals *GlobalConfig) *Engine {
 		OutputRunners:  make(map[string]OutputRunner),
 		outputWrappers: make(map[string]*pluginWrapper),
 
-		inputRecycleChan:  make(chan *PipelinePack, globals.RecyclePoolSize),
-		filterRecycleChan: make(chan *PipelinePack, globals.RecyclePoolSize),
+		inputRecycleChan:  make(chan *Packet, globals.RecyclePoolSize),
+		filterRecycleChan: make(chan *Packet, globals.RecyclePoolSize),
 
 		top:    newTopology(),
 		router: newMessageRouter(),
@@ -265,12 +265,12 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
-	log.Trace("initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
+	log.Trace("initializing Packet pool with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
-		inputPack := NewPipelinePack(e.inputRecycleChan)
+		inputPack := NewPacket(e.inputRecycleChan)
 		e.inputRecycleChan <- inputPack
 
-		filterPack := NewPipelinePack(e.filterRecycleChan)
+		filterPack := NewPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack
 	}
 
