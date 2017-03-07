@@ -87,7 +87,7 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 		}
 	}()
 
-	log.Trace("Router started with ticker=%s", globals.WatchdogTick)
+	log.Trace("Router started with watchdog ticker=%s", globals.WatchdogTick)
 
 	ticker = time.NewTicker(globals.WatchdogTick)
 	defer ticker.Stop()
@@ -171,46 +171,32 @@ func (r *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
 }
 
 type routerStats struct {
-	TotalInputMsgN       int64
-	PeriodInputMsgN      int32
-	TotalInputBytes      int64
-	PeriodInputBytes     int64
-	TotalProcessedBytes  int64
-	TotalProcessedMsgN   int64 // 16 BilionBillion
-	PeriodProcessedMsgN  int32
-	PeriodProcessedBytes int64
-	TotalMaxMsgBytes     int64
-	PeriodMaxMsgBytes    int64
+	PeriodInputMsgN     int32
+	PeriodInputBytes    int64
+	TotalProcessedBytes int64
+	TotalProcessedMsgN  int64 // 16 BilionBillion
 }
 
 func (rs *routerStats) update(pack *Packet) {
+	msgBytes := int64(pack.Payload.Length())
+	atomic.AddInt64(&rs.TotalProcessedBytes, msgBytes)
 	atomic.AddInt64(&rs.TotalProcessedMsgN, 1)
-	atomic.AddInt32(&rs.PeriodProcessedMsgN, 1)
 
 	if pack.input {
-		atomic.AddInt64(&rs.TotalInputMsgN, 1)
 		atomic.AddInt32(&rs.PeriodInputMsgN, 1)
-		atomic.AddInt64(&rs.TotalInputBytes, int64(pack.Payload.Length()))
-		atomic.AddInt64(&rs.PeriodInputBytes, int64(pack.Payload.Length()))
+		atomic.AddInt64(&rs.PeriodInputBytes, msgBytes)
 	}
 }
 
 func (rs *routerStats) resetPeriodCounters() {
-	rs.PeriodProcessedBytes = int64(0)
 	rs.PeriodInputBytes = int64(0)
 	rs.PeriodInputMsgN = int32(0)
-	rs.PeriodProcessedMsgN = int32(0)
-	rs.PeriodMaxMsgBytes = int64(0)
 }
 
 func (rs *routerStats) render(elapsed int) {
-	log.Trace("Total:%10s %10s speed:%6s/s %10s/s max: %s/%s",
+	log.Trace("Total:%10s %10s",
 		gofmt.Comma(rs.TotalProcessedMsgN),
-		gofmt.ByteSize(rs.TotalProcessedBytes),
-		gofmt.Comma(int64(rs.PeriodProcessedMsgN/int32(elapsed))),
-		gofmt.ByteSize(rs.PeriodProcessedBytes/int64(elapsed)),
-		gofmt.ByteSize(rs.PeriodMaxMsgBytes),
-		gofmt.ByteSize(rs.TotalMaxMsgBytes))
+		gofmt.ByteSize(rs.TotalProcessedBytes))
 	log.Trace("Input:%10s %10s speed:%6s/s %10s/s",
 		gofmt.Comma(int64(rs.PeriodInputMsgN)),
 		gofmt.ByteSize(rs.PeriodInputBytes),

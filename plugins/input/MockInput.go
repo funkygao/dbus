@@ -1,6 +1,8 @@
 package input
 
 import (
+	"strings"
+
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
@@ -25,7 +27,7 @@ func (this *MockInput) Stop(r engine.InputRunner) {
 }
 
 func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
-	payload := model.Bytes("hello world")
+	payload := model.Bytes(strings.Repeat("X", 1<<10))
 	for {
 		select {
 		case <-this.stopChan:

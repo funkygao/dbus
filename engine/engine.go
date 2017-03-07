@@ -381,7 +381,7 @@ func (e *Engine) ServeForever() {
 		project.Stop()
 	}
 
-	log.Info("shutdown with input:%s, dispatched:%s",
-		gofmt.Comma(atomic.LoadInt64(&e.router.stats.TotalInputMsgN)),
+	log.Info("shutdown, dispatched: %s, %sp",
+		gofmt.ByteSize(atomic.LoadInt64(&e.router.stats.TotalProcessedBytes)),
 		gofmt.Comma(atomic.LoadInt64(&e.router.stats.TotalProcessedMsgN)))
 }
