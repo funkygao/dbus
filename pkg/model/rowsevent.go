@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/Shopify/sarama"
@@ -12,6 +11,8 @@ var (
 	_ engine.Payloader = &RowsEvent{}
 	_ sarama.Encoder   = &RowsEvent{}
 )
+
+//go:generate ffjson -force-regenerate $GOFILE
 
 // RowsEvent is a structured mysql binlog rows event.
 // It implements engine.Payloader interface and can be transferred between plugins.
@@ -36,7 +37,7 @@ type RowsEvent struct {
 
 func (r *RowsEvent) ensureEncoded() {
 	if r.encoded == nil {
-		r.encoded, r.err = json.Marshal(r)
+		r.encoded, r.err = r.MarshalJSON()
 	}
 }
 
@@ -53,10 +54,6 @@ func (r *RowsEvent) MetaInfo() string {
 func (r *RowsEvent) Encode() (b []byte, err error) {
 	r.ensureEncoded()
 	return r.encoded, r.err
-}
-
-func (r *RowsEvent) Decode(b []byte) error {
-	return json.Unmarshal(b, r)
 }
 
 // Implements engine.Payloader and sarama.Encoder.

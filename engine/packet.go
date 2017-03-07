@@ -5,8 +5,6 @@ import (
 	"sync/atomic"
 )
 
-//go:generate structlayout github.com/funkygao/dbus/engine Packet
-
 // Payloader defines the contract of Packet payload.
 // Any plugin transferrable data must implement this interface.
 type Payloader interface {
@@ -64,6 +62,7 @@ func (p *Packet) Recycle() {
 		p.Reset()
 
 		// reuse this pack to avoid re-alloc
+		// if recycleChan is full, will block
 		p.recycleChan <- p
 	}
 }

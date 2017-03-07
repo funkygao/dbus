@@ -115,6 +115,7 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/client9/misspell/cmd/misspell
 	GOPATH=$(GOPATH) go get github.com/HewlettPackard/gas
 	GOPATH=$(GOPATH) go get github.com/dominikh/go-tools
+	GOPATH=$(GOPATH) go get github.com/pquerna/ffjson
 
 # Remove any build artifact
 clean:
@@ -133,5 +134,5 @@ loc:
 	@find . -name "*.go" | xargs wc -l | tail -1
 
 # Install dbsud to $GOPATH/bin
-install:
+install:generate
 	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
