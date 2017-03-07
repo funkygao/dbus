@@ -32,7 +32,7 @@ type PipelinePack struct {
 	Payload Payloader
 }
 
-func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
+func NewPipelinePack(recycleChan chan *PipelinePack) *PipelinePack {
 	return &PipelinePack{
 		recycleChan: recycleChan,
 		refCount:    int32(1),
@@ -40,29 +40,28 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
 	}
 }
 
-func (this *PipelinePack) incRef() {
-	atomic.AddInt32(&this.refCount, 1)
+func (p *PipelinePack) incRef() {
+	atomic.AddInt32(&p.refCount, 1)
 }
 
-func (this PipelinePack) String() string {
-	return fmt.Sprintf("{%s, %+v, %s}", this.Ident, this.input, this.Payload)
+func (p PipelinePack) String() string {
+	return fmt.Sprintf("{%s, %+v, %s}", p.Ident, p.input, p.Payload)
 }
 
-func (this *PipelinePack) Reset() {
-	this.refCount = int32(1)
-	this.input = false
-
-	this.Ident = ""
-	this.Payload = nil
+func (p *PipelinePack) Reset() {
+	p.refCount = int32(1)
+	p.input = false
+	p.Ident = ""
+	p.Payload = nil
 }
 
-func (this *PipelinePack) Recycle() {
-	count := atomic.AddInt32(&this.refCount, -1)
+func (p *PipelinePack) Recycle() {
+	count := atomic.AddInt32(&p.refCount, -1)
 	if count == 0 {
-		this.Reset()
+		p.Reset()
 
 		// reuse this pack to avoid re-alloc
-		this.recycleChan <- this
+		p.recycleChan <- p
 	} else if count < 0 {
 		fmt.Println("reference count below zero")
 	}

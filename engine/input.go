@@ -48,34 +48,34 @@ func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r I
 	}
 }
 
-func (this *iRunner) Inject(pack *PipelinePack) {
+func (ir *iRunner) Inject(pack *PipelinePack) {
 	pack.input = true
 	if pack.Ident == "" {
-		pack.Ident = this.name
+		pack.Ident = ir.name
 	}
-	this.engine.router.hub <- pack
+	ir.engine.router.hub <- pack
 }
 
-func (this *iRunner) InChan() chan *PipelinePack {
-	return this.inChan
+func (ir *iRunner) InChan() chan *PipelinePack {
+	return ir.inChan
 }
 
-func (this *iRunner) Input() Input {
-	return this.plugin.(Input)
+func (ir *iRunner) Input() Input {
+	return ir.plugin.(Input)
 }
 
-func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
-	this.engine = e
-	this.inChan = e.inputRecycleChan
+func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
+	ir.engine = e
+	ir.inChan = e.inputRecycleChan
 
-	go this.runMainloop(e, wg)
+	go ir.runMainloop(e, wg)
 	return nil
 }
 
-func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
+func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", this.name, err)
+			log.Critical("[%s] %v", ir.name, err)
 		}
 
 		wg.Done()
@@ -83,33 +83,33 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Trace("Input[%s] starting", this.name)
-		if err := this.Input().Run(this, e); err == nil {
-			log.Trace("Input[%s] stopped", this.name)
+		log.Trace("Input[%s] starting", ir.name)
+		if err := ir.Input().Run(ir, e); err == nil {
+			log.Trace("Input[%s] stopped", ir.name)
 		} else {
-			log.Trace("Input[%s] stopped: %v", this.name, err)
+			log.Trace("Input[%s] stopped: %v", ir.name, err)
 		}
 
 		if globals.Stopping {
-			e.stopInputRunner(this.name)
+			e.stopInputRunner(ir.name)
 
 			return
 		}
 
-		if restart, ok := this.plugin.(Restarting); ok {
+		if restart, ok := ir.plugin.(Restarting); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
-				e.stopInputRunner(this.name)
+				e.stopInputRunner(ir.name)
 
 				return
 			}
 		}
 
-		log.Trace("Input[%s] restarting", this.name)
+		log.Trace("Input[%s] restarting", ir.name)
 
 		// Re-initialize our plugin with its wrapper
-		iw := e.inputWrappers[this.name]
-		this.plugin = iw.Create()
+		iw := e.inputWrappers[ir.name]
+		ir.plugin = iw.Create()
 	}
 
 }
