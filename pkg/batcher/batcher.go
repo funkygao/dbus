@@ -11,17 +11,30 @@ import (
 // Batcher is a batched lock free queue that borrows design from disruptor.
 // It maintains a queue with the sematics of all succeed and advance or any fails and retry.
 type Batcher struct {
-	capacity uint32
-	stopped  uint32 // FIXME too much overhead
+	_padding0 [8]uint64
+	capacity  uint32
 
-	// cursors
-	w, r, c uint32
+	_padding1 [8]uint64
+	stopped   uint32
 
-	// counters
-	okN, failN uint32
+	_padding2 [8]uint64
+	w         uint32
+
+	_padding3 [8]uint64
+	r         uint32
+
+	_padding4 [8]uint64
+	c         uint32
+
+	_padding5 [8]uint64
+	okN       uint32
+
+	_padding6 [8]uint64
+	failN     uint32
 
 	// [nil, item1, item2, ..., itemN]
-	contents []interface{}
+	_padding7 [8]uint64
+	contents  []interface{}
 }
 
 // NewBatcher create a new smart batcher instance.
