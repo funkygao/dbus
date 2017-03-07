@@ -163,8 +163,6 @@ func (this *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) 
 		if m == matcher {
 			log.Trace("closing matcher for %s", m.runner.Name())
 
-			// in golang, close means we can no longer send to that chan
-			// but consumers can still recv from the chan
 			close(m.InChan())
 			matchers[idx] = nil
 			return

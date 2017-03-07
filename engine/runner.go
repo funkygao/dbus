@@ -133,12 +133,20 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 			log.Trace("Filter[%s] starting", this.name)
 
 			pluginType = "filter"
-			log.Trace("Filter[%s] stopped: %v", this.name, filter.Run(this, this.engine))
+			if err := filter.Run(this, this.engine); err != nil {
+				log.Trace("Filter[%s] stopped: %v", this.name, err)
+			} else {
+				log.Trace("Filter[%s] stopped", this.name)
+			}
 		} else if output, ok := this.plugin.(Output); ok {
 			log.Trace("Output[%s] starting", this.name)
 
 			pluginType = "output"
-			log.Trace("Output[%s] stopped: %v", this.name, output.Run(this, this.engine))
+			if err := output.Run(this, this.engine); err != nil {
+				log.Trace("Output[%s] stopped: %v", this.name, err)
+			} else {
+				log.Trace("Output[%s] stopped", this.name)
+			}
 		} else {
 			panic("unknown plugin type")
 		}

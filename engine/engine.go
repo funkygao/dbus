@@ -360,7 +360,9 @@ func (this *Engine) ServeForever() {
 		this.router.removeFilterMatcher <- runner.getMatcher()
 	}
 	filtersWg.Wait()
-	log.Trace("all Filters stopped")
+	if len(this.FilterRunners) > 0 {
+		log.Trace("all Filters stopped")
+	}
 
 	for _, runner := range this.OutputRunners {
 		log.Trace("Stop message sent to %s", runner.Name())

@@ -84,7 +84,11 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	globals := Globals()
 	for {
 		log.Trace("Input[%s] starting", this.name)
-		log.Trace("Input[%s] stopped: %v", this.name, this.Input().Run(this, e))
+		if err := this.Input().Run(this, e); err == nil {
+			log.Trace("Input[%s] stopped", this.name)
+		} else {
+			log.Trace("Input[%s] stopped: %v", this.name, err)
+		}
 
 		if globals.Stopping {
 			e.stopInputRunner(this.name)
