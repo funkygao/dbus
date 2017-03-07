@@ -1,4 +1,5 @@
-mock:build
+mock:
+	@go build
 	./dbusd -conf ../../etc/mock.cf
 
 mysql:build
@@ -9,4 +10,8 @@ build:
 	@mkdir -p var
 
 pprof:
-	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=30
+	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=60
+
+flame:
+	@go-torch -u http://localhost:10120/debug/pprof/profile --title=dbusd
+	@open torch.svg

@@ -1,4 +1,5 @@
 // Package batcher provides retriable batch queue: all succeed or rollback for all.
+// In kafka it is called RecordAccumulator.
 package batcher
 
 import (

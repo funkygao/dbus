@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 )
 
+//go:generate structlayout github.com/funkygao/dbus/engine PipelinePack
+
 // Payloader defines the contract of PipelinePack payload.
 // Any plugin transferrable data must implement this interface.
 type Payloader interface {
@@ -20,14 +22,12 @@ type Payloader interface {
 }
 
 // PipelinePack is the pipeline data structure that is transferred between plugins.
+// TODO padding
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
-	refCount    int32
 
-	input bool
-
-	// Used internally to stamp diagnostic information
-	diagnostics *PacketTracking
+	refCount int32
+	input    bool
 
 	// For routing
 	Ident string
@@ -35,40 +35,34 @@ type PipelinePack struct {
 	Payload Payloader
 }
 
-func NewPipelinePack(recycleChan chan *PipelinePack) (this *PipelinePack) {
+func NewPipelinePack(recycleChan chan *PipelinePack) *PipelinePack {
 	return &PipelinePack{
 		recycleChan: recycleChan,
 		refCount:    int32(1),
 		input:       false,
-		diagnostics: NewPacketTracking(),
 	}
 }
 
-func (this *PipelinePack) incRef() {
-	atomic.AddInt32(&this.refCount, 1)
+func (p *PipelinePack) incRef() {
+	atomic.AddInt32(&p.refCount, 1)
 }
 
-func (this PipelinePack) String() string {
-	return fmt.Sprintf("{%s, %+v, %s}", this.Ident, this.input, this.Payload)
+func (p PipelinePack) String() string {
+	return fmt.Sprintf("{%s, %+v, %s}", p.Ident, p.input, p.Payload)
 }
 
-func (this *PipelinePack) Reset() {
-	this.refCount = int32(1)
-	this.input = false
-	this.diagnostics.Reset()
-
-	this.Ident = ""
-	this.Payload = nil
+func (p *PipelinePack) Reset() {
+	p.refCount = int32(1)
+	p.input = false
+	p.Ident = ""
+	p.Payload = nil
 }
 
-func (this *PipelinePack) Recycle() {
-	count := atomic.AddInt32(&this.refCount, -1)
-	if count == 0 {
-		this.Reset()
+func (p *PipelinePack) Recycle() {
+	if atomic.AddInt32(&p.refCount, -1) == 0 {
+		p.Reset()
 
 		// reuse this pack to avoid re-alloc
-		this.recycleChan <- this
-	} else if count < 0 {
-		fmt.Println("reference count below zero")
+		p.recycleChan <- p
 	}
 }

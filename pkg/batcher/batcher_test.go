@@ -92,8 +92,8 @@ func BenchmarkAtomicCAS(b *testing.B) {
 	}
 }
 
-func BenchmarkBatcherReadWrite(b *testing.B) {
-	batcher := NewBatcher(10)
+func BenchmarkBatcherReadOneWithBatchSize100(b *testing.B) {
+	batcher := NewBatcher(100)
 	go func() {
 		for {
 			batcher.Write(1)
@@ -107,5 +107,41 @@ func BenchmarkBatcherReadWrite(b *testing.B) {
 			panic(err)
 		}
 		batcher.Succeed()
+	}
+}
+
+func BenchmarkBatcherWriteWithBatchSize100(b *testing.B) {
+	batcher := NewBatcher(100)
+	go func() {
+		for {
+			_, err := batcher.ReadOne()
+			if err != nil {
+				panic(err)
+			}
+			batcher.Succeed()
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		batcher.Write(1)
+	}
+}
+
+func BenchmarkBatcherWriteWithBatchSize1000(b *testing.B) {
+	batcher := NewBatcher(1000)
+	go func() {
+		for {
+			_, err := batcher.ReadOne()
+			if err != nil {
+				panic(err)
+			}
+			batcher.Succeed()
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		batcher.Write(1)
 	}
 }

@@ -25,6 +25,7 @@ func (this *MockInput) Stop(r engine.InputRunner) {
 }
 
 func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	payload := model.Bytes("hello world")
 	for {
 		select {
 		case <-this.stopChan:
@@ -36,7 +37,7 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				break
 			}
 
-			pack.Payload = model.Bytes("hello world")
+			pack.Payload = payload
 			r.Inject(pack)
 		}
 	}

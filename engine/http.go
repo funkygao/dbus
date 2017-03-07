@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/funkygao/golib/bjtime"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
@@ -35,6 +34,13 @@ func (this *Engine) launchHttpServ() {
 
 	go this.httpServer.Serve(this.httpListener)
 	log.Info("API server ready on http://%s", this.httpServer.Addr)
+}
+
+func (this *Engine) stopHttpServ() {
+	if this.httpListener != nil {
+		this.httpListener.Close()
+		log.Trace("API server stopped")
+	}
 }
 
 func (this *Engine) pluginNames() (names []string) {
@@ -84,17 +90,6 @@ func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
 		output["elapsed"] = time.Since(globals.StartedAt).String()
 		output["pid"] = this.pid
 		output["hostname"] = this.hostname
-
-	case "pools":
-		for poolName := range this.diagnosticTrackers {
-			packs := make([]string, 0, globals.RecyclePoolSize)
-			for _, pack := range this.diagnosticTrackers[poolName].packs {
-				s := fmt.Sprintf("[%s]%s", bjtime.TimeToString(pack.diagnostics.LastAccess), *pack)
-				packs = append(packs, s)
-			}
-			output[poolName] = packs
-			output[poolName+"_len"] = len(packs)
-		}
 
 	case "plugins":
 		output["plugins"] = this.pluginNames()
@@ -181,11 +176,4 @@ func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (
 	}
 
 	return params, nil
-}
-
-func (this *Engine) stopHttpServ() {
-	if this.httpListener != nil {
-		this.httpListener.Close()
-		log.Trace("API server stopped")
-	}
 }

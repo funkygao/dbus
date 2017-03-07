@@ -11,8 +11,7 @@ import (
 
 var (
 	options struct {
-		debug  bool
-		dryrun bool
+		debug bool
 
 		configfile    string
 		showversion   bool
@@ -40,7 +39,6 @@ func parseFlags() {
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
-	flag.BoolVar(&options.dryrun, "dryrun", false, "dry run")
 	flag.IntVar(&options.mpoolSize, "mpool", 100, "memory pool size")
 	flag.IntVar(&options.ppoolSize, "ppool", 150, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
