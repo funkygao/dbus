@@ -54,10 +54,7 @@ type Engine struct {
 	top    *topology
 	router *messageRouter
 
-	// PipelinePack supply for Input plugins.
-	inputRecycleChan chan *PipelinePack
-
-	// PipelinePack supply for Filter plugins.
+	inputRecycleChan  chan *PipelinePack
 	filterRecycleChan chan *PipelinePack
 
 	hostname string
@@ -250,20 +247,20 @@ func (e *Engine) ServeForever() {
 		}()
 	}
 
-	for _, runner := range e.OutputRunners {
-		log.Trace("launching Output[%s]...", runner.Name())
+	for _, outputRunner := range e.OutputRunners {
+		log.Trace("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = runner.start(e, outputsWg); err != nil {
+		if err = outputRunner.start(e, outputsWg); err != nil {
 			panic(err)
 		}
 	}
 
-	for _, runner := range e.FilterRunners {
-		log.Trace("launching Filter[%s]...", runner.Name())
+	for _, filterRunner := range e.FilterRunners {
+		log.Trace("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = runner.start(e, filtersWg); err != nil {
+		if err = filterRunner.start(e, filtersWg); err != nil {
 			panic(err)
 		}
 	}
@@ -288,7 +285,7 @@ func (e *Engine) ServeForever() {
 			inputPoolSize = len(e.inputRecycleChan)
 			filterPoolSize = len(e.filterRecycleChan)
 			if inputPoolSize == 0 || filterPoolSize == 0 {
-				log.Trace("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
+				log.Warn("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
 			}
 		}
 	}()
@@ -303,11 +300,11 @@ func (e *Engine) ServeForever() {
 		project.Start()
 	}
 
-	for _, runner := range e.InputRunners {
-		log.Trace("launching Input[%s]...", runner.Name())
+	for _, inputRunner := range e.InputRunners {
+		log.Trace("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = runner.start(e, inputsWg); err != nil {
+		if err = inputRunner.start(e, inputsWg); err != nil {
 			inputsWg.Done()
 			panic(err)
 		}
@@ -340,14 +337,14 @@ func (e *Engine) ServeForever() {
 	}
 
 	e.Lock()
-	for _, runner := range e.InputRunners {
-		if runner == nil {
+	for _, inputRunner := range e.InputRunners {
+		if inputRunner == nil {
 			// e Input plugin already exit
 			continue
 		}
 
-		log.Trace("Stop message sent to %s", runner.Name())
-		runner.Input().Stop(runner)
+		log.Trace("Stop message sent to %s", inputRunner.Name())
+		inputRunner.Input().Stop(inputRunner)
 	}
 	e.Unlock()
 	inputsWg.Wait() // wait for all inputs done
@@ -357,18 +354,18 @@ func (e *Engine) ServeForever() {
 	// still may be filter injected packs and output not consumed packs
 	// we must wait for all the packs to be consumed before shutdown
 
-	for _, runner := range e.FilterRunners {
-		log.Trace("Stop message sent to %s", runner.Name())
-		e.router.removeFilterMatcher <- runner.getMatcher()
+	for _, filterRunner := range e.FilterRunners {
+		log.Trace("Stop message sent to %s", filterRunner.Name())
+		e.router.removeFilterMatcher <- filterRunner.getMatcher()
 	}
 	filtersWg.Wait()
 	if len(e.FilterRunners) > 0 {
 		log.Trace("all Filters stopped")
 	}
 
-	for _, runner := range e.OutputRunners {
-		log.Trace("Stop message sent to %s", runner.Name())
-		e.router.removeOutputMatcher <- runner.getMatcher()
+	for _, outputRunner := range e.OutputRunners {
+		log.Trace("Stop message sent to %s", outputRunner.Name())
+		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
 	log.Trace("all Outputs stopped")

@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 )
 
+//go:generate structlayout github.com/funkygao/dbus/engine PipelinePack
+
 // Payloader defines the contract of PipelinePack payload.
 // Any plugin transferrable data must implement this interface.
 type Payloader interface {
@@ -20,11 +22,11 @@ type Payloader interface {
 }
 
 // PipelinePack is the pipeline data structure that is transferred between plugins.
+// TODO padding
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
 	refCount    int32
-
-	input bool
+	input       bool
 
 	// For routing
 	Ident string

@@ -36,6 +36,13 @@ func (this *Engine) launchHttpServ() {
 	log.Info("API server ready on http://%s", this.httpServer.Addr)
 }
 
+func (this *Engine) stopHttpServ() {
+	if this.httpListener != nil {
+		this.httpListener.Close()
+		log.Trace("API server stopped")
+	}
+}
+
 func (this *Engine) pluginNames() (names []string) {
 	names = make([]string, 0, 20)
 	for _, pr := range this.InputRunners {
@@ -169,11 +176,4 @@ func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (
 	}
 
 	return params, nil
-}
-
-func (this *Engine) stopHttpServ() {
-	if this.httpListener != nil {
-		this.httpListener.Close()
-		log.Trace("API server stopped")
-	}
 }
