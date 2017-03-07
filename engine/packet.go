@@ -20,17 +20,22 @@ type Payloader interface {
 }
 
 // Packet is the pipeline data structure that is transferred between plugins.
-// TODO padding, false sharing
 type Packet struct {
+	_padding0   [8]uint64 // avoid false sharing, although with little effects
 	recycleChan chan *Packet
 
-	refCount int32
-	input    bool
+	_padding1 [8]uint64
+	refCount  int32
 
-	// For routing
+	_padding2 [8]uint64
+	input     bool
+
+	_padding3 [8]uint64
+	// Ident is used for routing.
 	Ident string
 
-	Payload Payloader
+	_padding4 [8]uint64
+	Payload   Payloader
 	//	buf     []byte TODO
 }
 
