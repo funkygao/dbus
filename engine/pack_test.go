@@ -4,10 +4,10 @@ import (
 	"testing"
 )
 
-func BenchmarkPack(b *testing.B) {
-	pool := 100
-	inChan := make(chan *PipelinePack, pool)
-	for i := 0; i < pool; i++ {
+func BenchmarkPackRecycle(b *testing.B) {
+	poolSize := 100
+	inChan := make(chan *PipelinePack, poolSize)
+	for i := 0; i < poolSize; i++ {
 		pack := NewPipelinePack(inChan)
 		inChan <- pack
 	}

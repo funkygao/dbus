@@ -25,8 +25,9 @@ type Payloader interface {
 // TODO padding
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
-	refCount    int32
-	input       bool
+
+	refCount int32
+	input    bool
 
 	// For routing
 	Ident string
@@ -58,13 +59,10 @@ func (p *PipelinePack) Reset() {
 }
 
 func (p *PipelinePack) Recycle() {
-	count := atomic.AddInt32(&p.refCount, -1)
-	if count == 0 {
+	if atomic.AddInt32(&p.refCount, -1) == 0 {
 		p.Reset()
 
 		// reuse this pack to avoid re-alloc
 		p.recycleChan <- p
-	} else if count < 0 {
-		fmt.Println("reference count below zero")
 	}
 }
