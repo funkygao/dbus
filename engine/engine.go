@@ -178,22 +178,21 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		return
 	}
 
-	wrapper := new(pluginWrapper)
+	wrapper := &pluginWrapper{
+		name:          pluginCommons.name,
+		configCreator: func() *conf.Conf { return section },
+	}
 	var ok bool
 	if wrapper.pluginCreator, ok = availablePlugins[pluginCommons.class]; !ok {
 		panic("unknown plugin type: " + pluginCommons.class)
 	}
-	wrapper.configCreator = func() *conf.Conf { return section }
-	wrapper.name = pluginCommons.name
 
 	pluginType := pluginTypeRegex.FindStringSubmatch(pluginCommons.class)
 	if len(pluginType) < 2 {
 		panic("invalid plugin type: " + pluginCommons.class)
 	}
 
-	plugin := wrapper.pluginCreator()
-	plugin.Init(section)
-
+	plugin := wrapper.Create()
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
 		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons)

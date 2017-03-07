@@ -23,9 +23,6 @@ type PluginRunner interface {
 	Plugin() Plugin
 
 	start(e *Engine, wg *sync.WaitGroup) (err error)
-
-	setLeakCount(count int)
-	getLeakCount() int
 }
 
 // Filter and Output runner extends PluginRunner
@@ -43,7 +40,6 @@ type pRunnerBase struct {
 	plugin        Plugin
 	engine        *Engine
 	pluginCommons *pluginCommons
-	leakCount     int
 }
 
 func (this *pRunnerBase) Name() string {
@@ -52,14 +48,6 @@ func (this *pRunnerBase) Name() string {
 
 func (this *pRunnerBase) Plugin() Plugin {
 	return this.plugin
-}
-
-func (this *pRunnerBase) setLeakCount(count int) {
-	this.leakCount = count
-}
-
-func (this *pRunnerBase) getLeakCount() int {
-	return this.leakCount
 }
 
 // foRunner is filter output runner.
