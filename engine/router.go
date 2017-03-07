@@ -77,9 +77,6 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 		foundMatch bool
 	)
 
-	ticker = time.NewTicker(globals.WatchdogTick)
-	defer ticker.Stop()
-
 	go func() {
 		t := time.NewTicker(globals.WatchdogTick)
 		defer t.Stop()
@@ -90,6 +87,9 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 	}()
 
 	log.Trace("Router started with ticker=%s", globals.WatchdogTick)
+
+	ticker = time.NewTicker(globals.WatchdogTick)
+	defer ticker.Stop()
 
 LOOP:
 	for ok {
@@ -110,12 +110,12 @@ LOOP:
 				break LOOP
 			}
 
-			r.stats.update(pack)
+			r.stats.update(pack) // comment out this line, throughput 1.52M/s -> 1.65M/s
 
 			foundMatch = false
 
 			// If we send pack to filterMatchers and then outputMatchers
-			// because filter may change pack Ident, and r pack because
+			// because filter may change pack Ident, and this pack because
 			// of shared mem, may match both filterMatcher and outputMatcher
 			// then dup dispatching happens!!!
 			//
@@ -150,7 +150,7 @@ LOOP:
 				log.Debug("no match: %+v", pack)
 			}
 
-			// never forget r!
+			// never forget this!
 			pack.Recycle()
 		}
 	}
