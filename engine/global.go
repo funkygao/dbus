@@ -34,7 +34,6 @@ type GlobalConfig struct {
 	StartedAt       time.Time
 	Stopping        bool
 	Debug           bool
-	DryRun          bool
 	RecyclePoolSize int
 	PluginChanSize  int
 
@@ -93,7 +92,6 @@ func DefaultGlobals() *GlobalConfig {
 	idle, _ := time.ParseDuration("2m")
 	return &GlobalConfig{
 		Debug:           false,
-		DryRun:          false,
 		RecyclePoolSize: 100,
 		PluginChanSize:  150,
 		WatchdogTick:    time.Minute * 10,

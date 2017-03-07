@@ -37,7 +37,6 @@ func main() {
 
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
-	globals.DryRun = options.dryrun
 	globals.RecyclePoolSize = options.mpoolSize
 	globals.PluginChanSize = options.ppoolSize
 

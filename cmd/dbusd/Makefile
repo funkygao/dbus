@@ -1,4 +1,5 @@
-mock:build
+mock:
+	@go build
 	./dbusd -conf ../../etc/mock.cf
 
 mysql:build
