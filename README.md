@@ -41,6 +41,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [ ] Batcher padding
 - [ ] shutdown kafka
 - [ ] filter to dispatch dbs of a single binlog to different output
+- [ ] router finding matcher is slow
 - [ ] zk checkpoint vs kafka checkpoint
   - discard MarkAsProcessed
 - [ ] visualized flow throughput like nifi

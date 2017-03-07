@@ -94,7 +94,7 @@ func DefaultGlobals() *GlobalConfig {
 		Debug:           false,
 		RecyclePoolSize: 100,
 		PluginChanSize:  150,
-		WatchdogTick:    time.Minute * 10,
+		WatchdogTick:    time.Minute * 2,
 		MaxMsgLoops:     4,
 		MaxPackIdle:     idle,
 		StartedAt:       time.Now(),

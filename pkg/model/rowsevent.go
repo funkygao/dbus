@@ -41,7 +41,7 @@ func (r *RowsEvent) ensureEncoded() {
 	}
 }
 
-// Implements engine.Payloader.
+// Used for debugging.
 func (r *RowsEvent) String() string {
 	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
 }

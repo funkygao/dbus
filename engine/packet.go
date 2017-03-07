@@ -13,10 +13,6 @@ type Payloader interface {
 
 	// Bytes returns the marshalled byte array of the payload.
 	Encode() ([]byte, error)
-
-	// String return the string format of the payload.
-	// Useful for debugging.
-	String() string
 }
 
 // Packet is the pipeline data structure that is transferred between plugins.
