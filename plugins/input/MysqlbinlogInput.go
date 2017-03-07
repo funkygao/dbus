@@ -88,7 +88,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 				select {
 				case err := <-errors:
-					// TODO is this neccessary?
+					// TODO is this necessary?
 					log.Error("[%s] backoff %s: %v", name, backoff, err)
 					this.slave.StopReplication()
 

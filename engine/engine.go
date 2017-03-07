@@ -281,7 +281,7 @@ func (e *Engine) ServeForever() {
 
 		var inputPoolSize, filterPoolSize int
 
-		for range t.C {
+		for range t.C { // FIXME need to be more frequent
 			inputPoolSize = len(e.inputRecycleChan)
 			filterPoolSize = len(e.filterRecycleChan)
 			if inputPoolSize == 0 || filterPoolSize == 0 {

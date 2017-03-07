@@ -64,7 +64,7 @@ func TestBatcherBasic(t *testing.T) {
 
 	t.Logf("sleep 1s for reader catch up")
 	time.Sleep(time.Second)
-	t.Logf("closeing batcher")
+	t.Logf("closing batcher")
 	b.Close()
 
 }

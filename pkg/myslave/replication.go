@@ -13,7 +13,7 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
-// StopReplication stops the slave and do neccessary cleanups.
+// StopReplication stops the slave and do necessary cleanups.
 func (m *MySlave) StopReplication() {
 	if m.isMaster {
 		m.r.Close()
