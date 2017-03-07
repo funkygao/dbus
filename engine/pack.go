@@ -22,7 +22,7 @@ type Payloader interface {
 }
 
 // PipelinePack is the pipeline data structure that is transferred between plugins.
-// TODO padding
+// TODO padding, false sharing
 type PipelinePack struct {
 	recycleChan chan *PipelinePack
 
