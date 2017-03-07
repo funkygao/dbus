@@ -29,7 +29,7 @@ type PluginRunner interface {
 type FilterOutputRunner interface {
 	PluginRunner
 
-	InChan() chan *PipelinePack
+	InChan() chan *Packet
 
 	getMatcher() *matcher
 }
@@ -55,7 +55,7 @@ type foRunner struct {
 	pRunnerBase
 
 	matcher   *matcher
-	inChan    chan *PipelinePack
+	inChan    chan *Packet
 	leakCount int
 }
 
@@ -66,7 +66,7 @@ func newFORunner(name string, plugin Plugin, pluginCommons *pluginCommons) *foRu
 			plugin:        plugin,
 			pluginCommons: pluginCommons,
 		},
-		inChan: make(chan *PipelinePack, Globals().PluginChanSize),
+		inChan: make(chan *Packet, Globals().PluginChanSize),
 	}
 }
 
@@ -74,13 +74,13 @@ func (fo *foRunner) getMatcher() *matcher {
 	return fo.matcher
 }
 
-func (fo *foRunner) Inject(pack *PipelinePack) bool {
+func (fo *foRunner) Inject(pack *Packet) bool {
 	pack.input = false
 	fo.engine.router.hub <- pack
 	return true
 }
 
-func (fo *foRunner) InChan() chan *PipelinePack {
+func (fo *foRunner) InChan() chan *Packet {
 	return fo.inChan
 }
 
