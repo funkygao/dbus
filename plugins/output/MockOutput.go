@@ -26,6 +26,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 	defer tick.Stop()
 
 	var n, lastN int64
+	name := r.Name()
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -36,7 +37,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			n++
 
 			if !this.blackhole {
-				log.Info("-> %s", pack)
+				log.Info("[%s] -> %s", name, pack)
 			}
 
 			pack.Recycle()

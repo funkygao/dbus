@@ -2,6 +2,9 @@ mock:
 	@go build
 	./dbusd -conf ../../etc/mock.cf
 
+fanout:build
+	./dbusd -conf ../../etc/fanout.cf
+
 mysql:build
 	./dbusd -conf ../../etc/mysql.cf
 
