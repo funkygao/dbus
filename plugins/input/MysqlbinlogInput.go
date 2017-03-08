@@ -88,7 +88,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 				select {
 				case err := <-errors:
-					// TODO is this neccessary?
+					// TODO is this necessary?
 					log.Error("[%s] backoff %s: %v", name, backoff, err)
 					this.slave.StopReplication()
 
@@ -110,6 +110,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						pack.Payload = row
 						r.Inject(pack)
 					} else {
+						// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
 						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
 						pack.Recycle()
 					}

@@ -90,7 +90,7 @@ func generateClientID() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s-%s", host, fmt.Sprintf("%d", atomic.AddUint32(&clientID, 1))), nil
+	return fmt.Sprintf("dbus-%s-%s", host, fmt.Sprintf("%d", atomic.AddUint32(&clientID, 1))), nil
 }
 
 func init() {

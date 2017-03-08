@@ -35,7 +35,7 @@
             topic: "foobar"
             myslave_key: "binlog"
             ack: 1
-            async: false
+            async: true
             compress: false
             hhdirs: ["hh", ]
             match: ["binlog", ]

@@ -33,16 +33,18 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [X] presence and standby mode
 - [X] graceful shutdown
 - [X] master must drain before leave cluster
-- [ ] KafkaOutput metrics
+- [X] KafkaOutput metrics
   -  binlog tps
   -  kafka tps
   -  lag
 - [ ] hub is shared, what if a plugin blocks others
-- [ ] Batcher padding
-- [ ] shutdown kafka
-- [ ] filter to dispatch dbs of a single binlog to different output
-- [ ] zk checkpoint vs kafka checkpoint
-  - discard MarkAsProcessed
+- [X] Batcher padding
+- [X] shutdown kafka
+- [ ] pipeline
+  - 1 input, multiple output
+  - filter to dispatch dbs of a single binlog to different output
+- [ ] router finding matcher is slow
+- [X] zk checkpoint vs kafka checkpoint
 - [ ] visualized flow throughput like nifi
 - [ ] kafka follower stops replication
     [2017-02-17 07:59:52,581] INFO Reconnect due to socket error: java.lang.OutOfMemoryError: Direct buffer memory (kafka.consumer.SimpleConsumer)
@@ -52,18 +54,14 @@ yet another databus that listens for mysql binlog and distribute to sinks
     [2017-02-17 07:59:52,781] INFO Reconnect due to socket error: java.nio.channels.ClosedChannelException (kafka.consumer.SimpleConsumer)
 - [ ] integration with helix
   - place config to central zk znode and watch changes
-- [ ] can a mysql instance with miltiple databases have multiple Log/Position?
+- [X] can a mysql instance with miltiple databases have multiple Log/Position?
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [ ] kafka sync produce in batch
-- [ ] DDL binlog
+- [X] kafka sync produce in batch
+- [X] DDL binlog
   - drop table y;
 - [X] trace async producer Successes channel and mark as processed
 - [X] metrics
 - [X] telemetry and alert
-- [X] visualize pipeline
-
-  - ![dashboard](https://github.com/funkygao/dbus/blob/master/misc/resources/diagram.png)
-
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
@@ -74,8 +72,9 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [ ] table id issue
   - [ ] what if invalid position
   - [ ] kill dbusd, dbusd-slave did not leave cluster
-  - [ ] router stat wrong
+  - [X] router stat wrong
     Total:142,535,625      0.00B speed:22,671/s      0.00B/s max: 0.00B/0.00B
+  - [ ] ffjson marshalled bytes has NL before the ending bracket
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process

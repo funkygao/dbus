@@ -144,7 +144,7 @@ func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 }
 
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
-	p.b.Write(m)
+	p.b.Put(m)
 	return nil
 }
 
@@ -157,7 +157,7 @@ func (p *Producer) asyncSendWorker() {
 			return
 
 		default:
-			if msg, err := p.b.ReadOne(); err == nil {
+			if msg, err := p.b.Get(); err == nil {
 				// FIXME what if msg is nil
 				// FIXME a batch of 10, msg7 is too big message size, lead to dead loop
 				pm := msg.(*sarama.ProducerMessage)

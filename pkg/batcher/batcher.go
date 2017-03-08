@@ -1,26 +1,38 @@
 // Package batcher provides retriable batch queue: all succeed or rollback for all.
+// In kafka it is called RecordAccumulator.
 package batcher
 
 import (
 	"sync/atomic"
 )
 
-//go:generate structlayout github.com/funkygao/dbus/pkg/batcher Batcher
-
 // Batcher is a batched lock free queue that borrows design from disruptor.
 // It maintains a queue with the sematics of all succeed and advance or any fails and retry.
 type Batcher struct {
-	capacity uint32
-	stopped  uint32 // FIXME too much overhead
+	_padding0 [8]uint64
+	capacity  uint32
 
-	// cursors
-	w, r, c uint32
+	_padding1 [8]uint64
+	stopped   uint32
 
-	// counters
-	okN, failN uint32
+	_padding2 [8]uint64
+	w         uint32
+
+	_padding3 [8]uint64
+	r         uint32
+
+	_padding4 [8]uint64
+	c         uint32
+
+	_padding5 [8]uint64
+	okN       uint32
+
+	_padding6 [8]uint64
+	failN     uint32
 
 	// [nil, item1, item2, ..., itemN]
-	contents []interface{}
+	_padding7 [8]uint64
+	contents  []interface{}
 }
 
 // NewBatcher create a new smart batcher instance.
@@ -40,9 +52,9 @@ func (b *Batcher) Close() {
 	atomic.StoreUint32(&b.stopped, 1)
 }
 
-// Write writes an item to the batcher. If queue is full, it will block till
+// Put writes an item to the batcher. If queue is full, it will block till
 // all inflight items marked success.
-func (b *Batcher) Write(item interface{}) error {
+func (b *Batcher) Put(item interface{}) error {
 	for atomic.LoadUint32(&b.w) == b.capacity+1 {
 		if atomic.LoadUint32(&b.stopped) == 1 {
 			return ErrStopping
@@ -60,8 +72,8 @@ func (b *Batcher) Write(item interface{}) error {
 	return nil
 }
 
-// ReadOne read an item from the batcher.
-func (b *Batcher) ReadOne() (interface{}, error) {
+// Get reads an item from the batcher.
+func (b *Batcher) Get() (interface{}, error) {
 	for {
 		r, w := atomic.LoadUint32(&b.r), atomic.LoadUint32(&b.w)
 		if r == b.capacity+1 ||
@@ -94,15 +106,14 @@ func (b *Batcher) ReadOne() (interface{}, error) {
 
 // Succeed marks an item handling success.
 func (b *Batcher) Succeed() {
-	ok := atomic.AddUint32(&b.okN, 1)
-	if ok == b.capacity {
+	if okN := atomic.AddUint32(&b.okN, 1); okN == b.capacity {
 		// batch commit
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)
 		atomic.StoreUint32(&b.c, 0)
 		atomic.StoreUint32(&b.w, 1)
 		atomic.StoreUint32(&b.r, 1)
-	} else if ok+atomic.LoadUint32(&b.failN) == b.capacity {
+	} else if okN+atomic.LoadUint32(&b.failN) == b.capacity {
 		// batch rollback, reset reader cursor, retry the batch, hold writer
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)
@@ -113,8 +124,7 @@ func (b *Batcher) Succeed() {
 
 // Fail marks an item handling failure.
 func (b *Batcher) Fail() {
-	fail := atomic.AddUint32(&b.failN, 1)
-	if fail+atomic.LoadUint32(&b.okN) == b.capacity {
+	if failN := atomic.AddUint32(&b.failN, 1); failN+atomic.LoadUint32(&b.okN) == b.capacity {
 		// batch rollback
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)

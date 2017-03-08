@@ -3,15 +3,21 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 var (
 	_ engine.Payloader = &RowsEvent{}
 	_ sarama.Encoder   = &RowsEvent{}
+
+	marshaller func(v interface{}) ([]byte, error)
 )
+
+//go:generate ffjson -force-regenerate $GOFILE
 
 // RowsEvent is a structured mysql binlog rows event.
 // It implements engine.Payloader interface and can be transferred between plugins.
@@ -36,17 +42,17 @@ type RowsEvent struct {
 
 func (r *RowsEvent) ensureEncoded() {
 	if r.encoded == nil {
-		r.encoded, r.err = json.Marshal(r)
+		r.encoded, r.err = marshaller(r)
 	}
 }
 
-// Implements engine.Payloader.
+// Used for debugging.
 func (r *RowsEvent) String() string {
 	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
 }
 
 func (r *RowsEvent) MetaInfo() string {
-	return fmt.Sprintf("%s %d %d %s %s/%s", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table)
+	return fmt.Sprintf("{%s %d %d %s %s/%s}", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table)
 }
 
 // Implements engine.Payloader and sarama.Encoder.
@@ -55,12 +61,18 @@ func (r *RowsEvent) Encode() (b []byte, err error) {
 	return r.encoded, r.err
 }
 
-func (r *RowsEvent) Decode(b []byte) error {
-	return json.Unmarshal(b, r)
-}
-
 // Implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Length() int {
 	r.ensureEncoded()
 	return len(r.encoded)
+}
+
+func init() {
+	if os.Getenv("USE_FFJSON") == "1" {
+		marshaller = ffjson.Marshal
+		return
+	}
+
+	// use golang json by default
+	marshaller = json.Marshal
 }

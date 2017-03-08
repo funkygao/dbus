@@ -3,6 +3,8 @@ package model
 import (
 	"encoding/json"
 	"testing"
+
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 func makeRowsEvent() *RowsEvent {
@@ -43,8 +45,22 @@ func BenchmarkRowsEventLength(b *testing.B) {
 }
 
 func BenchmarkJsonEncodeRowsEvent(b *testing.B) {
-	r := makeRowsEvent()
 	for i := 0; i < b.N; i++ {
+		r := makeRowsEvent()
 		json.Marshal(r)
+	}
+}
+
+func BenchmarkMsgpackEncodeRowsEvent(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		r := makeRowsEvent()
+		msgpack.Marshal(r)
+	}
+}
+
+func BenchmarkRowsEventJsonMarshalFF(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		r := makeRowsEvent()
+		r.MarshalJSON()
 	}
 }
