@@ -33,7 +33,7 @@ func TestBatcherBasic(t *testing.T) {
 	b := NewBatcher(8)
 	// inject [0, 8)
 	for i := 0; i < 8; i++ {
-		b.Write(i)
+		b.Put(i)
 	}
 	t.Logf("[0, 8) injected, %+v", b)
 
@@ -45,7 +45,7 @@ func TestBatcherBasic(t *testing.T) {
 
 	go func() {
 		for {
-			v, err := b.ReadOne()
+			v, err := b.Get()
 			if err != nil {
 				return
 			}
@@ -69,6 +69,60 @@ func TestBatcherBasic(t *testing.T) {
 
 }
 
+func BenchmarkBatcherGetWithBatchSize100(b *testing.B) {
+	batcher := NewBatcher(100)
+	go func() {
+		for {
+			batcher.Put(1)
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := batcher.Get()
+		if err != nil {
+			panic(err)
+		}
+		batcher.Succeed()
+	}
+}
+
+func BenchmarkBatcherPutWithBatchSize100(b *testing.B) {
+	batcher := NewBatcher(100)
+	go func() {
+		for {
+			_, err := batcher.Get()
+			if err != nil {
+				panic(err)
+			}
+			batcher.Succeed()
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		batcher.Put(1)
+	}
+}
+
+func BenchmarkBatcherPutWithBatchSize1000(b *testing.B) {
+	batcher := NewBatcher(1000)
+	go func() {
+		for {
+			_, err := batcher.Get()
+			if err != nil {
+				panic(err)
+			}
+			batcher.Succeed()
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		batcher.Put(1)
+	}
+}
+
 func BenchmarkWaitGroup(b *testing.B) {
 	var wg sync.WaitGroup
 	for i := 0; i < b.N; i++ {
@@ -89,59 +143,5 @@ func BenchmarkAtomicCAS(b *testing.B) {
 	var v uint64
 	for i := 0; i < b.N; i++ {
 		atomic.CompareAndSwapUint64(&v, 0, 1)
-	}
-}
-
-func BenchmarkBatcherReadOneWithBatchSize100(b *testing.B) {
-	batcher := NewBatcher(100)
-	go func() {
-		for {
-			batcher.Write(1)
-		}
-	}()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := batcher.ReadOne()
-		if err != nil {
-			panic(err)
-		}
-		batcher.Succeed()
-	}
-}
-
-func BenchmarkBatcherWriteWithBatchSize100(b *testing.B) {
-	batcher := NewBatcher(100)
-	go func() {
-		for {
-			_, err := batcher.ReadOne()
-			if err != nil {
-				panic(err)
-			}
-			batcher.Succeed()
-		}
-	}()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		batcher.Write(1)
-	}
-}
-
-func BenchmarkBatcherWriteWithBatchSize1000(b *testing.B) {
-	batcher := NewBatcher(1000)
-	go func() {
-		for {
-			_, err := batcher.ReadOne()
-			if err != nil {
-				panic(err)
-			}
-			batcher.Succeed()
-		}
-	}()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		batcher.Write(1)
 	}
 }

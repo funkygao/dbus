@@ -52,9 +52,9 @@ func (b *Batcher) Close() {
 	atomic.StoreUint32(&b.stopped, 1)
 }
 
-// Write writes an item to the batcher. If queue is full, it will block till
+// Put writes an item to the batcher. If queue is full, it will block till
 // all inflight items marked success.
-func (b *Batcher) Write(item interface{}) error {
+func (b *Batcher) Put(item interface{}) error {
 	for atomic.LoadUint32(&b.w) == b.capacity+1 {
 		if atomic.LoadUint32(&b.stopped) == 1 {
 			return ErrStopping
@@ -72,8 +72,8 @@ func (b *Batcher) Write(item interface{}) error {
 	return nil
 }
 
-// ReadOne read an item from the batcher.
-func (b *Batcher) ReadOne() (interface{}, error) {
+// Get reads an item from the batcher.
+func (b *Batcher) Get() (interface{}, error) {
 	for {
 		r, w := atomic.LoadUint32(&b.r), atomic.LoadUint32(&b.w)
 		if r == b.capacity+1 ||
