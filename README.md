@@ -1,5 +1,15 @@
 # dbus
-yet another databus that listens for mysql binlog and distribute to sinks
+    
+          $$\       $$\                                       
+          $$ |      $$ |                                      
+     $$$$$$$ |      $$$$$$$\        $$\   $$\        $$$$$$$\ 
+    $$  __$$ |      $$  __$$\       $$ |  $$ |      $$  _____|
+    $$ /  $$ |      $$ |  $$ |      $$ |  $$ |      \$$$$$$\  
+    $$ |  $$ |      $$ |  $$ |      $$ |  $$ |       \____$$\ 
+    \$$$$$$$ |      $$$$$$$  |      \$$$$$$  |      $$$$$$$  |
+     \_______|      \_______/        \______/       \_______/ 
+                                                              
+yet another databus that transfer/decorate data between plugins.
 
 ### Plugins
 
@@ -37,6 +47,7 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [ ] visualized flow throughput like nifi
 - [ ] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
+- [ ] sharding binlog across the dbusd cluster
 - [X] logging
 - [X] share zkzone instance
 - [X] presence and standby mode
