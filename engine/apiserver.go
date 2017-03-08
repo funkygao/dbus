@@ -42,21 +42,38 @@ func (this *Engine) stopHttpServ() {
 func (this *Engine) setupAPIRoutings() {
 	this.RegisterAPI("/stat", this.httpStat).Methods("GET")
 	this.RegisterAPI("/plugins", this.httpPlugins).Methods("GET")
+	this.RegisterAPI("/metris", this.httpMetrics).Methods("GET")
+}
+
+func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+	return nil, nil
 }
 
 func (this *Engine) httpPlugins(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
-	names := make([]string, 0, 20)
-	for _, pr := range this.InputRunners {
-		names = append(names, pr.Name())
+	plugins := make(map[string][]string)
+	for _, r := range this.InputRunners {
+		if _, present := plugins[r.Class()]; !present {
+			plugins[r.Class()] = []string{r.Name()}
+		} else {
+			plugins[r.Class()] = append(plugins[r.Class()], r.Name())
+		}
 	}
-	for _, pr := range this.FilterRunners {
-		names = append(names, pr.Name())
+	for _, r := range this.FilterRunners {
+		if _, present := plugins[r.Class()]; !present {
+			plugins[r.Class()] = []string{r.Name()}
+		} else {
+			plugins[r.Class()] = append(plugins[r.Class()], r.Name())
+		}
 	}
-	for _, pr := range this.OutputRunners {
-		names = append(names, pr.Name())
+	for _, r := range this.OutputRunners {
+		if _, present := plugins[r.Class()]; !present {
+			plugins[r.Class()] = []string{r.Name()}
+		} else {
+			plugins[r.Class()] = append(plugins[r.Class()], r.Name())
+		}
 	}
 
-	return names, nil
+	return plugins, nil
 }
 
 func (this *Engine) httpStat(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
