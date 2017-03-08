@@ -9,7 +9,7 @@
     \$$$$$$$ |      $$$$$$$  |      \$$$$$$  |      $$$$$$$  |
      \_______|      \_______/        \______/       \_______/ 
                                                               
-yet another databus that transfer/decorate data between plugins.
+yet another databus that transfer/transform data between plugins pipeline.
 
 ### Plugins
 
