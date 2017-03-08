@@ -1,15 +1,20 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 var (
 	_ engine.Payloader = &RowsEvent{}
 	_ sarama.Encoder   = &RowsEvent{}
+
+	marshaller func(v interface{}) ([]byte, error)
 )
 
 //go:generate ffjson -force-regenerate $GOFILE
@@ -37,7 +42,7 @@ type RowsEvent struct {
 
 func (r *RowsEvent) ensureEncoded() {
 	if r.encoded == nil {
-		r.encoded, r.err = r.MarshalJSON()
+		r.encoded, r.err = marshaller(r)
 	}
 }
 
@@ -60,4 +65,14 @@ func (r *RowsEvent) Encode() (b []byte, err error) {
 func (r *RowsEvent) Length() int {
 	r.ensureEncoded()
 	return len(r.encoded)
+}
+
+func init() {
+	if os.Getenv("USE_FFJSON") == "1" {
+		marshaller = ffjson.Marshal
+		return
+	}
+
+	// use golang json by default
+	marshaller = json.Marshal
 }
