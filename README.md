@@ -33,17 +33,18 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [X] presence and standby mode
 - [X] graceful shutdown
 - [X] master must drain before leave cluster
-- [ ] KafkaOutput metrics
+- [X] KafkaOutput metrics
   -  binlog tps
   -  kafka tps
   -  lag
 - [ ] hub is shared, what if a plugin blocks others
-- [ ] Batcher padding
-- [ ] shutdown kafka
-- [ ] filter to dispatch dbs of a single binlog to different output
+- [X] Batcher padding
+- [X] shutdown kafka
+- [ ] pipeline
+  - 1 input, multiple output
+  - filter to dispatch dbs of a single binlog to different output
 - [ ] router finding matcher is slow
-- [ ] zk checkpoint vs kafka checkpoint
-  - discard MarkAsProcessed
+- [X] zk checkpoint vs kafka checkpoint
 - [ ] visualized flow throughput like nifi
 - [ ] kafka follower stops replication
     [2017-02-17 07:59:52,581] INFO Reconnect due to socket error: java.lang.OutOfMemoryError: Direct buffer memory (kafka.consumer.SimpleConsumer)
@@ -61,10 +62,6 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [X] trace async producer Successes channel and mark as processed
 - [X] metrics
 - [X] telemetry and alert
-- [X] visualize pipeline
-
-  - ![dashboard](https://github.com/funkygao/dbus/blob/master/misc/resources/diagram.png)
-
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image

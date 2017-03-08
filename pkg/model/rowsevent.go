@@ -47,7 +47,7 @@ func (r *RowsEvent) String() string {
 }
 
 func (r *RowsEvent) MetaInfo() string {
-	return fmt.Sprintf("%s %d %d %s %s/%s", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table)
+	return fmt.Sprintf("{%s %d %d %s %s/%s}", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table)
 }
 
 // Implements engine.Payloader and sarama.Encoder.
