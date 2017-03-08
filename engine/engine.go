@@ -9,14 +9,12 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
-	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -373,7 +371,5 @@ func (e *Engine) ServeForever() {
 		project.Stop()
 	}
 
-	log.Info("shutdown, dispatched: %s, %sp",
-		gofmt.ByteSize(atomic.LoadInt64(&e.router.stats.TotalProcessedBytes)),
-		gofmt.Comma(atomic.LoadInt64(&e.router.stats.TotalProcessedMsgN)))
+	log.Info("shutdown complete")
 }

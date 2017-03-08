@@ -3,10 +3,8 @@ package engine
 import (
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/funkygao/golib/gofmt"
 	log "github.com/funkygao/log4go"
 )
 
@@ -14,7 +12,7 @@ import (
 type messageRouter struct {
 	hub chan *Packet
 
-	stats routerStats
+	metrics *routerMetrics
 
 	removeFilterMatcher chan *matcher
 	removeOutputMatcher chan *matcher
@@ -26,7 +24,7 @@ type messageRouter struct {
 func newMessageRouter() *messageRouter {
 	return &messageRouter{
 		hub:                 make(chan *Packet, Globals().PluginChanSize),
-		stats:               routerStats{},
+		metrics:             newMetrics(),
 		removeFilterMatcher: make(chan *matcher),
 		removeOutputMatcher: make(chan *matcher),
 		filterMatchers:      make([]*matcher, 0, 10),
@@ -73,7 +71,6 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 		globals    = Globals()
 		ok         = true
 		pack       *Packet
-		ticker     *time.Ticker
 		matcher    *matcher
 		foundMatch bool
 	)
@@ -87,10 +84,7 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 		}
 	}()
 
-	log.Trace("Router started with watchdog ticker=%s", globals.WatchdogTick)
-
-	ticker = time.NewTicker(globals.WatchdogTick)
-	defer ticker.Stop()
+	log.Trace("Router started")
 
 LOOP:
 	for ok {
@@ -101,17 +95,13 @@ LOOP:
 		case matcher = <-r.removeFilterMatcher:
 			r.removeMatcher(matcher, r.filterMatchers)
 
-		case <-ticker.C:
-			r.stats.render(int(globals.WatchdogTick.Seconds()))
-			r.stats.resetPeriodCounters()
-
 		case pack, ok = <-r.hub:
 			if !ok {
 				globals.Stopping = true
 				break LOOP
 			}
 
-			r.stats.update(pack) // comment out this line, throughput 1.52M/s -> 1.65M/s
+			r.metrics.update(pack) // comment out this line, throughput 1.52M/s -> 1.65M/s
 
 			foundMatch = false
 
@@ -169,33 +159,4 @@ func (r *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
 			return
 		}
 	}
-}
-
-type routerStats struct {
-	PeriodInputMsgN     int32
-	PeriodInputBytes    int64
-	TotalProcessedBytes int64
-	TotalProcessedMsgN  int64 // 16 BilionBillion
-}
-
-func (rs *routerStats) update(pack *Packet) {
-	msgBytes := int64(pack.Payload.Length())
-	atomic.AddInt64(&rs.TotalProcessedBytes, msgBytes)
-	atomic.AddInt64(&rs.TotalProcessedMsgN, 1)
-}
-
-func (rs *routerStats) resetPeriodCounters() {
-	rs.PeriodInputBytes = int64(0)
-	rs.PeriodInputMsgN = int32(0)
-}
-
-func (rs *routerStats) render(elapsed int) {
-	log.Trace("Total:%10s %10s",
-		gofmt.Comma(rs.TotalProcessedMsgN),
-		gofmt.ByteSize(rs.TotalProcessedBytes))
-	log.Trace("Input:%10s %10s speed:%6s/s %10s/s",
-		gofmt.Comma(int64(rs.PeriodInputMsgN)),
-		gofmt.ByteSize(rs.PeriodInputBytes),
-		gofmt.Comma(int64(rs.PeriodInputMsgN/int32(elapsed))),
-		gofmt.ByteSize(rs.PeriodInputBytes/int64(elapsed)))
 }
