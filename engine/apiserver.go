@@ -42,11 +42,26 @@ func (this *Engine) stopHttpServ() {
 func (this *Engine) setupAPIRoutings() {
 	this.RegisterAPI("/stat", this.httpStat).Methods("GET")
 	this.RegisterAPI("/plugins", this.httpPlugins).Methods("GET")
-	this.RegisterAPI("/metris", this.httpMetrics).Methods("GET")
+	this.RegisterAPI("/metrics", this.httpMetrics).Methods("GET")
 }
 
 func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
-	return nil, nil
+	output := make(map[string]map[string]interface{})
+	output["tps"] = make(map[string]interface{})
+	output["cum"] = make(map[string]interface{})
+
+	this.router.metrics.l.RLock()
+	defer this.router.metrics.l.RUnlock()
+
+	for ident, m := range this.router.metrics.m {
+		output["tps"][ident] = m.Rate1()
+	}
+
+	for ident, c := range this.router.metrics.c {
+		output["cum"][ident] = c.Count()
+	}
+
+	return output, nil
 }
 
 func (this *Engine) httpPlugins(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
