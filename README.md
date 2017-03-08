@@ -27,6 +27,8 @@ yet another databus that transfer/transform data between plugins pipeline.
 
 - MockOutput
 - KafkaOutput
+- ESOutput
+  ElasticSearch
 
 ### Roadmap
 
