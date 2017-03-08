@@ -10,14 +10,9 @@ var (
 )
 
 type MockFilter struct {
-	ident string
 }
 
 func (this *MockFilter) Init(config *conf.Conf) {
-	this.ident = config.String("ident", "")
-	if this.ident == "" {
-		panic("empty ident")
-	}
 }
 
 func (this *MockFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error {

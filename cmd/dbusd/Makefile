@@ -5,6 +5,9 @@ mock:
 fanout:build
 	./dbusd -conf ../../etc/fanout.cf
 
+dispatch:build
+	./dbusd -conf ../../etc/dispatch.cf
+
 mysql:build
 	./dbusd -conf ../../etc/mysql.cf
 

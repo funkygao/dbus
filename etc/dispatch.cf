@@ -1,0 +1,49 @@
+{
+    api_addr: "127.0.0.1:9876"
+    influx_addr: "http://localhost:8086"
+    influx_db: "dbus"
+    influx_tick: "1m"
+
+    projects: [
+        {
+            name: "mysql"
+        }
+    ]
+
+    plugins: [
+        {
+            name: "binlog"
+            class: "MysqlbinlogInput"
+            // zone is used for positioner
+            zone: "local"
+            pos_commit_interval: "1s"
+            event_buffer_len: 100
+            master_addr: "localhost:3306"
+            // 2 databases: db1, db2
+            user: "root"
+            password: ""
+            server_id: 137
+            GTID: false
+            table_excluded: ["foo", ]
+            db_excluded: ["bar", ]
+        }
+
+        {
+            name: "dispatcher"
+            class: "MysqlbinlogFilter"
+            match: ["binlog", ]
+        }
+
+        {
+            name: "db1_out"
+            class: "MockOutput"
+            match: ["db1", ]
+        }
+        {
+            name: "db2_out"
+            class: "MockOutput"
+            match: ["db2", ]
+        }
+    ]
+
+}
