@@ -2,17 +2,17 @@ package engine
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
-	"runtime"
 	"time"
 
+	"github.com/funkygao/dbus"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
+
+type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error)
 
 func (this *Engine) launchHttpServ() {
 	this.httpRouter = mux.NewRouter()
@@ -21,11 +21,7 @@ func (this *Engine) launchHttpServ() {
 		Handler: this.httpRouter,
 	}
 
-	this.RegisterHttpApi("/admin/{cmd}",
-		func(w http.ResponseWriter, req *http.Request,
-			params map[string]interface{}) (interface{}, error) {
-			return this.handleHttpQuery(w, req, params)
-		}).Methods("GET")
+	this.setupAPIRoutings()
 
 	var err error
 	if this.httpListener, err = net.Listen("tcp", this.httpServer.Addr); err != nil {
@@ -43,8 +39,13 @@ func (this *Engine) stopHttpServ() {
 	}
 }
 
-func (this *Engine) pluginNames() (names []string) {
-	names = make([]string, 0, 20)
+func (this *Engine) setupAPIRoutings() {
+	this.RegisterAPI("/stat", this.httpStat).Methods("GET")
+	this.RegisterAPI("/plugins", this.httpPlugins).Methods("GET")
+}
+
+func (this *Engine) httpPlugins(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+	names := make([]string, 0, 20)
 	for _, pr := range this.InputRunners {
 		names = append(names, pr.Name())
 	}
@@ -55,62 +56,25 @@ func (this *Engine) pluginNames() (names []string) {
 		names = append(names, pr.Name())
 	}
 
-	return
+	return names, nil
 }
 
-func (this *Engine) handleHttpQuery(w http.ResponseWriter, req *http.Request,
-	params map[string]interface{}) (interface{}, error) {
-	var (
-		vars    = mux.Vars(req)
-		cmd     = vars["cmd"]
-		globals = Globals()
-		output  = make(map[string]interface{})
-	)
-
-	switch cmd {
-	case "ping":
-		output["status"] = "ok"
-
-	case "shutdown":
-		globals.Shutdown()
-		output["status"] = "ok"
-
-	case "reload", "restart":
-		break
-
-	case "debug":
-		stack := make([]byte, 1<<20)
-		stackSize := runtime.Stack(stack, true)
-		fmt.Println(string(stack[:stackSize]))
-		output["result"] = "go to global logger to see result"
-
-	case "stat":
-		output["started"] = globals.StartedAt
-		output["elapsed"] = time.Since(globals.StartedAt).String()
-		output["pid"] = this.pid
-		output["hostname"] = this.hostname
-
-	case "plugins":
-		output["plugins"] = this.pluginNames()
-
-	case "uris":
-		output["all"] = this.httpPaths
-
-	default:
-		return nil, errors.New("Not Found")
-	}
-
+func (this *Engine) httpStat(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+	var output = make(map[string]interface{})
+	output["ver"] = dbus.Version
+	output["started"] = Globals().StartedAt
+	output["elapsed"] = time.Since(Globals().StartedAt).String()
+	output["pid"] = this.pid
+	output["hostname"] = this.hostname
+	output["build"] = dbus.BuildID
 	return output, nil
 }
 
-func (this *Engine) RegisterHttpApi(path string,
-	handlerFunc func(http.ResponseWriter,
-		*http.Request, map[string]interface{}) (interface{}, error)) *mux.Route {
+func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
 	wrappedFunc := func(w http.ResponseWriter, req *http.Request) {
 		var (
-			ret     interface{}
-			globals = Globals()
-			t1      = time.Now()
+			ret interface{}
+			t1  = time.Now()
 		)
 
 		params, err := this.decodeHttpParams(w, req)
@@ -122,6 +86,7 @@ func (this *Engine) RegisterHttpApi(path string,
 			ret = map[string]interface{}{"error": err.Error()}
 		}
 
+		w.Header().Set("Server", "dbus")
 		w.Header().Set("Content-Type", "application/json")
 		var status int
 		if err == nil {
@@ -131,12 +96,8 @@ func (this *Engine) RegisterHttpApi(path string,
 		}
 		w.WriteHeader(status)
 
-		// debug request body content
-		if globals.Debug {
-			log.Debug("req body: %+v", params)
-		}
 		// access log
-		log.Debug("%s \"%s %s %s\" %d %s",
+		log.Trace("%s \"%s %s %s\" %d %s",
 			req.RemoteAddr,
 			req.Method,
 			req.RequestURI,
