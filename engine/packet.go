@@ -17,20 +17,26 @@ type Payloader interface {
 
 // Packet is the pipeline data structure that is transferred between plugins.
 type Packet struct {
-	_padding0   [8]uint64 // avoid false sharing, although with little effects
+	_padding0   [8]uint64 // avoid false sharing
 	recycleChan chan *Packet
 
 	_padding1 [8]uint64
 	refCount  int32
 
 	_padding2 [8]uint64
-	input     bool
+	input     bool // TODO kill this
 
 	_padding3 [8]uint64
 	// Ident is used for routing.
 	Ident string
 
-	_padding4 [8]uint64
+	_padding4 [8]uint64 // TODO [7]uint64 should be enough
+	// Metadata is used to hold arbitrary data you wish to include.
+	// Engine completely ignores this field and is only to be used for
+	// pass-through data.
+	Metadata interface{}
+
+	_padding5 [8]uint64
 	Payload   Payloader
 	//	buf     []byte TODO
 }
@@ -49,6 +55,13 @@ func (p *Packet) incRef() {
 
 func (p Packet) String() string {
 	return fmt.Sprintf("{%s, %+v, %s}", p.Ident, p.input, p.Payload)
+}
+
+// CopyTo will copy itself to another Packet.
+func (p *Packet) CopyTo(other *Packet) {
+	other.input = p.input
+	other.Ident = p.Ident
+	other.Payload = p.Payload // FIXME clone deep copy
 }
 
 func (p *Packet) Reset() {

@@ -102,10 +102,7 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Unlock()
 }
 
-func (e *Engine) Engine() *Engine {
-	return e
-}
-
+// Project returns a Project by name.
 func (e *Engine) Project(name string) *Project {
 	p, present := e.projects[name]
 	if !present {
@@ -113,6 +110,14 @@ func (e *Engine) Project(name string) *Project {
 	}
 
 	return p
+}
+
+// NewPacket is used for plugin Filter to generate new Packet.
+// The generated Packet will use dedicated filter recycle chan.
+func (e *Engine) NewPacket() *Packet {
+	pack := <-e.filterRecycleChan
+	pack.Reset()
+	return pack
 }
 
 func (e *Engine) LoadConfigFile(fn string) *Engine {

@@ -43,7 +43,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Info("throughput %s/s", gofmt.Comma((n-lastN)/10))
+			log.Info("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}

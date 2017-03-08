@@ -25,12 +25,6 @@ func RegisterPlugin(name string, factory func() Plugin) {
 	availablePlugins[name] = factory
 }
 
-type PluginHelper interface {
-	Engine() *Engine
-
-	Project(name string) *Project
-}
-
 // pluginWrapper is a helper object to support delayed plugin creation.
 type pluginWrapper struct {
 	name string

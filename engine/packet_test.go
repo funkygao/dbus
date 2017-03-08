@@ -21,7 +21,7 @@ func BenchmarkPackRecycle(b *testing.B) {
 
 func BenchmarkMapGetItem(b *testing.B) {
 	m := map[string]struct{}{
-		"hello": struct{}{},
+		"hello": {},
 	}
 
 	for i := 0; i < b.N; i++ {
