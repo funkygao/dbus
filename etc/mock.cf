@@ -1,5 +1,5 @@
 {
-    api_addr: "127.0.0.1:9876"
+    apisvr_addr: "127.0.0.1:9876"
 
     projects: [
         {

@@ -17,7 +17,7 @@ import (
 func (this *Engine) launchHttpServ() {
 	this.httpRouter = mux.NewRouter()
 	this.httpServer = &http.Server{
-		Addr:    this.String("api_addr", "127.0.0.1:9876"),
+		Addr:    this.String("apisvr_addr", "127.0.0.1:9876"),
 		Handler: this.httpRouter,
 	}
 
