@@ -101,7 +101,7 @@ LOOP:
 				break LOOP
 			}
 
-			r.metrics.update(pack) // comment out this line, throughput 1.52M/s -> 1.65M/s
+			r.metrics.Update(pack)
 
 			foundMatch = false
 

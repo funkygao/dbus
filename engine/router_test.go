@@ -20,8 +20,11 @@ func (b Bytes) Encode() ([]byte, error) {
 
 func BenchmarkRouterMetrics(b *testing.B) {
 	pack := newPacket(nil)
+	pack.Ident = "foobar"
 	pack.Payload = Bytes("hello world")
+
+	m := newMetrics()
 	for i := 0; i < b.N; i++ {
-		_ = pack
+		m.Update(pack)
 	}
 }
