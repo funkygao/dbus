@@ -35,15 +35,15 @@ yet another databus that transfer/decorate data between plugins.
 
 ### TODO
 
-- [ ] pipeline
+- [X] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
 - [X] kill Packet.input field
-- [ ] router metrics
-- [ ] router finding matcher is slow
-- [ ] dbusd api server
-- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [X] router metrics
 - [ ] visualized flow throughput like nifi
+- [ ] router finding matcher is slow
+- [X] dbusd api server
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
 - [ ] sharding binlog across the dbusd cluster
