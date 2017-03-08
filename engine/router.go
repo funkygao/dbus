@@ -152,6 +152,7 @@ LOOP:
 			}
 
 			// never forget this!
+			// if no sink found, this packet is recycled directly for latter use
 			pack.Recycle()
 		}
 	}
