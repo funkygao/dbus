@@ -115,7 +115,9 @@ func (e *Engine) Project(name string) *Project {
 // NewPacket is used for plugin Filter to generate new Packet.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) NewPacket() *Packet {
-	return <-e.filterRecycleChan
+	pack := <-e.filterRecycleChan
+	pack.Reset()
+	return pack
 }
 
 func (e *Engine) LoadConfigFile(fn string) *Engine {
