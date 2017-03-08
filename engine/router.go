@@ -182,11 +182,6 @@ func (rs *routerStats) update(pack *Packet) {
 	msgBytes := int64(pack.Payload.Length())
 	atomic.AddInt64(&rs.TotalProcessedBytes, msgBytes)
 	atomic.AddInt64(&rs.TotalProcessedMsgN, 1)
-
-	if pack.input {
-		atomic.AddInt32(&rs.PeriodInputMsgN, 1)
-		atomic.AddInt64(&rs.PeriodInputBytes, msgBytes)
-	}
 }
 
 func (rs *routerStats) resetPeriodCounters() {

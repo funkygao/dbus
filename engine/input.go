@@ -49,7 +49,6 @@ func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r I
 }
 
 func (ir *iRunner) Inject(pack *Packet) {
-	pack.input = true
 	if pack.Ident == "" {
 		pack.Ident = ir.name
 	}

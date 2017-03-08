@@ -75,7 +75,6 @@ func (fo *foRunner) getMatcher() *matcher {
 }
 
 func (fo *foRunner) Inject(pack *Packet) bool {
-	pack.input = false
 	fo.engine.router.hub <- pack
 	return true
 }

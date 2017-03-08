@@ -38,7 +38,7 @@ yet another databus that transfer/decorate data between plugins.
 - [ ] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
-- [ ] kill Packet.input field
+- [X] kill Packet.input field
 - [ ] router metrics
 - [ ] router finding matcher is slow
 - [ ] dbusd api server
