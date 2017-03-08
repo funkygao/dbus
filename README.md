@@ -21,6 +21,7 @@ yet another databus that transfer/transform data between plugins pipeline.
 
 #### Filter
 
+- MockFilter
 - MysqlbinlogFilter
 
 #### Output
