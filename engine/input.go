@@ -38,10 +38,9 @@ type iRunner struct {
 	inChan chan *Packet
 }
 
-func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons) (r InputRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
-			name:          name,
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
@@ -50,7 +49,7 @@ func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r I
 
 func (ir *iRunner) Inject(pack *Packet) {
 	if pack.Ident == "" {
-		pack.Ident = ir.name
+		pack.Ident = ir.Name()
 	}
 	ir.engine.router.hub <- pack
 }
@@ -74,7 +73,7 @@ func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", ir.name, err)
+			log.Critical("[%s] %v", ir.Name(), err)
 		}
 
 		wg.Done()
@@ -82,15 +81,15 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Info("Input[%s] starting", ir.name)
+		log.Info("Input[%s] starting", ir.Name())
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Info("Input[%s] stopped", ir.name)
+			log.Info("Input[%s] stopped", ir.Name())
 		} else {
-			log.Error("Input[%s] stopped: %v", ir.name, err)
+			log.Error("Input[%s] stopped: %v", ir.Name(), err)
 		}
 
 		if globals.Stopping {
-			e.stopInputRunner(ir.name)
+			e.stopInputRunner(ir.Name())
 
 			return
 		}
@@ -98,16 +97,16 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 		if restart, ok := ir.plugin.(Restarting); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
-				e.stopInputRunner(ir.name)
+				e.stopInputRunner(ir.Name())
 
 				return
 			}
 		}
 
-		log.Trace("Input[%s] restarting", ir.name)
+		log.Trace("Input[%s] restarting", ir.Name())
 
 		// Re-initialize our plugin with its wrapper
-		iw := e.inputWrappers[ir.name]
+		iw := e.inputWrappers[ir.Name()]
 		ir.plugin = iw.Create()
 	}
 
