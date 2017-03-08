@@ -279,21 +279,8 @@ func (e *Engine) ServeForever() {
 		e.filterRecycleChan <- filterPack
 	}
 
-	// check if we have enough recycle pool reservation
-	go func() {
-		t := time.NewTicker(globals.WatchdogTick)
-		defer t.Stop()
-
-		var inputPoolSize, filterPoolSize int
-
-		for range t.C { // FIXME need to be more frequent
-			inputPoolSize = len(e.inputRecycleChan)
-			filterPoolSize = len(e.filterRecycleChan)
-			if inputPoolSize == 0 || filterPoolSize == 0 {
-				log.Warn("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
-			}
-		}
-	}()
+	log.Trace("launching Watchdog with ticker=%s", globals.WatchdogTick)
+	go e.runWatchdog(globals.WatchdogTick)
 
 	log.Trace("launching Router...")
 	routerWg.Add(1)
