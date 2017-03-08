@@ -48,8 +48,7 @@ func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper)
 				continue
 			}
 
-			p := h.NewPacket()
-			pack.CopyTo(p)
+			p := h.ClonePacket(pack)
 			p.Ident = row.Schema
 			r.Inject(p)
 

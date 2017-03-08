@@ -8,7 +8,7 @@ func BenchmarkPackRecycle(b *testing.B) {
 	poolSize := 100
 	inChan := make(chan *Packet, poolSize)
 	for i := 0; i < poolSize; i++ {
-		pack := NewPacket(inChan)
+		pack := newPacket(inChan)
 		inChan <- pack
 	}
 

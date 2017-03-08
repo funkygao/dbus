@@ -110,11 +110,12 @@ func (e *Engine) Project(name string) *Project {
 	return p
 }
 
-// NewPacket is used for plugin Filter to generate new Packet.
+// ClonePacket is used for plugin Filter to generate new Packet.
 // The generated Packet will use dedicated filter recycle chan.
-func (e *Engine) NewPacket() *Packet {
+func (e *Engine) ClonePacket(p *Packet) *Packet {
 	pack := <-e.filterRecycleChan
 	pack.Reset()
+	p.CopyTo(pack)
 	return pack
 }
 
@@ -270,10 +271,10 @@ func (e *Engine) ServeForever() {
 
 	log.Info("initializing Packet pool with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
-		inputPack := NewPacket(e.inputRecycleChan)
+		inputPack := newPacket(e.inputRecycleChan)
 		e.inputRecycleChan <- inputPack
 
-		filterPack := NewPacket(e.filterRecycleChan)
+		filterPack := newPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack
 	}
 
@@ -360,7 +361,6 @@ func (e *Engine) ServeForever() {
 	outputsWg.Wait()
 	log.Info("all Outputs stopped")
 
-	// stop router
 	close(e.router.hub)
 	routerWg.Wait()
 	log.Info("Router stopped")

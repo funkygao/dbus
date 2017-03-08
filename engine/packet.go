@@ -38,7 +38,7 @@ type Packet struct {
 	//	buf     []byte TODO
 }
 
-func NewPacket(recycleChan chan *Packet) *Packet {
+func newPacket(recycleChan chan *Packet) *Packet {
 	return &Packet{
 		recycleChan: recycleChan,
 		refCount:    int32(1),
