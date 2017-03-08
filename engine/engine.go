@@ -199,26 +199,26 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	plugin := wrapper.Create()
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
-		e.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons)
+		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
 
 		return
 	}
 
-	foRunner := newFORunner(wrapper.name, plugin, pluginCommons)
+	foRunner := newFORunner(plugin, pluginCommons)
 	matcher := newMatcher(section.StringList("match", nil), foRunner)
 	foRunner.matcher = matcher
 
 	switch pluginCategory {
 	case "Filter":
 		e.router.addFilterMatcher(matcher)
-		e.FilterRunners[foRunner.name] = foRunner
-		e.filterWrappers[foRunner.name] = wrapper
+		e.FilterRunners[foRunner.Name()] = foRunner
+		e.filterWrappers[foRunner.Name()] = wrapper
 
 	case "Output":
 		e.router.addOutputMatcher(matcher)
-		e.OutputRunners[foRunner.name] = foRunner
-		e.outputWrappers[foRunner.name] = wrapper
+		e.OutputRunners[foRunner.Name()] = foRunner
+		e.outputWrappers[foRunner.Name()] = wrapper
 	}
 }
 
