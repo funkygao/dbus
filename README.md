@@ -28,6 +28,15 @@ yet another databus that listens for mysql binlog and distribute to sinks
 
 ### TODO
 
+- [ ] pipeline
+  - 1 input, multiple output
+  - filter to dispatch dbs of a single binlog to different output
+- [ ] router finding matcher is slow
+- [ ] dbusd api server
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [ ] visualized flow throughput like nifi
+- [ ] ugly design of Input/Output ack mechanism
+  - we might learn from storm bolt ack
 - [X] logging
 - [X] share zkzone instance
 - [X] presence and standby mode
@@ -37,15 +46,11 @@ yet another databus that listens for mysql binlog and distribute to sinks
   -  binlog tps
   -  kafka tps
   -  lag
-- [ ] hub is shared, what if a plugin blocks others
+- [X] hub is shared, what if a plugin blocks others
+  - currently, I have no idea how to solve this issue
 - [X] Batcher padding
 - [X] shutdown kafka
-- [ ] pipeline
-  - 1 input, multiple output
-  - filter to dispatch dbs of a single binlog to different output
-- [ ] router finding matcher is slow
 - [X] zk checkpoint vs kafka checkpoint
-- [ ] visualized flow throughput like nifi
 - [ ] kafka follower stops replication
     [2017-02-17 07:59:52,581] INFO Reconnect due to socket error: java.lang.OutOfMemoryError: Direct buffer memory (kafka.consumer.SimpleConsumer)
     [2017-02-17 07:59:52,780] WARN [ReplicaFetcherThread-2-1], Error in fetch Name: FetchRequest; Version: 0; CorrelationId: 4; ClientId: ReplicaFetcherThread-2-1; ReplicaId: 0; MaxWait: 500 ms; MinBytes: 1 bytes; RequestInfo: [pubaudit,0] -> PartitionFetchInfo(257984707,1048576). Possible cause: java.lang.OutOfMemoryError: Direct buffer memory (kafka.server.ReplicaFetcherThread)
@@ -55,7 +60,6 @@ yet another databus that listens for mysql binlog and distribute to sinks
 - [ ] integration with helix
   - place config to central zk znode and watch changes
 - [X] can a mysql instance with miltiple databases have multiple Log/Position?
-- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [X] kafka sync produce in batch
 - [X] DDL binlog
   - drop table y;
@@ -81,10 +85,9 @@ yet another databus that listens for mysql binlog and distribute to sinks
   - [X] race detection
   - [ ] tc drop network packets and high latency
   - [X] reset binlog pos, and check kafka didn't recv dup events
-  - [ ] MysqlbinlogInput max_event_length
+  - [X] MysqlbinlogInput max_event_length
   - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
 - [ ] GTID
-- [ ] ugly globals register myslave_key
 
 ### Memo
 
