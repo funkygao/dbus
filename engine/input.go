@@ -82,11 +82,11 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Trace("Input[%s] starting", ir.name)
+		log.Info("Input[%s] starting", ir.name)
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Trace("Input[%s] stopped", ir.name)
+			log.Error("Input[%s] stopped", ir.name)
 		} else {
-			log.Trace("Input[%s] stopped: %v", ir.name, err)
+			log.Info("Input[%s] stopped: %v", ir.name, err)
 		}
 
 		if globals.Stopping {

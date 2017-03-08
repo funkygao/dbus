@@ -46,7 +46,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("[%s] starting replication...", name)
+		log.Trace("[%s] starting replication...", name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)

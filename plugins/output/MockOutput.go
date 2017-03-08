@@ -37,13 +37,13 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			n++
 
 			if !this.blackhole {
-				log.Info("[%s] -> %s", name, pack)
+				log.Trace("[%s] -> %s", name, pack)
 			}
 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Info("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
+			log.Trace("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}

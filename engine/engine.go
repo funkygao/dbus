@@ -241,7 +241,7 @@ func (e *Engine) ServeForever() {
 	e.launchHttpServ()
 
 	if telemetry.Default != nil {
-		log.Trace("launching telemetry dumper...")
+		log.Info("launching telemetry dumper...")
 
 		go func() {
 			if err := telemetry.Default.Start(); err != nil {
@@ -268,7 +268,7 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
-	log.Trace("initializing Packet pool with size=%d", globals.RecyclePoolSize)
+	log.Info("initializing Packet pool with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
 		inputPack := NewPacket(e.inputRecycleChan)
 		e.inputRecycleChan <- inputPack
@@ -277,7 +277,7 @@ func (e *Engine) ServeForever() {
 		e.filterRecycleChan <- filterPack
 	}
 
-	log.Trace("launching Watchdog with ticker=%s", globals.WatchdogTick)
+	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
 	go e.runWatchdog(globals.WatchdogTick)
 
 	log.Trace("launching Router...")
@@ -285,7 +285,7 @@ func (e *Engine) ServeForever() {
 	go e.router.Start(routerWg)
 
 	for _, project := range e.projects {
-		log.Trace("launching Project %s...", project.Name)
+		log.Info("launching Project %s...", project.Name)
 
 		project.Start()
 	}

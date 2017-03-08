@@ -48,13 +48,13 @@ func (r *messageRouter) reportMatcherQueues() {
 	}
 
 	for _, m := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s:%d", s, m.runner.Name(), len(m.InChan()))
+		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
 		if len(m.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
 	for _, m := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s:%d", s, m.runner.Name(), len(m.InChan()))
+		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
 		if len(m.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
@@ -84,7 +84,7 @@ func (r *messageRouter) Start(wg *sync.WaitGroup) {
 		}
 	}()
 
-	log.Trace("Router started")
+	log.Info("Router started")
 
 LOOP:
 	for ok {
