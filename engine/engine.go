@@ -311,7 +311,7 @@ func (e *Engine) ServeForever() {
 				observer.Publish(RELOAD, nil)
 
 			case syscall.SIGINT, syscall.SIGTERM:
-				log.Info("Engine shutdown...")
+				log.Info("shutdown...")
 				globals.Stopping = true
 				if telemetry.Default != nil {
 					telemetry.Default.Stop()
@@ -338,7 +338,7 @@ func (e *Engine) ServeForever() {
 	}
 	e.Unlock()
 	inputsWg.Wait() // wait for all inputs done
-	log.Trace("all Inputs stopped")
+	log.Info("all Inputs stopped")
 
 	// ok, now we are sure no more inputs, but in route.inChan there
 	// still may be filter injected packs and output not consumed packs
@@ -350,7 +350,7 @@ func (e *Engine) ServeForever() {
 	}
 	filtersWg.Wait()
 	if len(e.FilterRunners) > 0 {
-		log.Trace("all Filters stopped")
+		log.Info("all Filters stopped")
 	}
 
 	for _, outputRunner := range e.OutputRunners {
@@ -358,12 +358,12 @@ func (e *Engine) ServeForever() {
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
-	log.Trace("all Outputs stopped")
+	log.Info("all Outputs stopped")
 
 	// stop router
 	close(e.router.hub)
 	routerWg.Wait()
-	log.Trace("Router stopped")
+	log.Info("Router stopped")
 
 	e.stopHttpServ()
 

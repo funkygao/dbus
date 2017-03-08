@@ -10,5 +10,5 @@ type FilterRunner interface {
 	FilterOutputRunner
 
 	Filter() Filter
-	Inject(pack *Packet) bool
+	Inject(pack *Packet)
 }

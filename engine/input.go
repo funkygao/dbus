@@ -84,9 +84,9 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	for {
 		log.Info("Input[%s] starting", ir.name)
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Error("Input[%s] stopped", ir.name)
+			log.Info("Input[%s] stopped", ir.name)
 		} else {
-			log.Info("Input[%s] stopped: %v", ir.name, err)
+			log.Error("Input[%s] stopped: %v", ir.name, err)
 		}
 
 		if globals.Stopping {

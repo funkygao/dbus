@@ -39,7 +39,7 @@ func (this *Engine) launchHttpServ() {
 func (this *Engine) stopHttpServ() {
 	if this.httpListener != nil {
 		this.httpListener.Close()
-		log.Trace("API server stopped")
+		log.Info("API server stopped")
 	}
 }
 

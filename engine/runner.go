@@ -74,9 +74,8 @@ func (fo *foRunner) getMatcher() *matcher {
 	return fo.matcher
 }
 
-func (fo *foRunner) Inject(pack *Packet) bool {
+func (fo *foRunner) Inject(pack *Packet) {
 	fo.engine.router.hub <- pack
-	return true
 }
 
 func (fo *foRunner) InChan() chan *Packet {
