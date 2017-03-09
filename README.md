@@ -9,7 +9,7 @@
     \$$$$$$$ |      $$$$$$$  |      \$$$$$$  |      $$$$$$$  |
      \_______|      \_______/        \______/       \_______/ 
                                                               
-yet another databus that transfer/transform data between plugins pipeline.
+yet another databus that transfer/transform pipeline data between plugins.
 
 ### Plugins
 
@@ -35,6 +35,16 @@ yet another databus that transfer/transform data between plugins pipeline.
 
 - pubsub audit reporter
 - universal kafka listener and outputer
+
+### Dependencies
+
+dbus itself has no external dependencies. But the plugins might have.
+For example, MysqlbinlogInput uses zookeeper for sharding/election.
+
+### Configuration
+
+- KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
+- Mysql binlog positioner commit every 1s, channal buffer 100
 
 ### TODO
 

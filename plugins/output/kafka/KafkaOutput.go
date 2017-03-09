@@ -32,6 +32,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	}
 
 	cf := kafka.DefaultConfig()
+	cf.Sarama.Producer.Flush.Messages = config.Int("batch_size", 1024)
 	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
 	if !config.Bool("async", true) {
 		cf.SyncMode()

@@ -42,8 +42,8 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		Flavor:          m.c.String("flavor", "mysql"),
 		Host:            m.host,
 		Port:            m.port,
-		User:            m.c.String("user", "root"),
-		Password:        m.c.String("password", ""),
+		User:            m.user,
+		Password:        m.passwd,
 		SemiSyncEnabled: m.c.Bool("semi_sync", false),
 	})
 
