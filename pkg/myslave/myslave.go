@@ -21,16 +21,16 @@ type MySlave struct {
 
 	name string
 
+	Predicate func(schema, table string) bool
+	GTID      bool // global tx id
+
 	masterAddr   string
 	host         string
 	port         uint16
 	user, passwd string
-	dbs          []string
 
-	GTID bool // global tx id
-
-	db                        string
-	dbExcluded, tableExcluded map[string]struct{}
+	dbAllowed  map[string]struct{}
+	dbExcluded map[string]struct{}
 
 	isMaster  bool
 	errors    chan error
@@ -40,8 +40,8 @@ type MySlave struct {
 // New creates a MySlave instance.
 func New() *MySlave {
 	return &MySlave{
-		dbExcluded:    map[string]struct{}{},
-		tableExcluded: map[string]struct{}{},
+		dbExcluded: map[string]struct{}{},
+		dbAllowed:  map[string]struct{}{},
 	}
 }
 
@@ -50,22 +50,28 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
 	var err error
-	m.host, m.port, m.user, m.passwd, m.dbs, err = parseDSN(m.c.String("dsn", "localhost:3306"))
+	var dbs []string
+	m.host, m.port, m.user, m.passwd, dbs, err = parseDSN(m.c.String("dsn", "localhost:3306"))
 	if m.user == "" || m.host == "" || m.port == 0 || err != nil {
 		panic("invalid dsn")
 	}
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
 
-	m.name = m.c.String("name", m.masterAddr)
-	m.GTID = m.c.Bool("GTID", false)
-	if m.GTID {
-		panic("GTID not implemented")
+	for _, db := range dbs {
+		m.dbAllowed[db] = struct{}{}
 	}
 	for _, db := range config.StringList("db_excluded", nil) {
 		m.dbExcluded[db] = struct{}{}
 	}
-	for _, table := range config.StringList("table_excluded", nil) {
-		m.tableExcluded[table] = struct{}{}
+	if len(m.dbAllowed) > 0 && len(m.dbExcluded) > 0 {
+		panic("db_excluded and db allowed cannot be set at the same time")
+	}
+	m.setupPredicate()
+
+	m.name = m.c.String("name", m.masterAddr)
+	m.GTID = m.c.Bool("GTID", false)
+	if m.GTID {
+		panic("GTID not implemented")
 	}
 
 	m.m = newMetrics(m.host, m.port)

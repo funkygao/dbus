@@ -9,7 +9,7 @@ import (
 func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *replication.RowsEvent) {
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
-	if !m.predicate(schema, table) {
+	if !m.Predicate(schema, table) {
 		log.Debug("[%s] ignored[%s.%s]: %+v %+v", m.masterAddr, schema, table, h, e)
 		m.p.MarkAsProcessed(f, h.LogPos) // FIXME batcher partial failure?
 		return
@@ -40,18 +40,4 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		Timestamp: h.Timestamp,
 		Rows:      e.Rows,
 	}
-}
-
-func (m *MySlave) predicate(schema, table string) bool {
-	if len(m.db) > 0 && m.db != schema {
-		return false
-	}
-	if _, present := m.dbExcluded[schema]; present {
-		return false
-	}
-	if _, present := m.tableExcluded[table]; present {
-		return false
-	}
-
-	return true
 }
