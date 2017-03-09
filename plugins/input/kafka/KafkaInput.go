@@ -1,14 +1,10 @@
-package input
+package kafka
 
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Input = &KafkaInput{}
 )
 
 // KafkaInput is an input plugin that consumes data stream from a single specified kafka topic.
@@ -45,10 +41,4 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("KafkaInput", func() engine.Plugin {
-		return new(KafkaInput)
-	})
 }

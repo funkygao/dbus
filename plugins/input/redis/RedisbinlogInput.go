@@ -1,14 +1,10 @@
-package input
+package redis
 
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Input = &RedisbinlogInput{}
 )
 
 type RedisbinlogInput struct {
@@ -44,10 +40,4 @@ func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("RedisbinlogInput", func() engine.Plugin {
-		return new(RedisbinlogInput)
-	})
 }

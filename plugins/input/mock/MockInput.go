@@ -1,14 +1,10 @@
-package input
+package mock
 
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Input = &MockInput{}
 )
 
 type MockInput struct {
@@ -43,10 +39,4 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("MockInput", func() engine.Plugin {
-		return new(MockInput)
-	})
 }

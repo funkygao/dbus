@@ -1,12 +1,8 @@
-package filter
+package mock
 
 import (
 	"github.com/funkygao/dbus/engine"
 	conf "github.com/funkygao/jsconf"
-)
-
-var (
-	_ engine.Filter = &MockFilter{}
 )
 
 type MockFilter struct {
@@ -26,10 +22,4 @@ func (this *MockFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error 
 			pack.Recycle()
 		}
 	}
-}
-
-func init() {
-	engine.RegisterPlugin("MockFilter", func() engine.Plugin {
-		return new(MockFilter)
-	})
 }

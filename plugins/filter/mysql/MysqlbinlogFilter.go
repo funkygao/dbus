@@ -1,14 +1,10 @@
-package filter
+package mysql
 
 import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Filter = &MysqlbinlogFilter{}
 )
 
 /*
@@ -55,10 +51,4 @@ func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper)
 			pack.Recycle()
 		}
 	}
-}
-
-func init() {
-	engine.RegisterPlugin("MysqlbinlogFilter", func() engine.Plugin {
-		return new(MysqlbinlogFilter)
-	})
 }

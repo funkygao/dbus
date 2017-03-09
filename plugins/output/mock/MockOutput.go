@@ -1,4 +1,4 @@
-package output
+package mock
 
 import (
 	"time"
@@ -7,10 +7,6 @@ import (
 	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Output = &MockOutput{}
 )
 
 type MockOutput struct {
@@ -49,10 +45,4 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("MockOutput", func() engine.Plugin {
-		return new(MockOutput)
-	})
 }

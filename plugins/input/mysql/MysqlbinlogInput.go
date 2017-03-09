@@ -1,4 +1,4 @@
-package input
+package mysql
 
 import (
 	"fmt"
@@ -8,10 +8,6 @@ import (
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Input = &MysqlbinlogInput{}
 )
 
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
@@ -124,10 +120,4 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("MysqlbinlogInput", func() engine.Plugin {
-		return new(MysqlbinlogInput)
-	})
 }

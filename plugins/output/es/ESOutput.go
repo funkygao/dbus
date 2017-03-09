@@ -1,12 +1,8 @@
-package output
+package es
 
 import (
 	"github.com/funkygao/dbus/engine"
 	conf "github.com/funkygao/jsconf"
-)
-
-var (
-	_ engine.Output = &ESOutput{}
 )
 
 type ESOutput struct {
@@ -29,10 +25,4 @@ func (this *ESOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("ESOutput", func() engine.Plugin {
-		return new(ESOutput)
-	})
 }
