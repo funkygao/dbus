@@ -15,20 +15,21 @@ yet another databus that transfer/transform data between plugins pipeline.
 
 #### Input
 
-- MockInput
 - MysqlbinlogInput
 - RedisbinlogInput
+- KafkaInput
+- MockInput
 
 #### Filter
 
-- MockFilter
 - MysqlbinlogFilter
+- MockFilter
 
 #### Output
 
-- MockOutput
 - KafkaOutput
 - ESOutput
+- MockOutput
 
 ### Roadmap
 

@@ -103,7 +103,14 @@ func (this *Engine) httpStat(w http.ResponseWriter, req *http.Request, params ma
 }
 
 func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
-	wrappedFunc := func(w http.ResponseWriter, req *http.Request) {
+	for _, p := range this.httpPaths {
+		if p == path {
+			panic(path + " already registered")
+		}
+	}
+	this.httpPaths = append(this.httpPaths, path)
+
+	return this.httpRouter.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
 		var (
 			ret interface{}
 			t1  = time.Now()
@@ -119,14 +126,13 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 		}
 
 		w.Header().Set("Server", "dbus")
-		w.Header().Set("Content-Type", "application/json")
 		var status int
 		if err == nil {
 			status = http.StatusOK
 		} else {
 			status = http.StatusInternalServerError
+			w.WriteHeader(status)
 		}
-		w.WriteHeader(status)
 
 		// access log
 		log.Trace("%s \"%s %s %s\" %d %s",
@@ -136,27 +142,16 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 			req.Proto,
 			status,
 			time.Since(t1))
-		if status != http.StatusOK {
-			log.Error("ERROR %v", err)
-		}
 
+		// if handler returns nil, that means it will control the output
 		if ret != nil {
 			// pretty write json result
+			w.Header().Set("Content-Type", "application/json")
+
 			pretty, _ := json.MarshalIndent(ret, "", "    ")
 			w.Write(pretty)
-			w.Write([]byte("\n"))
 		}
-	}
-
-	// path can't be duplicated
-	for _, p := range this.httpPaths {
-		if p == path {
-			panic(path + " already registered")
-		}
-	}
-
-	this.httpPaths = append(this.httpPaths, path)
-	return this.httpRouter.HandleFunc(path, wrappedFunc)
+	})
 }
 
 func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{}, error) {
