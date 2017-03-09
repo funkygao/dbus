@@ -1,6 +1,7 @@
 package myslave
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -18,11 +19,15 @@ type MySlave struct {
 	m *slaveMetrics
 	z *zk.ZkZone
 
-	name       string
-	masterAddr string
-	host       string
-	port       uint16
-	GTID       bool // global tx id
+	name string
+
+	masterAddr   string
+	host         string
+	port         uint16
+	user, passwd string
+	dbs          []string
+
+	GTID bool // global tx id
 
 	db                        string
 	dbExcluded, tableExcluded map[string]struct{}
@@ -44,10 +49,13 @@ func New() *MySlave {
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
-	m.masterAddr, m.host, m.port, m.db = configMasterAddr(m.c.String("master_addr", "localhost:3306"))
-	if m.masterAddr == "" || m.host == "" || m.port == 0 {
-		panic("invalid master_addr")
+	var err error
+	m.host, m.port, m.user, m.passwd, m.dbs, err = parseDSN(m.c.String("dsn", "localhost:3306"))
+	if m.user == "" || m.host == "" || m.port == 0 || err != nil {
+		panic("invalid dsn")
 	}
+	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
+
 	m.name = m.c.String("name", m.masterAddr)
 	m.GTID = m.c.Bool("GTID", false)
 	if m.GTID {

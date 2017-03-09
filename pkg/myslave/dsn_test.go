@@ -31,7 +31,7 @@ func TestParseDSN(t *testing.T) {
 	host, port, user, pass, dbs, err = parseDSN(dsn)
 	assert.Equal(t, false, err == nil)
 
-	// missing password: ok
+	// empty password: ok
 	dsn = "user1:@1.1.1.1:3306"
 	host, port, user, pass, dbs, err = parseDSN(dsn)
 	assert.Equal(t, nil, err)
