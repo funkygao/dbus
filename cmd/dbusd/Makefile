@@ -8,8 +8,8 @@ fanout:build
 dispatch:build
 	./dbusd -conf ../../etc/dispatch.cf
 
-mysql:build
-	./dbusd -conf ../../etc/mysql.cf
+canal:build
+	./dbusd -conf ../../etc/canal.cf
 
 build:
 	@go build -race

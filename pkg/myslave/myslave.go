@@ -1,6 +1,7 @@
 package myslave
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -18,14 +19,18 @@ type MySlave struct {
 	m *slaveMetrics
 	z *zk.ZkZone
 
-	name       string
-	masterAddr string
-	host       string
-	port       uint16
-	GTID       bool // global tx id
+	name string
 
-	db                        string
-	dbExcluded, tableExcluded map[string]struct{}
+	Predicate func(schema, table string) bool
+	GTID      bool // global tx id
+
+	masterAddr   string
+	host         string
+	port         uint16
+	user, passwd string
+
+	dbAllowed  map[string]struct{}
+	dbExcluded map[string]struct{}
 
 	isMaster  bool
 	errors    chan error
@@ -35,8 +40,8 @@ type MySlave struct {
 // New creates a MySlave instance.
 func New() *MySlave {
 	return &MySlave{
-		dbExcluded:    map[string]struct{}{},
-		tableExcluded: map[string]struct{}{},
+		dbExcluded: map[string]struct{}{},
+		dbAllowed:  map[string]struct{}{},
 	}
 }
 
@@ -44,20 +49,29 @@ func New() *MySlave {
 func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	m.c = config
 
-	m.masterAddr, m.host, m.port, m.db = configMasterAddr(m.c.String("master_addr", "localhost:3306"))
-	if m.masterAddr == "" || m.host == "" || m.port == 0 {
-		panic("invalid master_addr")
+	var err error
+	var dbs []string
+	m.host, m.port, m.user, m.passwd, dbs, err = parseDSN(m.c.String("dsn", "localhost:3306"))
+	if m.user == "" || m.host == "" || m.port == 0 || err != nil {
+		panic("invalid dsn")
 	}
-	m.name = m.c.String("name", m.masterAddr)
-	m.GTID = m.c.Bool("GTID", false)
-	if m.GTID {
-		panic("GTID not implemented")
+	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
+
+	for _, db := range dbs {
+		m.dbAllowed[db] = struct{}{}
 	}
 	for _, db := range config.StringList("db_excluded", nil) {
 		m.dbExcluded[db] = struct{}{}
 	}
-	for _, table := range config.StringList("table_excluded", nil) {
-		m.tableExcluded[table] = struct{}{}
+	if len(m.dbAllowed) > 0 && len(m.dbExcluded) > 0 {
+		panic("db_excluded and db allowed cannot be set at the same time")
+	}
+	m.setupPredicate()
+
+	m.name = m.c.String("name", m.masterAddr)
+	m.GTID = m.c.Bool("GTID", false)
+	if m.GTID {
+		panic("GTID not implemented")
 	}
 
 	m.m = newMetrics(m.host, m.port)

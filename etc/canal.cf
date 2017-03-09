@@ -16,20 +16,14 @@
             class: "MysqlbinlogInput"
             // zone is used for positioner
             zone: "local"
-            pos_commit_interval: "1s"
-            event_buffer_len: 100
-            master_addr: "localhost:3306"
-            user: "root"
-            password: ""
-            server_id: 137
-            GTID: false
+            dsn: "mysql://root:@localhost:3306"
             table_excluded: ["foo", ]
             db_excluded: ["bar", ]
         }            
 
         {
             name: "binlog_out"
-            class: "KafkaOutput"
+            class: "MockOutput"
             zone: "local"
             cluster: "me"
             topic: "foobar"
