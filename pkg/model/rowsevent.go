@@ -17,7 +17,7 @@ var (
 	marshaller func(v interface{}) ([]byte, error)
 )
 
-//go:generate ffjson -force-regenerate $GOFILE
+///go:generate ffjson -force-regenerate $GOFILE
 
 // RowsEvent is a structured mysql binlog rows event.
 // It implements engine.Payloader interface and can be transferred between plugins.

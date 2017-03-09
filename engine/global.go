@@ -31,16 +31,15 @@ var (
 type GlobalConfig struct {
 	*conf.Conf
 
-	StartedAt       time.Time
-	Stopping        bool
-	Debug           bool
+	StartedAt   time.Time
+	Stopping    bool
+	Debug       bool
+	RouterTrack bool
+
 	RecyclePoolSize int
 	PluginChanSize  int
 
 	WatchdogTick time.Duration
-
-	MaxMsgLoops int
-	MaxPackIdle time.Duration
 
 	// registry is used to hold the global object shared between plugins.
 	registry map[string]interface{}
@@ -89,14 +88,12 @@ func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 }
 
 func DefaultGlobals() *GlobalConfig {
-	idle, _ := time.ParseDuration("2m")
 	return &GlobalConfig{
 		Debug:           false,
 		RecyclePoolSize: 100,
 		PluginChanSize:  150,
+		RouterTrack:     true,
 		WatchdogTick:    time.Minute * 2,
-		MaxMsgLoops:     4,
-		MaxPackIdle:     idle,
 		StartedAt:       time.Now(),
 		registry:        map[string]interface{}{},
 	}

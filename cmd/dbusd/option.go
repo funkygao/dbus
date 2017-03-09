@@ -17,6 +17,7 @@ var (
 		showversion   bool
 		visualizeFile string
 		lockfile      string
+		routerTrack   bool
 
 		logfile  string
 		loglevel string
@@ -39,6 +40,7 @@ func parseFlags() {
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
+	flag.BoolVar(&options.routerTrack, "routerstat", false, "track router metrics")
 	flag.IntVar(&options.mpoolSize, "mpool", 100, "memory pool size")
 	flag.IntVar(&options.ppoolSize, "ppool", 150, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
