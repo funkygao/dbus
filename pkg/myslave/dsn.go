@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-func parseDSN(dsn string) (host string, port uint16, username, passwd string, err error) {
+// parseDSN parse mysql DSN(data source name).
+func parseDSN(dsn string) (host string, port uint16, username, passwd string, dbs []string, err error) {
 	if !strings.HasPrefix(dsn, "mysql://") {
 		dsn = "mysql://" + dsn
 	}
@@ -32,6 +33,14 @@ func parseDSN(dsn string) (host string, port uint16, username, passwd string, er
 		return
 	}
 	port = uint16(portInt)
+
+	databases := strings.Split(strings.TrimPrefix(u.Path, "/"), ",")
+	dbs = make([]string, 0, len(databases))
+	for _, db := range databases {
+		if db = strings.TrimSpace(db); db != "" {
+			dbs = append(dbs, db)
+		}
+	}
 
 	return
 }
