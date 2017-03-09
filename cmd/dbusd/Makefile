@@ -1,5 +1,12 @@
-mock:build
-	./dbusd -conf ../../etc/mock.cf
+mock:
+	@go build
+	./dbusd -conf ../../etc/mock.cf -routerstat=false
+
+fanout:build
+	./dbusd -conf ../../etc/fanout.cf
+
+dispatch:build
+	./dbusd -conf ../../etc/dispatch.cf
 
 mysql:build
 	./dbusd -conf ../../etc/mysql.cf
@@ -7,3 +14,10 @@ mysql:build
 build:
 	@go build -race
 	@mkdir -p var
+
+pprof:
+	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=60
+
+flame:
+	@go-torch -u http://localhost:10120/debug/pprof/profile --title=dbusd
+	@open torch.svg

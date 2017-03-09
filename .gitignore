@@ -35,4 +35,4 @@ var/
 
 dbusd
 pkg/kafka/kpub/kpub
-
+pkg/model/rowsevent_ffjson.go

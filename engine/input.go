@@ -21,61 +21,59 @@ type Input interface {
 type InputRunner interface {
 	PluginRunner
 
-	// InChan returns input channel from which Inputs can get fresh PipelinePacks.
-	InChan() chan *PipelinePack
+	// InChan returns input channel from which Inputs can get fresh Packets.
+	InChan() chan *Packet
 
 	// Input returns the associated Input plugin object.
 	Input() Input
 
-	// Injects PipelinePack into the Router's input channel for delivery
+	// Injects Packet into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
-	Inject(pack *PipelinePack)
+	Inject(pack *Packet)
 }
 
 type iRunner struct {
 	pRunnerBase
 
-	inChan chan *PipelinePack
+	inChan chan *Packet
 }
 
-func newInputRunner(name string, input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons) (r InputRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
-			name:          name,
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
 	}
 }
 
-func (this *iRunner) Inject(pack *PipelinePack) {
-	pack.input = true
+func (ir *iRunner) Inject(pack *Packet) {
 	if pack.Ident == "" {
-		pack.Ident = this.name
+		pack.Ident = ir.Name()
 	}
-	this.engine.router.hub <- pack
+	ir.engine.router.hub <- pack
 }
 
-func (this *iRunner) InChan() chan *PipelinePack {
-	return this.inChan
+func (ir *iRunner) InChan() chan *Packet {
+	return ir.inChan
 }
 
-func (this *iRunner) Input() Input {
-	return this.plugin.(Input)
+func (ir *iRunner) Input() Input {
+	return ir.plugin.(Input)
 }
 
-func (this *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
-	this.engine = e
-	this.inChan = e.inputRecycleChan
+func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
+	ir.engine = e
+	ir.inChan = e.inputRecycleChan
 
-	go this.runMainloop(e, wg)
+	go ir.runMainloop(e, wg)
 	return nil
 }
 
-func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
+func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", this.name, err)
+			log.Critical("[%s] %v", ir.Name(), err)
 		}
 
 		wg.Done()
@@ -83,29 +81,33 @@ func (this *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Trace("Input[%s] starting", this.name)
-		log.Trace("Input[%s] stopped: %v", this.name, this.Input().Run(this, e))
+		log.Info("Input[%s] starting", ir.Name())
+		if err := ir.Input().Run(ir, e); err == nil {
+			log.Info("Input[%s] stopped", ir.Name())
+		} else {
+			log.Error("Input[%s] stopped: %v", ir.Name(), err)
+		}
 
 		if globals.Stopping {
-			e.stopInputRunner(this.name)
+			e.stopInputRunner(ir.Name())
 
 			return
 		}
 
-		if restart, ok := this.plugin.(Restarting); ok {
+		if restart, ok := ir.plugin.(Restarting); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
-				e.stopInputRunner(this.name)
+				e.stopInputRunner(ir.Name())
 
 				return
 			}
 		}
 
-		log.Trace("Input[%s] restarting", this.name)
+		log.Trace("Input[%s] restarting", ir.Name())
 
 		// Re-initialize our plugin with its wrapper
-		iw := e.inputWrappers[this.name]
-		this.plugin = iw.Create()
+		iw := e.inputWrappers[ir.Name()]
+		ir.plugin = iw.Create()
 	}
 
 }

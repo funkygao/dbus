@@ -1,0 +1,28 @@
+{
+    apisvr_addr: "127.0.0.1:9876"
+
+    projects: [
+        {
+            name: "mock"
+        }
+    ]
+
+    plugins: [
+        { name: "MockInput" }
+        
+        {
+            name:   "o1"
+            class:   "MockOutput"
+            blackhole: false
+            match:  ["MockInput", ]
+        }
+
+        {
+            name:   "o2"
+            class:   "MockOutput"
+            blackhole: false
+            match:  ["MockInput", ]
+        }
+    ]
+
+}

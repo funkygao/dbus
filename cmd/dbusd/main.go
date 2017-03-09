@@ -7,12 +7,14 @@ import (
 
 	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/engine"
-	_ "github.com/funkygao/dbus/plugins/filter"
-	_ "github.com/funkygao/dbus/plugins/input"
-	_ "github.com/funkygao/dbus/plugins/output"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/diagnostics/agent"
 	"github.com/funkygao/log4go"
+
+	// bootstrap plugins
+	_ "github.com/funkygao/dbus/plugins/filter"
+	_ "github.com/funkygao/dbus/plugins/input"
+	_ "github.com/funkygao/dbus/plugins/output"
 )
 
 func init() {
@@ -37,7 +39,7 @@ func main() {
 
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
-	globals.DryRun = options.dryrun
+	globals.RouterTrack = options.routerTrack
 	globals.RecyclePoolSize = options.mpoolSize
 	globals.PluginChanSize = options.ppoolSize
 

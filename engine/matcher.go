@@ -19,13 +19,13 @@ func newMatcher(matches []string, r FilterOutputRunner) *matcher {
 	return this
 }
 
-func (this *matcher) InChan() chan *PipelinePack {
+func (this *matcher) InChan() chan *Packet {
 	return this.runner.InChan()
 }
 
-func (this *matcher) Match(pack *PipelinePack) bool {
+func (this *matcher) Match(pack *Packet) bool {
 	if pack.Ident == "" {
-		panic(fmt.Sprintf("Pack with empty ident: %+v", *pack))
+		panic(fmt.Sprintf("Packet with empty ident: %+v", *pack))
 	}
 
 	if len(this.matches) == 0 {

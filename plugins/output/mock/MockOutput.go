@@ -1,4 +1,4 @@
-package output
+package mock
 
 import (
 	"time"
@@ -7,10 +7,6 @@ import (
 	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Output = &MockOutput{}
 )
 
 type MockOutput struct {
@@ -26,6 +22,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 	defer tick.Stop()
 
 	var n, lastN int64
+	name := r.Name()
 	for {
 		select {
 		case pack, ok := <-r.InChan():
@@ -36,22 +33,16 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			n++
 
 			if !this.blackhole {
-				log.Info("-> %s", pack)
+				log.Trace("[%s] -> %s", name, pack)
 			}
 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Info("throughput %s/s", gofmt.Comma((n-lastN)/10))
+			log.Trace("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
 			lastN = n
 		}
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("MockOutput", func() engine.Plugin {
-		return new(MockOutput)
-	})
 }

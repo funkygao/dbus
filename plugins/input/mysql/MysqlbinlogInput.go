@@ -1,4 +1,4 @@
-package input
+package mysql
 
 import (
 	"fmt"
@@ -8,10 +8,6 @@ import (
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Input = &MysqlbinlogInput{}
 )
 
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
@@ -46,7 +42,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		log.Info("[%s] starting replication...", name)
+		log.Trace("[%s] starting replication...", name)
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
@@ -88,7 +84,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 				select {
 				case err := <-errors:
-					// TODO is this neccessary?
+					// TODO is this necessary?
 					log.Error("[%s] backoff %s: %v", name, backoff, err)
 					this.slave.StopReplication()
 
@@ -110,6 +106,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						pack.Payload = row
 						r.Inject(pack)
 					} else {
+						// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
 						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
 						pack.Recycle()
 					}
@@ -123,10 +120,4 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("MysqlbinlogInput", func() engine.Plugin {
-		return new(MysqlbinlogInput)
-	})
 }

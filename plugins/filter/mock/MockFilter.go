@@ -1,23 +1,14 @@
-package filter
+package mock
 
 import (
 	"github.com/funkygao/dbus/engine"
 	conf "github.com/funkygao/jsconf"
 )
 
-var (
-	_ engine.Filter = &MockFilter{}
-)
-
 type MockFilter struct {
-	ident string
 }
 
 func (this *MockFilter) Init(config *conf.Conf) {
-	this.ident = config.String("ident", "")
-	if this.ident == "" {
-		panic("empty ident")
-	}
 }
 
 func (this *MockFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error {
@@ -31,10 +22,4 @@ func (this *MockFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error 
 			pack.Recycle()
 		}
 	}
-}
-
-func init() {
-	engine.RegisterPlugin("MockFilter", func() engine.Plugin {
-		return new(MockFilter)
-	})
 }

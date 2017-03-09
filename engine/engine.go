@@ -9,14 +9,12 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
-	"github.com/funkygao/golib/gofmt"
 	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -51,25 +49,17 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*pluginWrapper
 
-	// inputPackTracker, filterPackTracker
-	diagnosticTrackers map[string]*diagnosticTracker
-
 	top    *topology
 	router *messageRouter
 
-	// PipelinePack supply for Input plugins.
-	inputRecycleChan chan *PipelinePack
-
-	// PipelinePack supply for Filter plugins.
-	filterRecycleChan chan *PipelinePack
+	inputRecycleChan  chan *Packet
+	filterRecycleChan chan *Packet
 
 	hostname string
 	pid      int
 }
 
-func New(globals *GlobalConfig) (this *Engine) {
-	this = new(Engine)
-
+func New(globals *GlobalConfig) *Engine {
 	if globals == nil {
 		globals = DefaultGlobals()
 	}
@@ -77,41 +67,42 @@ func New(globals *GlobalConfig) (this *Engine) {
 		return globals
 	}
 
-	this.InputRunners = make(map[string]InputRunner)
-	this.inputWrappers = make(map[string]*pluginWrapper)
-	this.FilterRunners = make(map[string]FilterRunner)
-	this.filterWrappers = make(map[string]*pluginWrapper)
-	this.OutputRunners = make(map[string]OutputRunner)
-	this.outputWrappers = make(map[string]*pluginWrapper)
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
 
-	this.inputRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
-	this.filterRecycleChan = make(chan *PipelinePack, globals.RecyclePoolSize)
+	return &Engine{
+		InputRunners:   make(map[string]InputRunner),
+		inputWrappers:  make(map[string]*pluginWrapper),
+		FilterRunners:  make(map[string]FilterRunner),
+		filterWrappers: make(map[string]*pluginWrapper),
+		OutputRunners:  make(map[string]OutputRunner),
+		outputWrappers: make(map[string]*pluginWrapper),
 
-	this.diagnosticTrackers = make(map[string]*diagnosticTracker)
-	this.projects = make(map[string]*Project)
-	this.httpPaths = make([]string, 0, 6)
+		inputRecycleChan:  make(chan *Packet, globals.RecyclePoolSize),
+		filterRecycleChan: make(chan *Packet, globals.RecyclePoolSize),
 
-	this.top = newTopology()
-	this.router = newMessageRouter()
+		top:    newTopology(),
+		router: newMessageRouter(),
 
-	this.hostname, _ = os.Hostname()
-	this.pid = os.Getpid()
+		projects:  make(map[string]*Project),
+		httpPaths: make([]string, 0, 6),
 
-	return this
+		pid:      os.Getpid(),
+		hostname: hostname,
+	}
 }
 
-func (this *Engine) stopInputRunner(name string) {
-	this.Lock()
-	this.InputRunners[name] = nil
-	this.Unlock()
+func (e *Engine) stopInputRunner(name string) {
+	e.Lock()
+	e.InputRunners[name] = nil
+	e.Unlock()
 }
 
-func (this *Engine) Engine() *Engine {
-	return this
-}
-
-func (this *Engine) Project(name string) *Project {
-	p, present := this.projects[name]
+// Project returns a Project by name.
+func (e *Engine) Project(name string) *Project {
+	p, present := e.projects[name]
 	if !present {
 		return nil
 	}
@@ -119,7 +110,16 @@ func (this *Engine) Project(name string) *Project {
 	return p
 }
 
-func (this *Engine) LoadConfigFile(fn string) *Engine {
+// ClonePacket is used for plugin Filter to generate new Packet.
+// The generated Packet will use dedicated filter recycle chan.
+func (e *Engine) ClonePacket(p *Packet) *Packet {
+	pack := <-e.filterRecycleChan
+	pack.Reset()
+	p.CopyTo(pack)
+	return pack
+}
+
+func (e *Engine) LoadConfigFile(fn string) *Engine {
 	if fn == "" {
 		panic("config file is required")
 	}
@@ -131,36 +131,36 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 		panic(err)
 	}
 
-	this.Conf = cf
+	e.Conf = cf
 	Globals().Conf = cf
 
 	// 'projects' section
-	for i := 0; i < len(this.List("projects", nil)); i++ {
-		section, err := this.Section(fmt.Sprintf("projects[%d]", i))
+	for i := 0; i < len(e.List("projects", nil)); i++ {
+		section, err := e.Section(fmt.Sprintf("projects[%d]", i))
 		if err != nil {
 			panic(err)
 		}
 
 		project := &Project{}
 		project.fromConfig(section)
-		if _, present := this.projects[project.Name]; present {
+		if _, present := e.projects[project.Name]; present {
 			panic("dup project: " + project.Name)
 		}
-		this.projects[project.Name] = project
+		e.projects[project.Name] = project
 	}
 
 	// 'plugins' section
-	for i := 0; i < len(this.List("plugins", nil)); i++ {
-		section, err := this.Section(fmt.Sprintf("plugins[%d]", i))
+	for i := 0; i < len(e.List("plugins", nil)); i++ {
+		section, err := e.Section(fmt.Sprintf("plugins[%d]", i))
 		if err != nil {
 			panic(err)
 		}
 
-		this.loadPluginSection(section)
+		e.loadPluginSection(section)
 	}
 
 	// 'topology' section
-	this.top.load(this.Conf)
+	e.top.load(e.Conf)
 
 	if c, err := influxdb.NewConfig(cf.String("influx_addr", ""),
 		cf.String("influx_db", "dbus"), "", "",
@@ -170,10 +170,10 @@ func (this *Engine) LoadConfigFile(fn string) *Engine {
 		log.Warn("telemetry disabled for: %s", err)
 	}
 
-	return this
+	return e
 }
 
-func (this *Engine) loadPluginSection(section *conf.Conf) {
+func (e *Engine) loadPluginSection(section *conf.Conf) {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.loadConfig(section)
 	if pluginCommons.disabled {
@@ -182,48 +182,47 @@ func (this *Engine) loadPluginSection(section *conf.Conf) {
 		return
 	}
 
-	wrapper := new(pluginWrapper)
+	wrapper := &pluginWrapper{
+		name:          pluginCommons.name,
+		configCreator: func() *conf.Conf { return section },
+	}
 	var ok bool
 	if wrapper.pluginCreator, ok = availablePlugins[pluginCommons.class]; !ok {
 		panic("unknown plugin type: " + pluginCommons.class)
 	}
-	wrapper.configCreator = func() *conf.Conf { return section }
-	wrapper.name = pluginCommons.name
 
 	pluginType := pluginTypeRegex.FindStringSubmatch(pluginCommons.class)
 	if len(pluginType) < 2 {
 		panic("invalid plugin type: " + pluginCommons.class)
 	}
 
-	plugin := wrapper.pluginCreator()
-	plugin.Init(section)
-
+	plugin := wrapper.Create()
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
-		this.InputRunners[wrapper.name] = newInputRunner(wrapper.name, plugin.(Input), pluginCommons)
-		this.inputWrappers[wrapper.name] = wrapper
+		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
+		e.inputWrappers[wrapper.name] = wrapper
 
 		return
 	}
 
-	foRunner := newFORunner(wrapper.name, plugin, pluginCommons)
+	foRunner := newFORunner(plugin, pluginCommons)
 	matcher := newMatcher(section.StringList("match", nil), foRunner)
 	foRunner.matcher = matcher
 
 	switch pluginCategory {
 	case "Filter":
-		this.router.addFilterMatcher(matcher)
-		this.FilterRunners[foRunner.name] = foRunner
-		this.filterWrappers[foRunner.name] = wrapper
+		e.router.addFilterMatcher(matcher)
+		e.FilterRunners[foRunner.Name()] = foRunner
+		e.filterWrappers[foRunner.Name()] = wrapper
 
 	case "Output":
-		this.router.addOutputMatcher(matcher)
-		this.OutputRunners[foRunner.name] = foRunner
-		this.outputWrappers[foRunner.name] = wrapper
+		e.router.addOutputMatcher(matcher)
+		e.OutputRunners[foRunner.Name()] = foRunner
+		e.outputWrappers[foRunner.Name()] = wrapper
 	}
 }
 
-func (this *Engine) ServeForever() {
+func (e *Engine) ServeForever() {
 	var (
 		outputsWg = new(sync.WaitGroup)
 		filtersWg = new(sync.WaitGroup)
@@ -240,10 +239,10 @@ func (this *Engine) ServeForever() {
 	globals.sigChan = make(chan os.Signal)
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGUSR1, syscall.SIGUSR2)
 
-	this.launchHttpServ()
+	e.launchHttpServ()
 
 	if telemetry.Default != nil {
-		log.Trace("launching telemetry dumper...")
+		log.Info("launching telemetry dumper...")
 
 		go func() {
 			if err := telemetry.Default.Start(); err != nil {
@@ -252,75 +251,49 @@ func (this *Engine) ServeForever() {
 		}()
 	}
 
-	for _, runner := range this.OutputRunners {
-		log.Trace("launching Output[%s]...", runner.Name())
+	for _, outputRunner := range e.OutputRunners {
+		log.Trace("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = runner.start(this, outputsWg); err != nil {
+		if err = outputRunner.start(e, outputsWg); err != nil {
 			panic(err)
 		}
 	}
 
-	for _, runner := range this.FilterRunners {
-		log.Trace("launching Filter[%s]...", runner.Name())
+	for _, filterRunner := range e.FilterRunners {
+		log.Trace("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = runner.start(this, filtersWg); err != nil {
+		if err = filterRunner.start(e, filtersWg); err != nil {
 			panic(err)
 		}
 	}
 
-	// setup the diagnostic trackers
-	inputPackTracker := newDiagnosticTracker("inputPackTracker")
-	this.diagnosticTrackers[inputPackTracker.PoolName] = inputPackTracker
-	filterPackTracker := newDiagnosticTracker("filterPackTracker")
-	this.diagnosticTrackers[filterPackTracker.PoolName] = filterPackTracker
-
-	log.Trace("initializing PipelinePack pools with size=%d", globals.RecyclePoolSize)
+	log.Info("initializing Packet pool with size=%d", globals.RecyclePoolSize)
 	for i := 0; i < globals.RecyclePoolSize; i++ {
-		inputPack := NewPipelinePack(this.inputRecycleChan)
-		inputPackTracker.AddPack(inputPack)
-		this.inputRecycleChan <- inputPack
+		inputPack := newPacket(e.inputRecycleChan)
+		e.inputRecycleChan <- inputPack
 
-		filterPack := NewPipelinePack(this.filterRecycleChan)
-		filterPackTracker.AddPack(filterPack)
-		this.filterRecycleChan <- filterPack
+		filterPack := newPacket(e.filterRecycleChan)
+		e.filterRecycleChan <- filterPack
 	}
 
-	go inputPackTracker.Run(this.Int("diagnostic_interval", 20))
-	go filterPackTracker.Run(this.Int("diagnostic_interval", 20))
+	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
+	go e.runWatchdog(globals.WatchdogTick)
 
-	// check if we have enough recycle pool reservation
-	go func() {
-		t := time.NewTicker(globals.WatchdogTick)
-		defer t.Stop()
-
-		var inputPoolSize, filterPoolSize int
-
-		for range t.C {
-			inputPoolSize = len(this.inputRecycleChan)
-			filterPoolSize = len(this.filterRecycleChan)
-			if inputPoolSize == 0 || filterPoolSize == 0 {
-				log.Trace("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
-			}
-		}
-	}()
-
-	log.Trace("launching Router...")
+	log.Info("launching Router...")
 	routerWg.Add(1)
-	go this.router.Start(routerWg)
+	go e.router.Start(routerWg)
 
-	for _, project := range this.projects {
-		log.Trace("launching Project %s...", project.Name)
-
+	for _, project := range e.projects {
 		project.Start()
 	}
 
-	for _, runner := range this.InputRunners {
-		log.Trace("launching Input[%s]...", runner.Name())
+	for _, inputRunner := range e.InputRunners {
+		log.Trace("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = runner.start(this, inputsWg); err != nil {
+		if err = inputRunner.start(e, inputsWg); err != nil {
 			inputsWg.Done()
 			panic(err)
 		}
@@ -337,7 +310,7 @@ func (this *Engine) ServeForever() {
 				observer.Publish(RELOAD, nil)
 
 			case syscall.SIGINT, syscall.SIGTERM:
-				log.Info("Engine shutdown...")
+				log.Info("shutdown...")
 				globals.Stopping = true
 				if telemetry.Default != nil {
 					telemetry.Default.Stop()
@@ -352,55 +325,49 @@ func (this *Engine) ServeForever() {
 		}
 	}
 
-	// cleanup after shutdown
-	for _, diag := range this.diagnosticTrackers {
-		diag.Stop()
-	}
-
-	this.Lock()
-	for _, runner := range this.InputRunners {
-		if runner == nil {
-			// this Input plugin already exit
+	e.Lock()
+	for _, inputRunner := range e.InputRunners {
+		if inputRunner == nil {
+			// the Input plugin already exit
 			continue
 		}
 
-		log.Trace("Stop message sent to %s", runner.Name())
-		runner.Input().Stop(runner)
+		log.Trace("Stop message sent to %s", inputRunner.Name())
+		inputRunner.Input().Stop(inputRunner)
 	}
-	this.Unlock()
+	e.Unlock()
 	inputsWg.Wait() // wait for all inputs done
-	log.Trace("all Inputs stopped")
+	log.Info("all Inputs stopped")
 
 	// ok, now we are sure no more inputs, but in route.inChan there
 	// still may be filter injected packs and output not consumed packs
 	// we must wait for all the packs to be consumed before shutdown
 
-	for _, runner := range this.FilterRunners {
-		log.Trace("Stop message sent to %s", runner.Name())
-		this.router.removeFilterMatcher <- runner.getMatcher()
+	for _, filterRunner := range e.FilterRunners {
+		log.Trace("Stop message sent to %s", filterRunner.Name())
+		e.router.removeFilterMatcher <- filterRunner.getMatcher()
 	}
 	filtersWg.Wait()
-	log.Trace("all Filters stopped")
+	if len(e.FilterRunners) > 0 {
+		log.Info("all Filters stopped")
+	}
 
-	for _, runner := range this.OutputRunners {
-		log.Trace("Stop message sent to %s", runner.Name())
-		this.router.removeOutputMatcher <- runner.getMatcher()
+	for _, outputRunner := range e.OutputRunners {
+		log.Trace("Stop message sent to %s", outputRunner.Name())
+		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
-	log.Trace("all Outputs stopped")
+	log.Info("all Outputs stopped")
 
-	// stop router
-	close(this.router.hub)
+	close(e.router.hub)
 	routerWg.Wait()
-	log.Trace("Router stopped")
+	log.Info("Router stopped")
 
-	this.stopHttpServ()
+	e.stopHttpServ()
 
-	for _, project := range this.projects {
+	for _, project := range e.projects {
 		project.Stop()
 	}
 
-	log.Info("shutdown with input:%s, dispatched:%s",
-		gofmt.Comma(atomic.LoadInt64(&this.router.stats.TotalInputMsgN)),
-		gofmt.Comma(atomic.LoadInt64(&this.router.stats.TotalProcessedMsgN)))
+	log.Info("shutdown complete")
 }

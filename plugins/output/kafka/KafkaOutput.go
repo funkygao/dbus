@@ -1,4 +1,4 @@
-package output
+package kafka
 
 import (
 	"fmt"
@@ -11,10 +11,6 @@ import (
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
-)
-
-var (
-	_ engine.Output = &KafkaOutput{}
 )
 
 // KafkaOutput is an Output plugin that send pack to a single specified kafka topic.
@@ -117,10 +113,4 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	return nil
-}
-
-func init() {
-	engine.RegisterPlugin("KafkaOutput", func() engine.Plugin {
-		return new(KafkaOutput)
-	})
 }

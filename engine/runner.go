@@ -19,47 +19,41 @@ type PluginRunner interface {
 	// Name returns the name of the underlying plugin.
 	Name() string
 
+	// Class returns the class name of the underlying plugin.
+	Class() string
+
 	// Plugin returns the underlying plugin object.
 	Plugin() Plugin
 
 	start(e *Engine, wg *sync.WaitGroup) (err error)
-
-	setLeakCount(count int)
-	getLeakCount() int
 }
 
 // Filter and Output runner extends PluginRunner
 type FilterOutputRunner interface {
 	PluginRunner
 
-	InChan() chan *PipelinePack
+	InChan() chan *Packet
 
 	getMatcher() *matcher
 }
 
 // pRunnerBase is base for all plugin runners.
 type pRunnerBase struct {
-	name          string
 	plugin        Plugin
 	engine        *Engine
 	pluginCommons *pluginCommons
-	leakCount     int
 }
 
-func (this *pRunnerBase) Name() string {
-	return this.name
+func (pb *pRunnerBase) Name() string {
+	return pb.pluginCommons.name
 }
 
-func (this *pRunnerBase) Plugin() Plugin {
-	return this.plugin
+func (pb *pRunnerBase) Class() string {
+	return pb.pluginCommons.class
 }
 
-func (this *pRunnerBase) setLeakCount(count int) {
-	this.leakCount = count
-}
-
-func (this *pRunnerBase) getLeakCount() int {
-	return this.leakCount
+func (pb *pRunnerBase) Plugin() Plugin {
+	return pb.plugin
 }
 
 // foRunner is filter output runner.
@@ -67,56 +61,51 @@ type foRunner struct {
 	pRunnerBase
 
 	matcher   *matcher
-	inChan    chan *PipelinePack
+	inChan    chan *Packet
 	leakCount int
 }
 
-func newFORunner(name string, plugin Plugin, pluginCommons *pluginCommons) (this *foRunner) {
-	this = &foRunner{
+func newFORunner(plugin Plugin, pluginCommons *pluginCommons) *foRunner {
+	return &foRunner{
 		pRunnerBase: pRunnerBase{
-			name:          name,
 			plugin:        plugin,
 			pluginCommons: pluginCommons,
 		},
-		inChan: make(chan *PipelinePack, Globals().PluginChanSize),
+		inChan: make(chan *Packet, Globals().PluginChanSize),
 	}
-
-	return
 }
 
-func (this *foRunner) getMatcher() *matcher {
-	return this.matcher
+func (fo *foRunner) getMatcher() *matcher {
+	return fo.matcher
 }
 
-func (this *foRunner) Inject(pack *PipelinePack) bool {
-	pack.input = false
-	this.engine.router.hub <- pack
-	return true
+func (fo *foRunner) Inject(pack *Packet) {
+	fo.engine.router.hub <- pack
 }
 
-func (this *foRunner) InChan() chan *PipelinePack {
-	return this.inChan
+func (fo *foRunner) InChan() chan *Packet {
+	return fo.inChan
 }
 
-func (this *foRunner) Output() Output {
-	return this.plugin.(Output)
+func (fo *foRunner) Output() Output {
+	return fo.plugin.(Output)
 }
 
-func (this *foRunner) Filter() Filter {
-	return this.plugin.(Filter)
+func (fo *foRunner) Filter() Filter {
+	return fo.plugin.(Filter)
 }
 
-func (this *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
-	this.engine = e
+func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
+	fo.engine = e
 
-	go this.runMainloop(wg)
+	go fo.runMainloop(wg)
 	return nil
 }
 
-func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
+func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", this.name, err)
+			log.Critical("[%s] %v", fo.Name(), err)
 		}
 
 		wg.Done()
@@ -129,16 +118,24 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		if filter, ok := this.plugin.(Filter); ok {
-			log.Trace("Filter[%s] starting", this.name)
+		if filter, ok := fo.plugin.(Filter); ok {
+			log.Info("Filter[%s] starting", fo.Name())
 
 			pluginType = "filter"
-			log.Trace("Filter[%s] stopped: %v", this.name, filter.Run(this, this.engine))
-		} else if output, ok := this.plugin.(Output); ok {
-			log.Trace("Output[%s] starting", this.name)
+			if err := filter.Run(fo, fo.engine); err != nil {
+				log.Error("Filter[%s] stopped: %v", fo.Name(), err)
+			} else {
+				log.Info("Filter[%s] stopped", fo.Name())
+			}
+		} else if output, ok := fo.plugin.(Output); ok {
+			log.Info("Output[%s] starting", fo.Name())
 
 			pluginType = "output"
-			log.Trace("Output[%s] stopped: %v", this.name, output.Run(this, this.engine))
+			if err := output.Run(fo, fo.engine); err != nil {
+				log.Error("Output[%s] stopped: %v", fo.Name(), err)
+			} else {
+				log.Info("Output[%s] stopped", fo.Name())
+			}
 		} else {
 			panic("unknown plugin type")
 		}
@@ -147,21 +144,21 @@ func (this *foRunner) runMainloop(wg *sync.WaitGroup) {
 			return
 		}
 
-		if restart, ok := this.plugin.(Restarting); ok {
+		if restart, ok := fo.plugin.(Restarting); ok {
 			if !restart.CleanupForRestart() {
 				return
 			}
 		}
 
-		log.Trace("[%s] restarting", this.name)
+		log.Trace("[%s] restarting", fo.Name())
 
 		// Re-initialize our plugin using its wrapper
 		if pluginType == "filter" {
-			pw = this.engine.filterWrappers[this.name]
+			pw = fo.engine.filterWrappers[fo.Name()]
 		} else {
-			pw = this.engine.outputWrappers[this.name]
+			pw = fo.engine.outputWrappers[fo.Name()]
 		}
-		this.plugin = pw.Create()
+		fo.plugin = pw.Create()
 	}
 
 }
