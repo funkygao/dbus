@@ -281,13 +281,11 @@ func (e *Engine) ServeForever() {
 	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
 	go e.runWatchdog(globals.WatchdogTick)
 
-	log.Trace("launching Router...")
+	log.Info("launching Router...")
 	routerWg.Add(1)
 	go e.router.Start(routerWg)
 
 	for _, project := range e.projects {
-		log.Info("launching Project %s...", project.Name)
-
 		project.Start()
 	}
 

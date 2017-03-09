@@ -1,6 +1,6 @@
 mock:
 	@go build
-	./dbusd -conf ../../etc/mock.cf
+	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
 fanout:build
 	./dbusd -conf ../../etc/fanout.cf

@@ -47,18 +47,11 @@ func (this *Engine) setupAPIRoutings() {
 
 func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
 	output := make(map[string]map[string]interface{})
-	output["tps"] = make(map[string]interface{})
-	output["cum"] = make(map[string]interface{})
-
-	this.router.metrics.l.RLock()
-	defer this.router.metrics.l.RUnlock()
-
 	for ident, m := range this.router.metrics.m {
-		output["tps"][ident] = m.Rate1()
-	}
-
-	for ident, c := range this.router.metrics.c {
-		output["cum"][ident] = c.Count()
+		output[ident] = map[string]interface{}{
+			"tps": m.Rate1(),
+			"cum": m.Count(),
+		}
 	}
 
 	return output, nil

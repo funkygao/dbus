@@ -102,7 +102,7 @@ LOOP:
 			}
 
 			if globals.RouterTrack {
-				r.metrics.Update(pack) // dryrun throughput 1.7M/s -> 1.2M/s
+				r.metrics.Update(pack) // dryrun throughput 1.8M/s -> 1.3M/s
 			}
 
 			foundMatch = false
