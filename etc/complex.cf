@@ -1,0 +1,49 @@
+{
+    // complex.cf list all the config parmas and create a complex pipeline
+
+    apisvr_addr: "127.0.0.1:9876"
+    influx_addr: "http://localhost:8086"
+    influx_db: "dbus"
+    influx_tick: "1m"
+
+    plugins: [
+        {
+            name: "mybinlog"
+            class: "MysqlbinlogInput"
+            dsn: "local://root:@localhost:3306"
+            pos_commit_interval: "1s"
+            event_buffer_len: 100
+            max_event_length: 1000000
+            flavor: "mysql"
+            semi_sync: false
+            // 2 databases: db1, db2
+            server_id: 137
+            GTID: false
+            db_excluded: ["bar", ]
+        }
+
+        {
+            class: "MockInput"
+            name: "mocker"
+            disabled: false
+        }
+
+        {
+            name: "dispatcher"
+            class: "MysqlbinlogFilter"
+            match: ["mybinlog", "mocker", ]
+        }
+
+        {
+            name: "db1_out"
+            class: "MockOutput"
+            match: ["db1", "mybinlog", "dispatcher"]
+        }
+        {
+            name: "db2_out"
+            class: "MockOutput"
+            match: ["db2", "mybinlog", ]
+        }
+    ]
+
+}

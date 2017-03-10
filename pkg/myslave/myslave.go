@@ -52,7 +52,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	var err error
 	var dbs []string
 	var zone string
-	zone, m.host, m.port, m.user, m.passwd, dbs, err = ParseDSN(m.c.String("dsn", "localhost:3306"))
+	zone, m.host, m.port, m.user, m.passwd, dbs, err = ParseDSN(m.c.String("dsn", ""))
 	if m.user == "" || zone == "" || m.host == "" || m.port == 0 || err != nil {
 		panic("invalid dsn")
 	}
