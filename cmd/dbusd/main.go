@@ -51,6 +51,11 @@ func main() {
 		return
 	}
 
+	if options.validateConf {
+		fmt.Println("ok")
+		return
+	}
+
 	log4go.Info("dbus[%s@%s] starting", dbus.BuildID, dbus.Version)
 
 	agent.HttpAddr = ":10120" // FIXME security issue

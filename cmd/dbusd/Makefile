@@ -8,6 +8,9 @@ fanout:build
 dispatch:build
 	./dbusd -conf ../../etc/dispatch.cf
 
+complex:build
+	./dbusd -conf ../../etc/complex.cf
+
 canal:build
 	./dbusd -conf ../../etc/canal.cf
 
