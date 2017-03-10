@@ -7,29 +7,24 @@ import (
 	"strings"
 )
 
-// parseDSN parse mysql DSN(data source name).
-func parseDSN(dsn string) (host string, port uint16, username, passwd string, dbs []string, err error) {
-	if !strings.HasPrefix(dsn, "mysql://") {
-		dsn = "mysql://" + dsn
-	}
-
+// ParseDSN parse mysql DSN(data source name).
+// The DSN is in the form of zone://user:pass@host:port/db1,db2,...,dbn
+// The zone is used for zk positioner.
+func ParseDSN(dsn string) (zone, host string, port uint16, username, passwd string, dbs []string, err error) {
 	var u *url.URL
-	u, err = url.Parse(dsn)
-	if err != nil {
+	if u, err = url.Parse(dsn); err != nil {
 		return
 	}
 
 	var p string
-	host, p, err = net.SplitHostPort(u.Host)
-	if err != nil {
+	if host, p, err = net.SplitHostPort(u.Host); err != nil {
 		return
 	}
 
 	username = u.User.Username()
 	passwd, _ = u.User.Password()
 	var portInt int
-	portInt, err = strconv.Atoi(p)
-	if err != nil {
+	if portInt, err = strconv.Atoi(p); err != nil {
 		return
 	}
 	port = uint16(portInt)
@@ -42,5 +37,6 @@ func parseDSN(dsn string) (host string, port uint16, username, passwd string, db
 		}
 	}
 
+	zone = u.Scheme
 	return
 }

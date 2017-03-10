@@ -51,8 +51,9 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 
 	var err error
 	var dbs []string
-	m.host, m.port, m.user, m.passwd, dbs, err = parseDSN(m.c.String("dsn", "localhost:3306"))
-	if m.user == "" || m.host == "" || m.port == 0 || err != nil {
+	var zone string
+	zone, m.host, m.port, m.user, m.passwd, dbs, err = ParseDSN(m.c.String("dsn", "localhost:3306"))
+	if m.user == "" || zone == "" || m.host == "" || m.port == 0 || err != nil {
 		panic("invalid dsn")
 	}
 	m.masterAddr = fmt.Sprintf("%s:%d", m.host, m.port)
@@ -75,10 +76,6 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.m = newMetrics(m.host, m.port)
-	zone := m.c.String("zone", "")
-	if zone == "" {
-		panic("zone required")
-	}
 	m.z = engine.Globals().GetOrRegisterZkzone(zone)
 	m.p = newPositionerZk(m.name, m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 

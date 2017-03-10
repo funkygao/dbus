@@ -4,25 +4,16 @@
     influx_db: "dbus"
     influx_tick: "1m"
 
-    projects: [
-        {
-            name: "mysql"
-        }
-    ]
-
     plugins: [
         {
             name: "binlog"
             class: "MysqlbinlogInput"
-            // zone is used for positioner
-            zone: "local"
+            dsn: "local://root:@localhost:3306"
             pos_commit_interval: "1s"
             event_buffer_len: 100
-            dsn: "mysql://root:@localhost:3306"
             // 2 databases: db1, db2
             server_id: 137
             GTID: false
-            table_excluded: ["foo", ]
             db_excluded: ["bar", ]
         }
 

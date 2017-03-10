@@ -38,8 +38,6 @@ type Engine struct {
 	httpRouter   *mux.Router
 	httpPaths    []string
 
-	projects map[string]*Project // TODO
-
 	InputRunners  map[string]InputRunner
 	inputWrappers map[string]*pluginWrapper
 
@@ -86,7 +84,6 @@ func New(globals *GlobalConfig) *Engine {
 		top:    newTopology(),
 		router: newMessageRouter(),
 
-		projects:  make(map[string]*Project),
 		httpPaths: make([]string, 0, 6),
 
 		pid:      os.Getpid(),
@@ -98,16 +95,6 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Lock()
 	e.InputRunners[name] = nil
 	e.Unlock()
-}
-
-// Project returns a Project by name.
-func (e *Engine) Project(name string) *Project {
-	p, present := e.projects[name]
-	if !present {
-		return nil
-	}
-
-	return p
 }
 
 // ClonePacket is used for plugin Filter to generate new Packet.
@@ -133,21 +120,6 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 
 	e.Conf = cf
 	Globals().Conf = cf
-
-	// 'projects' section
-	for i := 0; i < len(e.List("projects", nil)); i++ {
-		section, err := e.Section(fmt.Sprintf("projects[%d]", i))
-		if err != nil {
-			panic(err)
-		}
-
-		project := &Project{}
-		project.fromConfig(section)
-		if _, present := e.projects[project.Name]; present {
-			panic("dup project: " + project.Name)
-		}
-		e.projects[project.Name] = project
-	}
 
 	// 'plugins' section
 	for i := 0; i < len(e.List("plugins", nil)); i++ {
@@ -201,7 +173,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	if pluginCategory == "Input" {
 		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
-
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 		return
 	}
 
@@ -214,11 +186,16 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 		e.router.addFilterMatcher(matcher)
 		e.FilterRunners[foRunner.Name()] = foRunner
 		e.filterWrappers[foRunner.Name()] = wrapper
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 
 	case "Output":
 		e.router.addOutputMatcher(matcher)
 		e.OutputRunners[foRunner.Name()] = foRunner
 		e.outputWrappers[foRunner.Name()] = wrapper
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
+
+	default:
+		panic("unknown plugin: " + pluginCategory)
 	}
 }
 
@@ -284,10 +261,6 @@ func (e *Engine) ServeForever() {
 	log.Info("launching Router...")
 	routerWg.Add(1)
 	go e.router.Start(routerWg)
-
-	for _, project := range e.projects {
-		project.Start()
-	}
 
 	for _, inputRunner := range e.InputRunners {
 		log.Trace("launching Input[%s]...", inputRunner.Name())
@@ -364,10 +337,6 @@ func (e *Engine) ServeForever() {
 	log.Info("Router stopped")
 
 	e.stopHttpServ()
-
-	for _, project := range e.projects {
-		project.Stop()
-	}
 
 	log.Info("shutdown complete")
 }

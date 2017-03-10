@@ -11,6 +11,9 @@ dispatch:build
 canal:build
 	./dbusd -conf ../../etc/canal.cf
 
+dump:build
+	./dbusd -conf ../../etc/canal.cf -dump canal.png
+
 build:
 	@go build -race
 	@mkdir -p var

@@ -4,29 +4,18 @@
     influx_db: "dbus"
     influx_tick: "1m"
 
-    projects: [
-        {
-            name: "mysql"
-        }
-    ]
-
     plugins: [
         {
             name: "binlog"
             class: "MysqlbinlogInput"
-            // zone is used for positioner
-            zone: "local"
-            dsn: "mysql://root:@localhost:3306"
-            table_excluded: ["foo", ]
+            dsn: "local://root:@localhost:3306"
             db_excluded: ["bar", ]
         }            
 
         {
             name: "binlog_out"
-            class: "MockOutput"
-            zone: "local"
-            cluster: "me"
-            topic: "foobar"
+            class: "KafkaOutput"
+            dsn: "local://me/foobar"
             myslave_key: "binlog"
             ack: 1
             async: true

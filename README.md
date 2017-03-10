@@ -11,6 +11,16 @@
                                                               
 yet another databus that transfer/transform pipeline data between plugins.
 
+dbus is not yet a 1.0.
+We're writing more tests, fixing bugs, working on TODOs.
+
+### Dependencies
+
+dbus itself has no external dependencies. 
+
+But the plugins might have. 
+For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
+
 ### Plugins
 
 #### Input
@@ -31,35 +41,28 @@ yet another databus that transfer/transform pipeline data between plugins.
 - ESOutput
 - MockOutput
 
-### Roadmap
-
-- pubsub audit reporter
-- universal kafka listener and outputer
-
-### Dependencies
-
-dbus itself has no external dependencies. But the plugins might have.
-For example, MysqlbinlogInput uses zookeeper for sharding/election.
-
 ### Configuration
 
 - KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
 - Mysql binlog positioner commit every 1s, channal buffer 100
+- inputRecycleChan buffer 100, filterRecycleChan 150
 
 ### TODO
 
+- [ ] router finding matcher is slow
+- [ ] ugly design of Input/Output ack mechanism
+  - we might learn from storm bolt ack
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [ ] sharding binlog across the dbusd cluster
 - [X] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
 - [X] kill Packet.input field
+- [X] visualized flow throughput like nifi
+  - dump uses dag pkg
+  - ![pipeline](https://github.com/funkygao/dbus-extra/blob/master/assets/dag.png?raw=true)
 - [X] router metrics
-- [ ] visualized flow throughput like nifi
-- [ ] router finding matcher is slow
 - [X] dbusd api server
-- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [ ] ugly design of Input/Output ack mechanism
-  - we might learn from storm bolt ack
-- [ ] sharding binlog across the dbusd cluster
 - [X] logging
 - [X] share zkzone instance
 - [X] presence and standby mode
@@ -75,19 +78,17 @@ For example, MysqlbinlogInput uses zookeeper for sharding/election.
 - [X] shutdown kafka
 - [X] zk checkpoint vs kafka checkpoint
 - [X] kafka follower stops replication
-- [ ] integration with helix
-  - place config to central zk znode and watch changes
 - [X] can a mysql instance with miltiple databases have multiple Log/Position?
 - [X] kafka sync produce in batch
 - [X] DDL binlog
   - drop table y;
 - [X] trace async producer Successes channel and mark as processed
-- [ ] each Input have its own recycle chan, one block will not block others
 - [X] metrics
 - [X] telemetry and alert
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
+- [ ] each Input have its own recycle chan, one block will not block others
 - [ ] project feature for multi-tenant
 - [ ] bug fix
   - [ ] next log position leads to failure after resume
@@ -103,10 +104,16 @@ For example, MysqlbinlogInput uses zookeeper for sharding/election.
   - [X] mysql kill process
   - [X] race detection
   - [ ] tc drop network packets and high latency
+  - [ ] mysql binlog zk session expire
   - [X] reset binlog pos, and check kafka didn't recv dup events
   - [X] MysqlbinlogInput max_event_length
   - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
 - [ ] GTID
+- [ ] integration with helix
+  - place config to central zk znode and watch changes
+- [ ] Roadmap
+  - pubsub audit reporter
+  - universal kafka listener and outputer
 
 ### Memo
 
@@ -115,4 +122,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/election.
   - 30k row event per second
   - 200Mb network bandwidth
   - it takes 2h25m to zero lag for platform of 2d lag
+
+- dryrun MockInput -> MockOutput
+  - 1.8M packet/s
 
