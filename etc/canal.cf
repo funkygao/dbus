@@ -9,7 +9,6 @@
             name: "binlog"
             class: "MysqlbinlogInput"
             dsn: "local://root:@localhost:3306"
-            table_excluded: ["foo", ]
             db_excluded: ["bar", ]
         }            
 
