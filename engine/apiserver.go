@@ -2,12 +2,18 @@ package engine
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/funkygao/dbus"
+	"github.com/funkygao/golib/dag"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
@@ -43,6 +49,58 @@ func (this *Engine) setupAPIRoutings() {
 	this.RegisterAPI("/stat", this.httpStat).Methods("GET")
 	this.RegisterAPI("/plugins", this.httpPlugins).Methods("GET")
 	this.RegisterAPI("/metrics", this.httpMetrics).Methods("GET")
+	this.RegisterAPI("/dag", this.httpDag).Methods("GET")
+}
+
+func (this *Engine) httpDag(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+	d := dag.New()
+
+	// vertex
+	for in := range this.InputRunners {
+		if _, present := this.router.metrics.m[in]; present {
+			d.AddVertex(in, this.router.metrics.m[in].Rate1())
+		}
+	}
+	for _, m := range this.router.filterMatchers {
+		if _, present := this.router.metrics.m[m.runner.Name()]; present {
+			d.AddVertex(m.runner.Name(), this.router.metrics.m[m.runner.Name()])
+		}
+	}
+	for _, m := range this.router.outputMatchers {
+		if _, present := this.router.metrics.m[m.runner.Name()]; present {
+			d.AddVertex(m.runner.Name(), this.router.metrics.m[m.runner.Name()])
+		}
+	}
+
+	// edge
+	for _, m := range this.router.filterMatchers {
+		for source := range m.matches {
+			d.AddEdge(source, m.runner.Name())
+		}
+	}
+	for _, m := range this.router.outputMatchers {
+		for source := range m.matches {
+			log.Info("%s,%s %+v", source, m.runner.Name(), d)
+			d.AddEdge(source, m.runner.Name())
+		}
+	}
+
+	dir := os.TempDir()
+	pngFile := fmt.Sprintf("%s/dag.png", dir)
+	dot := d.MakeDotGraph(fmt.Sprintf("%s/dag.dot", dir))
+
+	cmdLine := fmt.Sprintf("dot -o%s -Tpng -s3", pngFile)
+	cmd := exec.Command(`/bin/sh`, `-c`, cmdLine)
+	cmd.Stdin = strings.NewReader(dot)
+	cmd.Run()
+
+	w.Header().Set("Content-type", "image/png")
+	b, _ := ioutil.ReadFile(pngFile)
+	w.Write(b)
+
+	// TODO schedule to delete the tmp files
+
+	return nil, nil
 }
 
 func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {

@@ -11,6 +11,9 @@
                                                               
 yet another databus that transfer/transform pipeline data between plugins.
 
+dbus is not yet a 1.0.
+We're writing more tests, fixing bugs, working on TODOs.
+
 ### Dependencies
 
 dbus itself has no external dependencies. 
@@ -42,10 +45,13 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 - KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
 - Mysql binlog positioner commit every 1s, channal buffer 100
+- inputRecycleChan buffer 100, filterRecycleChan 150
 
 ### TODO
 
 - [ ] visualized flow throughput like nifi
+  - dump uses dag pkg
+  - ![pipeline](https://github.com/funkygao/dbus-extra/blob/master/assets/dag.png?raw=true)
 - [ ] router finding matcher is slow
 - [ ] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack

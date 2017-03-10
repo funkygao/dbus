@@ -173,7 +173,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	if pluginCategory == "Input" {
 		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
-
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 		return
 	}
 
@@ -186,11 +186,16 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 		e.router.addFilterMatcher(matcher)
 		e.FilterRunners[foRunner.Name()] = foRunner
 		e.filterWrappers[foRunner.Name()] = wrapper
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 
 	case "Output":
 		e.router.addOutputMatcher(matcher)
 		e.OutputRunners[foRunner.Name()] = foRunner
 		e.outputWrappers[foRunner.Name()] = wrapper
+		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
+
+	default:
+		panic("unknown plugin: " + pluginCategory)
 	}
 }
 

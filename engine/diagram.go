@@ -12,7 +12,7 @@ func (this *Engine) ExportDiagram(outfile string) {
 }
 
 func (this *Engine) exportPipeline(outfile string, format string, layout string, scale string, more string) {
-	dot := `digraph StateMachine {
+	dot := `digraph dbus {
     rankdir=LR
     node[width=1 fixedsize=true shape=circle style=filled fillcolor="darkorchid1" ]
 
