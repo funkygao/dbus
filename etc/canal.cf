@@ -16,7 +16,7 @@
         {
             name: "binlog_out"
             class: "KafkaOutput"
-            dsn: "kafka://local:me/foobar"
+            dsn: "local://me/foobar"
             myslave_key: "binlog"
             ack: 1
             async: true
