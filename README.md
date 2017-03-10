@@ -13,8 +13,10 @@ yet another databus that transfer/transform pipeline data between plugins.
 
 ### Dependencies
 
-dbus itself has no external dependencies. But the plugins might have.
-For example, MysqlbinlogInput uses zookeeper for sharding/election.
+dbus itself has no external dependencies. 
+
+But the plugins might have. 
+For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### Plugins
 
@@ -96,6 +98,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/election.
   - [X] mysql kill process
   - [X] race detection
   - [ ] tc drop network packets and high latency
+  - [ ] mysql binlog zk session expire
   - [X] reset binlog pos, and check kafka didn't recv dup events
   - [X] MysqlbinlogInput max_event_length
   - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
