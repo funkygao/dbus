@@ -49,9 +49,6 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] visualized flow throughput like nifi
-  - dump uses dag pkg
-  - ![pipeline](https://github.com/funkygao/dbus-extra/blob/master/assets/dag.png?raw=true)
 - [ ] router finding matcher is slow
 - [ ] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
@@ -61,6 +58,9 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
 - [X] kill Packet.input field
+- [X] visualized flow throughput like nifi
+  - dump uses dag pkg
+  - ![pipeline](https://github.com/funkygao/dbus-extra/blob/master/assets/dag.png?raw=true)
 - [X] router metrics
 - [X] dbusd api server
 - [X] logging
