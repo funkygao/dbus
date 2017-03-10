@@ -14,6 +14,7 @@ var (
 		debug bool
 
 		configfile    string
+		validateConf  bool
 		showversion   bool
 		visualizeFile string
 		lockfile      string
@@ -36,6 +37,7 @@ Flags:
 
 func parseFlags() {
 	flag.StringVar(&options.configfile, "conf", "", "main config file")
+	flag.BoolVar(&options.validateConf, "validate", false, "validate config file and exit")
 	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")

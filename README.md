@@ -14,6 +14,55 @@ yet another databus that transfer/transform pipeline data between plugins.
 dbus is not yet a 1.0.
 We're writing more tests, fixing bugs, working on TODOs.
 
+### Features
+
+dbus supports powerful and scalable directed graphs of data routing, transformation and
+system mediation logic.
+
+- Designed for extension
+  - plugin architecture
+  - build your own plugins and more
+  - enables rapid development and effective testing
+- Data Provenance
+  - track dataflow from beginning to end
+  - visualized dataflow
+  - rich metrics feed into tsdb
+  - online manual mediation of the dataflow
+  - RESTful API
+  - monitoring with alert
+- Distributed Deployment
+  - shard/balance/auto rebalance
+  - linear scale
+- Delivery Guarantee
+  - loss tolerant
+  - high throuput vs low latency
+  - back pressure
+- Robustness
+  - race condition detected
+  - edge cases fully covered
+  - network jitter tested
+  - dependent components failure tested
+
+### Getting Started
+
+#### 1. Installing
+
+To start using dbus, install Go and run `go get`:
+
+```sh
+$ go get -u github.com/funkygao/dbus
+```
+
+#### 2. Create config file
+
+Please find sample config files in etc/ directory.
+
+#### 3. Run the server
+
+```sh
+$ $GOPATH/dbusd -conf $myfile
+```
+
 ### Dependencies
 
 dbus itself has no external dependencies. 

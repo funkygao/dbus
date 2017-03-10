@@ -1,8 +1,6 @@
 {
     apisvr_addr: "127.0.0.1:9876"
     influx_addr: "http://localhost:8086"
-    influx_db: "dbus"
-    influx_tick: "1m"
 
     plugins: [
         {
@@ -17,10 +15,7 @@
             class: "KafkaOutput"
             dsn: "local://me/foobar"
             myslave_key: "binlog"
-            ack: 1
             async: true
-            compress: false
-            hhdirs: ["hh", ]
             match: ["binlog", ]
         }
     ]
