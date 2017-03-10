@@ -44,6 +44,10 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	this.myslave = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
 }
 
+func (this *KafkaOutput) CleanupForRestart() bool {
+	return true // yes, restart allowed
+}
+
 func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	this.p.SetErrorHandler(func(err *sarama.ProducerError) {
 		// e,g.
