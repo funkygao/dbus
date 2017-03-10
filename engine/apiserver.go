@@ -58,17 +58,17 @@ func (this *Engine) httpDag(w http.ResponseWriter, req *http.Request, params map
 	// vertex
 	for in := range this.InputRunners {
 		if _, present := this.router.metrics.m[in]; present {
-			d.AddVertex(in, this.router.metrics.m[in].Rate1())
+			d.AddVertex(in, int(this.router.metrics.m[in].Rate1()))
 		}
 	}
 	for _, m := range this.router.filterMatchers {
 		if _, present := this.router.metrics.m[m.runner.Name()]; present {
-			d.AddVertex(m.runner.Name(), this.router.metrics.m[m.runner.Name()])
+			d.AddVertex(m.runner.Name(), int(this.router.metrics.m[m.runner.Name()].Rate1()))
 		}
 	}
 	for _, m := range this.router.outputMatchers {
 		if _, present := this.router.metrics.m[m.runner.Name()]; present {
-			d.AddVertex(m.runner.Name(), this.router.metrics.m[m.runner.Name()])
+			d.AddVertex(m.runner.Name(), int(this.router.metrics.m[m.runner.Name()].Rate1()))
 		}
 	}
 
@@ -107,7 +107,7 @@ func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params
 	output := make(map[string]map[string]interface{})
 	for ident, m := range this.router.metrics.m {
 		output[ident] = map[string]interface{}{
-			"tps": m.Rate1(),
+			"tps": int(m.Rate1()),
 			"cum": m.Count(),
 		}
 	}
