@@ -37,6 +37,11 @@ system mediation logic.
   - loss tolerant
   - high throuput vs low latency
   - back pressure
+- Robustness
+  - race condition detected
+  - edge cases fully covered
+  - network jitter tested
+  - dependent components failure tested
 
 ### Getting Started
 
