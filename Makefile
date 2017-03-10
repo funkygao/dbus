@@ -89,6 +89,7 @@ ineffassign:
 # Detect commonly misspelled words in source files
 misspell:
 	find . -type f -name "*.go" -exec misspell -error {} \; | tee target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
+	misspell README.md
 
 # AST scanner
 astscan:
