@@ -5,14 +5,14 @@
         { name: "MockInput" }
         
         {
-            name:   "o1"
+            name:   "MockOutput1"
             class:   "MockOutput"
             blackhole: false
             match:  ["MockInput", ]
         }
 
         {
-            name:   "o2"
+            name:   "MockOutput2"
             class:   "MockOutput"
             blackhole: false
             match:  ["MockInput", ]
