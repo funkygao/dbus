@@ -4,12 +4,6 @@
     influx_db: "dbus"
     influx_tick: "1m"
 
-    projects: [
-        {
-            name: "mysql"
-        }
-    ]
-
     plugins: [
         {
             name: "binlog"
@@ -23,7 +17,7 @@
 
         {
             name: "binlog_out"
-            class: "MockOutput"
+            class: "KafkaOutput"
             zone: "local"
             cluster: "me"
             topic: "foobar"

@@ -4,12 +4,6 @@
     influx_db: "dbus"
     influx_tick: "1m"
 
-    projects: [
-        {
-            name: "mysql"
-        }
-    ]
-
     plugins: [
         {
             name: "binlog"
@@ -22,7 +16,6 @@
             // 2 databases: db1, db2
             server_id: 137
             GTID: false
-            table_excluded: ["foo", ]
             db_excluded: ["bar", ]
         }
 
