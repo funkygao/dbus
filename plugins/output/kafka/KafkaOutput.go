@@ -24,10 +24,9 @@ type KafkaOutput struct {
 // Init setup KafkaOutput state according to config section.
 // Default kafka delivery: async WaitForAll.
 func (this *KafkaOutput) Init(config *conf.Conf) {
-	this.zone = config.String("zone", "")
-	this.cluster = config.String("cluster", "")
-	this.topic = config.String("topic", "")
-	if this.cluster == "" || this.zone == "" || this.topic == "" {
+	var err error
+	this.zone, this.cluster, this.topic, err = kafka.ParseDSN(config.String("dsn", ""))
+	if err != nil || this.cluster == "" || this.zone == "" || this.topic == "" {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
 
