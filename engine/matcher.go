@@ -2,10 +2,7 @@
 
 package engine
 
-import (
-	"fmt"
-)
-
+// matcher belongs to the singleton router, it requires no lock.
 type matcher struct {
 	runner  FilterOutputRunner
 	matches map[string]bool
@@ -26,14 +23,5 @@ func (this *matcher) InChan() chan *Packet {
 }
 
 func (this *matcher) Match(pack *Packet) bool {
-	if pack.Ident == "" {
-		panic(fmt.Sprintf("Packet with empty ident: %+v", *pack))
-	}
-
-	if len(this.matches) == 0 {
-		// match all
-		return true
-	}
-
 	return this.matches[pack.Ident]
 }

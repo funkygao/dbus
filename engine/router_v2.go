@@ -12,22 +12,22 @@ import (
 
 const maxMatchedSubscriber = 100 // TODO validation
 
-// messageRouter is the router/hub shared among all plugins.
-type messageRouter struct {
+// Router is the router/hub shared among all plugins.
+type Router struct {
 	hub     chan *Packet
 	m       Matcher
 	metrics *routerMetrics
 }
 
-func newMessageRouter() *messageRouter {
-	return &messageRouter{
+func newMessageRouter() *Router {
+	return &Router{
 		hub:     make(chan *Packet, Globals().PluginChanSize),
 		metrics: newMetrics(),
 		m:       newNaiveMatcher(),
 	}
 }
 
-func (r *messageRouter) reportMatcherQueues() {
+func (r *Router) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
 	if len(r.hub) == globals.PluginChanSize {
@@ -51,7 +51,7 @@ func (r *messageRouter) reportMatcherQueues() {
 }
 
 // Dispatch pack from Input to MatchRunners
-func (r *messageRouter) Start(wg *sync.WaitGroup) {
+func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	go r.runReporter()
@@ -96,7 +96,7 @@ LOOP:
 
 }
 
-func (r *messageRouter) runReporter() {
+func (r *Router) runReporter() {
 	t := time.NewTicker(Globals().WatchdogTick)
 	defer t.Stop()
 

@@ -50,7 +50,7 @@ type Engine struct {
 	outputWrappers map[string]*pluginWrapper
 
 	top    *topology
-	router *messageRouter
+	router *Router
 
 	inputRecycleChan  chan *Packet
 	filterRecycleChan chan *Packet
