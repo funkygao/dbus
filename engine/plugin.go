@@ -18,8 +18,8 @@ type Restarter interface {
 
 // If a Plugin implements Pauser, it can pause/resume.
 type Pauser interface {
-	Pause() error
-	Resume() error
+	Pause(InputRunner) error
+	Resume(InputRunner) error
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.

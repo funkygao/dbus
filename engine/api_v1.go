@@ -15,7 +15,7 @@ func (this *Engine) handleAPIPause(w http.ResponseWriter, r *http.Request, param
 	}
 
 	if p, ok := this.InputRunners[inputPlugin].Plugin().(Pauser); ok {
-		return nil, p.Pause()
+		return nil, p.Pause(this.InputRunners[inputPlugin])
 	} else {
 		log.Warn("plugin[%s] is not able to pause", inputPlugin)
 		return nil, ErrInvalidParam
@@ -30,7 +30,7 @@ func (this *Engine) handleAPIResume(w http.ResponseWriter, r *http.Request, para
 	}
 
 	if p, ok := this.InputRunners[inputPlugin].Plugin().(Pauser); ok {
-		return nil, p.Resume()
+		return nil, p.Resume(this.InputRunners[inputPlugin])
 	} else {
 		log.Warn("plugin[%s] is not able to resume", inputPlugin)
 		return nil, ErrInvalidParam
