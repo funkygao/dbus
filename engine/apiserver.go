@@ -46,13 +46,18 @@ func (this *Engine) stopHttpServ() {
 }
 
 func (this *Engine) setupAPIRoutings() {
-	this.RegisterAPI("/stat", this.httpStat).Methods("GET")
-	this.RegisterAPI("/plugins", this.httpPlugins).Methods("GET")
-	this.RegisterAPI("/metrics", this.httpMetrics).Methods("GET")
-	this.RegisterAPI("/dag", this.httpDag).Methods("GET")
+	// admin
+	this.RegisterAPI("/stat", this.handleAPIStat).Methods("GET")
+	this.RegisterAPI("/plugins", this.handleAPIPlugins).Methods("GET")
+	this.RegisterAPI("/metrics", this.handleAPIMetrics).Methods("GET")
+	this.RegisterAPI("/dag", this.handleAPIDag).Methods("GET")
+
+	// API
+	this.RegisterAPI("/api/v1/pause/{input}", this.handleAPIPause).Methods("PUT")
+	this.RegisterAPI("/api/v1/resume/{input}", this.handleAPIResume).Methods("PUT")
 }
 
-func (this *Engine) httpDag(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+func (this *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	d := dag.New()
 
 	// vertex
@@ -103,7 +108,7 @@ func (this *Engine) httpDag(w http.ResponseWriter, req *http.Request, params map
 	return nil, nil
 }
 
-func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+func (this *Engine) handleAPIMetrics(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	output := make(map[string]map[string]interface{})
 	for ident, m := range this.router.metrics.m {
 		output[ident] = map[string]interface{}{
@@ -115,7 +120,7 @@ func (this *Engine) httpMetrics(w http.ResponseWriter, req *http.Request, params
 	return output, nil
 }
 
-func (this *Engine) httpPlugins(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+func (this *Engine) handleAPIPlugins(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	plugins := make(map[string][]string)
 	for _, r := range this.InputRunners {
 		if _, present := plugins[r.Class()]; !present {
@@ -142,7 +147,7 @@ func (this *Engine) httpPlugins(w http.ResponseWriter, req *http.Request, params
 	return plugins, nil
 }
 
-func (this *Engine) httpStat(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error) {
+func (this *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	var output = make(map[string]interface{})
 	output["ver"] = dbus.Version
 	output["started"] = Globals().StartedAt
@@ -161,15 +166,15 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 	}
 	this.httpPaths = append(this.httpPaths, path)
 
-	return this.httpRouter.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
+	return this.httpRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ret interface{}
 			t1  = time.Now()
 		)
 
-		params, err := this.decodeHttpParams(w, req)
+		params, err := this.decodeHttpParams(w, r)
 		if err == nil {
-			ret, err = handlerFunc(w, req, params)
+			ret, err = handlerFunc(w, r, params)
 		}
 
 		if err != nil {
@@ -187,10 +192,10 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 
 		// access log
 		log.Trace("%s \"%s %s %s\" %d %s",
-			req.RemoteAddr,
-			req.Method,
-			req.RequestURI,
-			req.Proto,
+			r.RemoteAddr,
+			r.Method,
+			r.RequestURI,
+			r.Proto,
 			status,
 			time.Since(t1))
 
@@ -205,9 +210,9 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 	})
 }
 
-func (this *Engine) decodeHttpParams(w http.ResponseWriter, req *http.Request) (map[string]interface{}, error) {
+func (this *Engine) decodeHttpParams(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
-	decoder := json.NewDecoder(req.Body)
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil && err != io.EOF {
 		return nil, err

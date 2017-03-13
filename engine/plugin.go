@@ -10,10 +10,16 @@ type Plugin interface {
 	Init(config *conf.Conf)
 }
 
-// If a Plugin implements CleanupForRestart, it will be called on restart.
+// If a Plugin implements Restarter, it will be called on restart.
 // Return value determines whether restart it or run once.
-type Restarting interface {
+type Restarter interface {
 	CleanupForRestart() bool
+}
+
+// If a Plugin implements Pauser, it can pause/resume.
+type Pauser interface {
+	Pause() error
+	Resume() error
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.
