@@ -1,4 +1,4 @@
-// +build !v2
+// +build v2
 
 // Package provides a plugin based pipeline engine that decouples Input/Filter/Output plugins.
 package engine
@@ -180,18 +180,17 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	}
 
 	foRunner := newFORunner(plugin, pluginCommons)
-	matcher := newMatcher(section.StringList("match", nil), foRunner)
-	foRunner.matcher = matcher
+	for _, topic := range section.StringList("match", nil) {
+		e.router.m.Subscribe(topic, foRunner)
+	}
 
 	switch pluginCategory {
 	case "Filter":
-		e.router.addFilterMatcher(matcher)
 		e.FilterRunners[foRunner.Name()] = foRunner
 		e.filterWrappers[foRunner.Name()] = wrapper
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 
 	case "Output":
-		e.router.addOutputMatcher(matcher)
 		e.OutputRunners[foRunner.Name()] = foRunner
 		e.outputWrappers[foRunner.Name()] = wrapper
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
