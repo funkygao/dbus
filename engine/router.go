@@ -120,8 +120,7 @@ LOOP:
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
-					pack.incRef()
-					matcher.InChan() <- pack
+					matcher.InChan() <- pack.incRef()
 				}
 			}
 
@@ -133,8 +132,7 @@ LOOP:
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
-					pack.incRef()
-					matcher.InChan() <- pack
+					matcher.InChan() <- pack.incRef()
 				}
 			}
 
