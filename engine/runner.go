@@ -144,7 +144,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			return
 		}
 
-		if restart, ok := fo.plugin.(Restarting); ok {
+		if restart, ok := fo.plugin.(Restarter); ok {
 			if !restart.CleanupForRestart() {
 				return
 			}
