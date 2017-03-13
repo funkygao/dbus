@@ -46,8 +46,9 @@ func newPacket(recycleChan chan *Packet) *Packet {
 	}
 }
 
-func (p *Packet) incRef() {
+func (p *Packet) incRef() *Packet {
 	atomic.AddInt32(&p.refCount, 1)
+	return p
 }
 
 func (p *Packet) String() string {
