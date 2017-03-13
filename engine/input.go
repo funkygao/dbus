@@ -94,7 +94,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			return
 		}
 
-		if restart, ok := ir.plugin.(Restarting); ok {
+		if restart, ok := ir.plugin.(Restarter); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
 				e.stopInputRunner(ir.Name())

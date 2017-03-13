@@ -5,7 +5,9 @@ import (
 )
 
 var (
-	_ engine.Input = &MockInput{}
+	_ engine.Input     = &MockInput{}
+	_ engine.Pauser    = &MockInput{}
+	_ engine.Restarter = &MockInput{}
 )
 
 func init() {
