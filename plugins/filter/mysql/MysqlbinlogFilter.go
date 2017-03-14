@@ -40,6 +40,8 @@ func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper)
 
 			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
+				pack.Recycle()
+
 				log.Warn("illegal payload: %+v", pack.Payload)
 				continue
 			}
