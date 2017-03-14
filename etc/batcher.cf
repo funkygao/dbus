@@ -1,0 +1,17 @@
+{
+    plugins: [
+        {
+            name: "in.mock"
+            class: "MockInput"
+        }            
+
+        {
+            name: "out.mock"
+            class: "KafkaOutput"
+            dsn: "local://me/foobar"
+            mode: "dryrun"
+            match: ["in.mock", ]
+        }
+    ]
+
+}
