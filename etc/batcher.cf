@@ -11,6 +11,7 @@
             class: "KafkaOutput"
             dsn: "local://me/foobar"
             mode: "dryrun"
+            reporter: true
             match: ["in.mock", ]
         }
     ]

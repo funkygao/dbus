@@ -9,6 +9,7 @@ import (
 	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
+	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
@@ -16,6 +17,7 @@ import (
 // KafkaOutput is an Output plugin that send pack to a single specified kafka topic.
 type KafkaOutput struct {
 	zone, cluster, topic string
+	reporter             bool
 
 	myslave *myslave.MySlave // FIXME ugly design, coupled with other plugin
 	p       *kafka.Producer
@@ -29,19 +31,27 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	if err != nil || this.cluster == "" || this.zone == "" || this.topic == "" {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
+	this.reporter = config.Bool("reporter", false)
 
 	cf := kafka.DefaultConfig()
 	cf.Sarama.Producer.Flush.Messages = config.Int("batch_size", 1024)
 	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
-	if !config.Bool("async", true) {
+	switch config.String("mode", "async") {
+	case "sync":
 		cf.SyncMode()
+	case "async":
+		cf.AsyncMode()
+	case "dryrun":
+		cf.DryrunMode()
+	default:
+		panic("invalid KafkaOut mode")
 	}
 
 	// get the bootstrap broker list
 	zkzone := engine.Globals().GetOrRegisterZkzone(this.zone)
 	zkcluster := zkzone.NewCluster(this.cluster)
 	this.p = kafka.NewProducer(config.String("name", "undefined"), zkcluster.BrokerList(), cf)
-	this.myslave = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
+	this.myslave, _ = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
 }
 
 func (this *KafkaOutput) CleanupForRestart() bool {
@@ -84,8 +94,21 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		}
 	}()
 
+	tick := time.NewTicker(time.Second * 10)
+	defer tick.Stop()
+
+	var ticker <-chan time.Time
+	if this.reporter {
+		ticker = tick.C
+	}
+
+	var n, lastN int64
 	for {
 		select {
+		case <-ticker:
+			log.Trace("[%s] throughput %s/s", r.Name(), gofmt.Comma((n-lastN)/10))
+			lastN = n
+
 		case pack, ok := <-r.InChan():
 			if !ok {
 				log.Trace("[%s.%s.%s] yes sir!", this.zone, this.cluster, this.topic)
@@ -94,9 +117,13 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 			row, ok := pack.Payload.(*model.RowsEvent)
 			if !ok {
+				pack.Recycle()
+
 				log.Error("[%s.%s.%s] bad payload: %+v", this.zone, this.cluster, this.topic, pack.Payload)
 				continue
 			}
+
+			n++
 
 			// loop is for sync mode only: async send will never return error
 			for {
