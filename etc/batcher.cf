@@ -3,6 +3,7 @@
         {
             name: "in.mock"
             class: "MockInput"
+            payload: "RowsEvent"
         }            
 
         {
