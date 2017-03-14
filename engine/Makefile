@@ -6,3 +6,6 @@ bench:
 
 v2:
 	go build -tags v2
+
+escape:
+	go build -gcflags '-m=1'

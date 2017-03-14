@@ -30,6 +30,7 @@ help:
 	@echo "    make astscan     : GO AST scanner"
 	@echo "    make loc         : Line of code"
 	@echo "    make generate    : Recursively invoke go generate"
+	@echo "    make escape      : Escape analysis"
 	@echo ""
 	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
 	@echo ""
@@ -53,6 +54,9 @@ test:
 # Format the source code inplace
 format:
 	@find . -type f -name "*.go" -exec gofmt -s -w {} \;
+
+escape:
+	go build -gcflags '-m=1' ./...
 
 # Check if the source code has been formatted
 fmtcheck:
