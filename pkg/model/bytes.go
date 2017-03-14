@@ -1,10 +1,14 @@
 package model
 
 import (
+	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
 )
 
-var _ engine.Payloader = Bytes{}
+var (
+	_ engine.Payloader = Bytes{}
+	_ sarama.Encoder   = &Bytes{}
+)
 
 type Bytes []byte
 

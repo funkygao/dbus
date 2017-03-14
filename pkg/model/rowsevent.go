@@ -14,7 +14,7 @@ var (
 	_ engine.Payloader = &RowsEvent{}
 	_ sarama.Encoder   = &RowsEvent{}
 
-	marshaller func(v interface{}) ([]byte, error)
+	rowsEventMarshaller func(v interface{}) ([]byte, error)
 )
 
 ///go:generate ffjson -force-regenerate $GOFILE
@@ -42,7 +42,7 @@ type RowsEvent struct {
 
 func (r *RowsEvent) ensureEncoded() {
 	if r.encoded == nil {
-		r.encoded, r.err = marshaller(r)
+		r.encoded, r.err = rowsEventMarshaller(r)
 	}
 }
 
@@ -69,10 +69,10 @@ func (r *RowsEvent) Length() int {
 
 func init() {
 	if os.Getenv("USE_FFJSON") == "1" {
-		marshaller = ffjson.Marshal
+		rowsEventMarshaller = ffjson.Marshal
 		return
 	}
 
 	// use golang json by default
-	marshaller = json.Marshal
+	rowsEventMarshaller = json.Marshal
 }
