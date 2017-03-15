@@ -80,6 +80,10 @@ func (fo *foRunner) getMatcher() *matcher {
 	return fo.matcher
 }
 
+func (fo *foRunner) Ack(pack *Packet) error {
+	return pack.input.OnAck(pack)
+}
+
 func (fo *foRunner) Inject(pack *Packet) {
 	fo.engine.router.hub <- pack
 }

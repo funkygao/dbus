@@ -6,6 +6,7 @@ import (
 	conf "github.com/funkygao/jsconf"
 )
 
+// Plugin is the base interface for all plugins.
 type Plugin interface {
 	Init(config *conf.Conf)
 }
@@ -20,6 +21,12 @@ type Restarter interface {
 type Pauser interface {
 	Pause(InputRunner) error
 	Resume(InputRunner) error
+}
+
+// Acker is a callback interface that is called when a packet
+// is processed successfully.
+type Acker interface {
+	OnAck(*Packet) error
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.
@@ -39,9 +46,9 @@ type pluginWrapper struct {
 	pluginCreator func() Plugin
 }
 
-func (this *pluginWrapper) Create() (plugin Plugin) {
-	plugin = this.pluginCreator()
-	plugin.Init(this.configCreator())
+func (pw *pluginWrapper) Create() (plugin Plugin) {
+	plugin = pw.pluginCreator()
+	plugin.Init(pw.configCreator())
 	return
 }
 
@@ -52,13 +59,13 @@ type pluginCommons struct {
 	disabled bool
 }
 
-func (this *pluginCommons) loadConfig(section *conf.Conf) {
-	if this.name = section.String("name", ""); this.name == "" {
+func (pc *pluginCommons) loadConfig(section *conf.Conf) {
+	if pc.name = section.String("name", ""); pc.name == "" {
 		panic(fmt.Sprintf("name is required"))
 	}
 
-	if this.class = section.String("class", ""); this.class == "" {
-		this.class = this.name
+	if pc.class = section.String("class", ""); pc.class == "" {
+		pc.class = pc.name
 	}
-	this.disabled = section.Bool("disabled", false)
+	pc.disabled = section.Bool("disabled", false)
 }

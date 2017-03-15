@@ -14,7 +14,6 @@
             name: "binlog_out"
             class: "KafkaOutput"
             dsn: "local://me/foobar"
-            myslave_key: "binlog"
             async: true
             match: ["binlog", ]
         }

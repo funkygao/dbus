@@ -1,14 +1,20 @@
 package engine
 
+// Filter is the filter plugin.
 type Filter interface {
 	Plugin
 
+	// Run starts the main loop of the Filter plugin.
 	Run(r FilterRunner, h PluginHelper) (err error)
 }
 
+// FilterRunner is a helper for Filter plugin to access some context data.
 type FilterRunner interface {
 	FilterOutputRunner
 
+	// Filter returns the underlying Filter plugin.
 	Filter() Filter
+
+	// Injects Packet into the Router's input channel for delivery.
 	Inject(pack *Packet)
 }

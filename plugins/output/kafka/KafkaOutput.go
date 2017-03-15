@@ -8,7 +8,6 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/kafka"
 	"github.com/funkygao/dbus/pkg/model"
-	"github.com/funkygao/dbus/pkg/myslave"
 	"github.com/funkygao/golib/gofmt"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -19,8 +18,7 @@ type KafkaOutput struct {
 	zone, cluster, topic string
 	reporter             bool
 
-	myslave *myslave.MySlave // FIXME ugly design, coupled with other plugin
-	p       *kafka.Producer
+	p *kafka.Producer
 }
 
 // Init setup KafkaOutput state according to config section.
@@ -51,7 +49,6 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	zkzone := engine.Globals().GetOrRegisterZkzone(this.zone)
 	zkcluster := zkzone.NewCluster(this.cluster)
 	this.p = kafka.NewProducer(config.String("name", "undefined"), zkcluster.BrokerList(), cf)
-	this.myslave, _ = engine.Globals().Registered(fmt.Sprintf("myslave.%s", config.String("myslave_key", ""))).(*myslave.MySlave)
 }
 
 func (this *KafkaOutput) CleanupForRestart() bool {
@@ -69,14 +66,18 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	})
 
 	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
-		row := msg.Value.(*model.RowsEvent)
 		// FIXME what if:
 		// [1, 2, 3, 4, 5] sent
 		// [1, 2, 4, 5] ok, [3] fails
 		// then shutdown dbusd? 3 might be lost
-		if err := this.myslave.MarkAsProcessed(row); err != nil {
+		pack := msg.Metadata.(*engine.Packet)
+		if err := r.Ack(pack); err != nil {
+			row := msg.Value.(*model.RowsEvent)
 			log.Error("[%s.%s.%s] {%s} %v", this.zone, this.cluster, this.topic, row, err)
 		}
+
+		// safe to recycle
+		pack.Recycle()
 	})
 
 	// start the producer background routines
@@ -128,8 +129,9 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			// loop is for sync mode only: async send will never return error
 			for {
 				if err := this.p.Send(&sarama.ProducerMessage{
-					Topic: this.topic,
-					Value: row,
+					Topic:    this.topic,
+					Value:    row,
+					Metadata: pack,
 				}); err == nil {
 					break
 				} else {
@@ -138,8 +140,6 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 					time.Sleep(time.Millisecond * 500)
 				}
 			}
-
-			pack.Recycle()
 		}
 	}
 

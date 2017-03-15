@@ -32,6 +32,10 @@ func (this *MockInput) Init(config *conf.Conf) {
 	}
 }
 
+func (this *MockInput) OnAck(pack *engine.Packet) error {
+	return nil
+}
+
 func (this *MockInput) Stop(r engine.InputRunner) {
 	log.Trace("[%s] stopping...", r.Name())
 	close(this.stopChan)
