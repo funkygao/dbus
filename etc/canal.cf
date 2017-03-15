@@ -4,18 +4,17 @@
 
     plugins: [
         {
-            name: "binlog"
+            name: "in.binlog"
             class: "MysqlbinlogInput"
             dsn: "local://root:@localhost:3306"
             db_excluded: ["bar", ]
         }            
 
         {
-            name: "binlog_out"
+            name: "out.kafka"
             class: "KafkaOutput"
             dsn: "local://me/foobar"
-            async: true
-            match: ["binlog", ]
+            match: ["in.binlog", ]
         }
     ]
 
