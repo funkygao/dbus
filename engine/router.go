@@ -132,7 +132,7 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 		}
 	}()
 
-	log.Info("Router started")
+	log.Info("Router started with hub pool=%d", cap(r.hub))
 
 LOOP:
 	for ok {
