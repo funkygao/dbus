@@ -38,6 +38,7 @@ type GlobalConfig struct {
 
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
+	HubChanSize           int
 	PluginChanSize        int
 
 	WatchdogTick time.Duration
@@ -93,6 +94,7 @@ func DefaultGlobals() *GlobalConfig {
 		Debug:                 false,
 		InputRecyclePoolSize:  100,
 		FilterRecyclePoolSize: 100,
+		HubChanSize:           200,
 		PluginChanSize:        150,
 		RouterTrack:           true,
 		WatchdogTick:          time.Minute * 2,

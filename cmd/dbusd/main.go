@@ -42,6 +42,7 @@ func main() {
 	globals.RouterTrack = options.routerTrack
 	globals.InputRecyclePoolSize = options.inputPoolSize
 	globals.FilterRecyclePoolSize = options.filterPoolSize
+	globals.HubChanSize = options.hubPoolSize
 	globals.PluginChanSize = options.pluginPoolSize
 
 	e := engine.New(globals).

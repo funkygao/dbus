@@ -25,7 +25,7 @@ type Router struct {
 
 func newMessageRouter() *Router {
 	return &Router{
-		hub:                 make(chan *Packet, Globals().PluginChanSize),
+		hub:                 make(chan *Packet, Globals().HubChanSize),
 		metrics:             newMetrics(),
 		removeFilterMatcher: make(chan *matcher),
 		removeOutputMatcher: make(chan *matcher),
@@ -45,19 +45,19 @@ func (r *Router) addOutputMatcher(matcher *matcher) {
 func (r *Router) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
-	if len(r.hub) == globals.PluginChanSize {
+	if len(r.hub) == globals.HubChanSize {
 		s = fmt.Sprintf("%s(F)", s)
 	}
 
-	for _, m := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, fm := range r.filterMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, fm.runner.Name(), len(fm.InChan()))
+		if len(fm.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
-	for _, m := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, om := range r.outputMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, om.runner.Name(), len(om.InChan()))
+		if len(om.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}

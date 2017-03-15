@@ -25,6 +25,7 @@ var (
 
 		inputPoolSize  int
 		filterPoolSize int
+		hubPoolSize    int
 		pluginPoolSize int
 	}
 )
@@ -37,6 +38,10 @@ Flags:
 )
 
 func parseFlags() {
+	iPool := 100
+	fPool := iPool * 15 / 10
+	hPool := 2 * iPool
+	pPool := iPool
 	flag.StringVar(&options.configfile, "conf", "", "main config file")
 	flag.BoolVar(&options.validateConf, "validate", false, "validate config file and exit")
 	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
@@ -44,9 +49,10 @@ func parseFlags() {
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.routerTrack, "routerstat", true, "track router metrics")
-	flag.IntVar(&options.inputPoolSize, "ipool", 100, "input recycle pool size")
-	flag.IntVar(&options.filterPoolSize, "fpool", 100, "filter recycle pool size")
-	flag.IntVar(&options.pluginPoolSize, "ppool", 150, "plugin pool size")
+	flag.IntVar(&options.inputPoolSize, "ipool", iPool, "input recycle pool size")
+	flag.IntVar(&options.filterPoolSize, "fpool", fPool, "filter recycle pool size")
+	flag.IntVar(&options.hubPoolSize, "hpool", hPool, "hub pool size")
+	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, USAGE)
