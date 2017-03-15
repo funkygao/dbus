@@ -15,6 +15,7 @@ const maxMatchedSubscriber = 100 // TODO validation
 // Router is the router/hub shared among all plugins.
 type Router struct {
 	hub     chan *Packet
+	stopper chan struct{}
 	m       Matcher
 	metrics *routerMetrics
 }
@@ -22,6 +23,7 @@ type Router struct {
 func newMessageRouter() *Router {
 	return &Router{
 		hub:     make(chan *Packet, Globals().HubChanSize),
+		stopper: make(chan struct{}),
 		metrics: newMetrics(),
 		m:       newNaiveMatcher(),
 	}
@@ -54,7 +56,8 @@ func (r *Router) reportMatcherQueues() {
 func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	go r.runReporter()
+	wg.Add(1)
+	go r.runReporter(wg)
 
 	var (
 		globals = Globals()
@@ -63,7 +66,7 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 		matcher *matcher
 	)
 
-	log.Info("Router started")
+	log.Info("Router started with hub pool=%d", cap(r.hub))
 
 	subs := make([]Subscriber, maxMatchedSubscriber)
 
@@ -96,11 +99,24 @@ LOOP:
 
 }
 
-func (r *Router) runReporter() {
+func (r *Router) Stop() {
+	close(r.hub)
+	close(r.stopper)
+}
+
+func (r *Router) runReporter(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	t := time.NewTicker(Globals().WatchdogTick)
 	defer t.Stop()
 
-	for range t.C {
-		r.reportMatcherQueues()
+	for {
+		select {
+		case <-t.C:
+			r.reportMatcherQueues()
+
+		case <-r.stopper:
+			return
+		}
 	}
 }

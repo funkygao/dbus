@@ -58,7 +58,8 @@ A normal cloned packet lifecycle:
 
 */
 type Router struct {
-	hub chan *Packet
+	hub     chan *Packet
+	stopper chan struct{}
 
 	metrics *routerMetrics
 
@@ -72,6 +73,7 @@ type Router struct {
 func newMessageRouter() *Router {
 	return &Router{
 		hub:                 make(chan *Packet, Globals().HubChanSize),
+		stopper:             make(chan struct{}),
 		metrics:             newMetrics(),
 		removeFilterMatcher: make(chan *matcher),
 		removeOutputMatcher: make(chan *matcher),
@@ -123,14 +125,8 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 		foundMatch bool
 	)
 
-	go func() {
-		t := time.NewTicker(globals.WatchdogTick)
-		defer t.Stop()
-
-		for range t.C {
-			r.reportMatcherQueues()
-		}
-	}()
+	wg.Add(1)
+	go r.runReporter(wg)
 
 	log.Info("Router started with hub pool=%d", cap(r.hub))
 
@@ -183,6 +179,29 @@ LOOP:
 			// never forget this!
 			// if no sink found, this packet is recycled directly for latter use
 			pack.Recycle()
+		}
+	}
+
+}
+
+func (r *Router) Stop() {
+	close(r.hub)
+	close(r.stopper)
+}
+
+func (r *Router) runReporter(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	t := time.NewTicker(Globals().WatchdogTick)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-t.C:
+			r.reportMatcherQueues()
+
+		case <-r.stopper:
+			return
 		}
 	}
 

@@ -347,7 +347,7 @@ func (e *Engine) ServeForever() {
 	outputsWg.Wait()
 	log.Info("all Outputs stopped")
 
-	close(e.router.hub)
+	e.router.Stop()
 	routerWg.Wait()
 	log.Info("Router stopped")
 
