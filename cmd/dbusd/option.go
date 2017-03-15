@@ -23,8 +23,9 @@ var (
 		logfile  string
 		loglevel string
 
-		mpoolSize int
-		ppoolSize int
+		inputPoolSize  int
+		filterPoolSize int
+		pluginPoolSize int
 	}
 )
 
@@ -43,8 +44,9 @@ func parseFlags() {
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
 	flag.BoolVar(&options.routerTrack, "routerstat", true, "track router metrics")
-	flag.IntVar(&options.mpoolSize, "mpool", 100, "memory pool size")
-	flag.IntVar(&options.ppoolSize, "ppool", 150, "plugin pool size")
+	flag.IntVar(&options.inputPoolSize, "ipool", 100, "input recycle pool size")
+	flag.IntVar(&options.filterPoolSize, "fpool", 100, "filter recycle pool size")
+	flag.IntVar(&options.pluginPoolSize, "ppool", 150, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, USAGE)

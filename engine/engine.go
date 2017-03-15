@@ -81,8 +81,8 @@ func New(globals *GlobalConfig) *Engine {
 		OutputRunners:  make(map[string]OutputRunner),
 		outputWrappers: make(map[string]*pluginWrapper),
 
-		inputRecycleChan:  make(chan *Packet, globals.RecyclePoolSize),
-		filterRecycleChan: make(chan *Packet, globals.RecyclePoolSize),
+		inputRecycleChan:  make(chan *Packet, globals.InputRecyclePoolSize),
+		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
 		top:    newTopology(),
 		router: newMessageRouter(),
@@ -250,11 +250,14 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
-	log.Info("initializing Packet pool with size=%d", globals.RecyclePoolSize)
-	for i := 0; i < globals.RecyclePoolSize; i++ {
+	log.Info("initializing Input Packet pool with size=%d", globals.InputRecyclePoolSize)
+	for i := 0; i < globals.InputRecyclePoolSize; i++ {
 		inputPack := newPacket(e.inputRecycleChan)
 		e.inputRecycleChan <- inputPack
+	}
 
+	log.Info("initializing Filter Packet pool with size=%d", globals.FilterRecyclePoolSize)
+	for i := 0; i < globals.FilterRecyclePoolSize; i++ {
 		filterPack := newPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack
 	}
