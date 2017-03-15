@@ -97,9 +97,8 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] some goroutine leakage
-- [ ] each Input have its own recycle chan, one block will not block others
 - [ ] hot reload on config file changed
+- [ ] each Input have its own recycle chan, one block will not block others
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] sharding binlog across the dbusd cluster
 - [ ] router finding matcher is slow
@@ -107,6 +106,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   - because CAS backoff 1us, cpu busy
 - [X] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
+- [X] some goroutine leakage
 - [X] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
