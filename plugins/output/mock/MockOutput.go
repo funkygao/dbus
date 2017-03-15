@@ -27,6 +27,7 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 		select {
 		case pack, ok := <-r.InChan():
 			if !ok {
+				log.Trace("[%s] yes sir!", name)
 				return nil
 			}
 
