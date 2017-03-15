@@ -34,7 +34,11 @@ type Packet struct {
 	Metadata interface{}
 
 	_padding4 [8]uint64
+	input     Acker
+
+	_padding5 [8]uint64
 	Payload   Payloader
+
 	//	buf     []byte TODO
 }
 
