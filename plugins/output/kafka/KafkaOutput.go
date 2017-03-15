@@ -77,6 +77,8 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		}
 
 		// safe to recycle
+		// FIXME delayed recycle will block input channel, so currently let input chan
+		// larger than batch size
 		pack.Recycle()
 	})
 
