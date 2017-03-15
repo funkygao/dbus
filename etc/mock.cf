@@ -5,7 +5,6 @@
         {
             // a mock input plugin just for testing and dryrun
             name: "MockInput"
-            disabled: false
         }
         
         {

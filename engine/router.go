@@ -10,9 +10,56 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-// Router is the router/hub shared among all plugins.
+/*
+Router is the router/hub shared among all plugins which dispatches
+packet along the plugins.
+
+A normal packet lifecycle:
+
+        +-------------+
+   	+-- | | | | | | | | Input(ipool)
+    |   +-------------+
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Hub(hpool)
+    |   +-------------+
+    |          |
+    |          |-------------------------------------+
+    |          |                                     |
+    |   +-------------+                       +-------------+
+    |   | | | | | | | | Output/Filter(ppool)  | | | | | | | | Output/Filter(ppool)
+    |   +-------------+                       +-------------+
+    |          |                                     |
+    |          +-------------------------------------+
+    |                        |
+	+-------<----------------+
+	     Recycle
+
+
+A normal cloned packet lifecycle:
+
+        +-------------+
+   	+-- | | | | | | | | Engine(fpool)
+    |   +-------------+
+    |          |
+    |          | ClonePacket
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Filter
+    |   +-------------+
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Output/Filter(ppool)
+    |   +-------------+
+    |          |
+	+-------<--+
+	     Recycle
+
+
+*/
 type Router struct {
-	hub chan *Packet
+	hub     chan *Packet
+	stopper chan struct{}
 
 	metrics *routerMetrics
 
@@ -25,7 +72,8 @@ type Router struct {
 
 func newMessageRouter() *Router {
 	return &Router{
-		hub:                 make(chan *Packet, Globals().PluginChanSize),
+		hub:                 make(chan *Packet, Globals().HubChanSize),
+		stopper:             make(chan struct{}),
 		metrics:             newMetrics(),
 		removeFilterMatcher: make(chan *matcher),
 		removeOutputMatcher: make(chan *matcher),
@@ -45,19 +93,19 @@ func (r *Router) addOutputMatcher(matcher *matcher) {
 func (r *Router) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
-	if len(r.hub) == globals.PluginChanSize {
+	if len(r.hub) == globals.HubChanSize {
 		s = fmt.Sprintf("%s(F)", s)
 	}
 
-	for _, m := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, fm := range r.filterMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, fm.runner.Name(), len(fm.InChan()))
+		if len(fm.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
-	for _, m := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, om := range r.outputMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, om.runner.Name(), len(om.InChan()))
+		if len(om.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
@@ -77,16 +125,10 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 		foundMatch bool
 	)
 
-	go func() {
-		t := time.NewTicker(globals.WatchdogTick)
-		defer t.Stop()
+	wg.Add(1)
+	go r.runReporter(wg)
 
-		for range t.C {
-			r.reportMatcherQueues()
-		}
-	}()
-
-	log.Info("Router started")
+	log.Info("Router started with hub pool=%d", cap(r.hub))
 
 LOOP:
 	for ok {
@@ -137,6 +179,34 @@ LOOP:
 			// never forget this!
 			// if no sink found, this packet is recycled directly for latter use
 			pack.Recycle()
+		}
+	}
+
+}
+
+func (r *Router) Stop() {
+	log.Trace("Router stopping...")
+	close(r.hub)
+	close(r.stopper)
+
+	for ident, m := range r.metrics.m {
+		log.Trace("routed to [%s] %d", ident, m.Count())
+	}
+}
+
+func (r *Router) runReporter(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	t := time.NewTicker(Globals().WatchdogTick)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-t.C:
+			r.reportMatcherQueues()
+
+		case <-r.stopper:
+			return
 		}
 	}
 

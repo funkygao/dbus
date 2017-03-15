@@ -33,6 +33,7 @@ type Engine struct {
 
 	// Engine will load json config file
 	*conf.Conf
+	fn string
 
 	// REST exporter
 	httpListener net.Listener
@@ -80,8 +81,8 @@ func New(globals *GlobalConfig) *Engine {
 		OutputRunners:  make(map[string]OutputRunner),
 		outputWrappers: make(map[string]*pluginWrapper),
 
-		inputRecycleChan:  make(chan *Packet, globals.RecyclePoolSize),
-		filterRecycleChan: make(chan *Packet, globals.RecyclePoolSize),
+		inputRecycleChan:  make(chan *Packet, globals.InputRecyclePoolSize),
+		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
 		top:    newTopology(),
 		router: newMessageRouter(),
@@ -104,7 +105,7 @@ func (e *Engine) stopInputRunner(name string) {
 func (e *Engine) ClonePacket(p *Packet) *Packet {
 	pack := <-e.filterRecycleChan
 	pack.Reset()
-	p.CopyTo(pack)
+	p.copyTo(pack)
 	return pack
 }
 
@@ -120,6 +121,7 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 		panic(err)
 	}
 
+	e.fn = fn
 	e.Conf = cf
 	Globals().Conf = cf
 
@@ -248,11 +250,14 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
-	log.Info("initializing Packet pool with size=%d", globals.RecyclePoolSize)
-	for i := 0; i < globals.RecyclePoolSize; i++ {
+	log.Info("initializing Input Packet pool with size=%d", globals.InputRecyclePoolSize)
+	for i := 0; i < globals.InputRecyclePoolSize; i++ {
 		inputPack := newPacket(e.inputRecycleChan)
 		e.inputRecycleChan <- inputPack
+	}
 
+	log.Info("initializing Filter Packet pool with size=%d", globals.FilterRecyclePoolSize)
+	for i := 0; i < globals.FilterRecyclePoolSize; i++ {
 		filterPack := newPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack
 	}
@@ -260,7 +265,6 @@ func (e *Engine) ServeForever() {
 	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
 	go e.runWatchdog(globals.WatchdogTick)
 
-	log.Info("launching Router...")
 	routerWg.Add(1)
 	go e.router.Start(routerWg)
 
@@ -274,8 +278,17 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
+	cfChanged := make(chan *conf.Conf)
+	poller := time.Second
+	log.Info("hot reload watching %s with poller=%s", e.fn, poller)
+	go conf.Watch(e.Conf, poller, cfChanged)
+
 	for !globals.Stopping {
 		select {
+		case <-cfChanged:
+			log.Info("%s updated, reloading...", e.fn)
+			// TODO
+
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 
@@ -334,7 +347,7 @@ func (e *Engine) ServeForever() {
 	outputsWg.Wait()
 	log.Info("all Outputs stopped")
 
-	close(e.router.hub)
+	e.router.Stop()
 	routerWg.Wait()
 	log.Info("Router stopped")
 

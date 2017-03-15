@@ -36,8 +36,10 @@ type GlobalConfig struct {
 	Debug       bool
 	RouterTrack bool
 
-	RecyclePoolSize int
-	PluginChanSize  int
+	InputRecyclePoolSize  int
+	FilterRecyclePoolSize int
+	HubChanSize           int
+	PluginChanSize        int
 
 	WatchdogTick time.Duration
 
@@ -89,12 +91,14 @@ func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 
 func DefaultGlobals() *GlobalConfig {
 	return &GlobalConfig{
-		Debug:           false,
-		RecyclePoolSize: 100,
-		PluginChanSize:  150,
-		RouterTrack:     true,
-		WatchdogTick:    time.Minute * 2,
-		StartedAt:       time.Now(),
-		registry:        map[string]interface{}{},
+		Debug:                 false,
+		InputRecyclePoolSize:  100,
+		FilterRecyclePoolSize: 100,
+		HubChanSize:           200,
+		PluginChanSize:        150,
+		RouterTrack:           true,
+		WatchdogTick:          time.Minute * 2,
+		StartedAt:             time.Now(),
+		registry:              map[string]interface{}{},
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const backoff = time.Microsecond
+const backoff = time.Microsecond * 10 // a too small backoff will lead to high CPU load
 
 var yield func()
 

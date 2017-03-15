@@ -1,6 +1,8 @@
 package mock
 
 import (
+	"time"
+
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	conf "github.com/funkygao/jsconf"
@@ -11,9 +13,11 @@ type MockInput struct {
 	stopChan chan struct{}
 
 	payload engine.Payloader
+	sleep   time.Duration
 }
 
 func (this *MockInput) Init(config *conf.Conf) {
+	this.sleep = config.Duration("sleep", 0)
 	this.stopChan = make(chan struct{})
 	switch config.String("payload", "Bytes") {
 	case "RowsEvent":
@@ -69,6 +73,10 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 
 			pack.Payload = this.payload
 			r.Inject(pack)
+
+			if this.sleep > 0 {
+				time.Sleep(this.sleep)
+			}
 		}
 	}
 

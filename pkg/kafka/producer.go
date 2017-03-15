@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/batcher"
 	log "github.com/funkygao/log4go"
 )
@@ -158,6 +159,8 @@ func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 func (p *Producer) dryrunSend(m *sarama.ProducerMessage) error {
 	p.b.Put(m)
 	p.b.Succeed() // i,e. onSuccess called silently
+	pack := m.Metadata.(*engine.Packet)
+	pack.Recycle()
 	return nil
 }
 

@@ -11,29 +11,29 @@ import (
 // Batcher is a batched lock free queue that borrows design from disruptor.
 // It maintains a queue with the sematics of all succeed and advance or any fails and retry.
 type Batcher struct {
-	_padding0 [sys.CacheLineSize]uint64
+	_padding0 [sys.CacheLineSize / 8]uint64
 	capacity  uint32
 
-	_padding1 [sys.CacheLineSize]uint64
+	_padding1 [sys.CacheLineSize / 8]uint64
 	stopped   uint32
 
-	_padding2 [sys.CacheLineSize]uint64
+	_padding2 [sys.CacheLineSize / 8]uint64
 	w         uint32
 
-	_padding3 [sys.CacheLineSize]uint64
+	_padding3 [sys.CacheLineSize / 8]uint64
 	r         uint32
 
-	_padding4 [sys.CacheLineSize]uint64
+	_padding4 [sys.CacheLineSize / 8]uint64
 	c         uint32
 
-	_padding5 [sys.CacheLineSize]uint64
+	_padding5 [sys.CacheLineSize / 8]uint64
 	okN       uint32
 
-	_padding6 [sys.CacheLineSize]uint64
+	_padding6 [sys.CacheLineSize / 8]uint64
 	failN     uint32
 
 	// [nil, item1, item2, ..., itemN]
-	_padding7 [sys.CacheLineSize]uint64
+	_padding7 [sys.CacheLineSize / 8]uint64
 	contents  []interface{}
 }
 

@@ -15,13 +15,15 @@ const maxMatchedSubscriber = 100 // TODO validation
 // Router is the router/hub shared among all plugins.
 type Router struct {
 	hub     chan *Packet
+	stopper chan struct{}
 	m       Matcher
 	metrics *routerMetrics
 }
 
 func newMessageRouter() *Router {
 	return &Router{
-		hub:     make(chan *Packet, Globals().PluginChanSize),
+		hub:     make(chan *Packet, Globals().HubChanSize),
+		stopper: make(chan struct{}),
 		metrics: newMetrics(),
 		m:       newNaiveMatcher(),
 	}
@@ -30,19 +32,19 @@ func newMessageRouter() *Router {
 func (r *Router) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
-	if len(r.hub) == globals.PluginChanSize {
+	if len(r.hub) == globals.HubChanSize {
 		s = fmt.Sprintf("%s(F)", s)
 	}
 
-	for _, m := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, fm := range r.filterMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, fm.runner.Name(), len(fm.InChan()))
+		if len(fm.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
-	for _, m := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, m.runner.Name(), len(m.InChan()))
-		if len(m.InChan()) == globals.PluginChanSize {
+	for _, om := range r.outputMatchers {
+		s = fmt.Sprintf("%s %s=%d", s, om.runner.Name(), len(om.InChan()))
+		if len(om.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
@@ -54,7 +56,8 @@ func (r *Router) reportMatcherQueues() {
 func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	go r.runReporter()
+	wg.Add(1)
+	go r.runReporter(wg)
 
 	var (
 		globals = Globals()
@@ -63,7 +66,7 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 		matcher *matcher
 	)
 
-	log.Info("Router started")
+	log.Info("Router started with hub pool=%d", cap(r.hub))
 
 	subs := make([]Subscriber, maxMatchedSubscriber)
 
@@ -96,11 +99,28 @@ LOOP:
 
 }
 
-func (r *Router) runReporter() {
+func (r *Router) Stop() {
+	log.Trace("Router stopping...")
+	close(r.hub)
+	close(r.stopper)
+
+	for ident, m := range r.metrics.m {
+		log.Trace("routed to [%s] %d", ident, m.Count())
+	}
+
+func (r *Router) runReporter(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	t := time.NewTicker(Globals().WatchdogTick)
 	defer t.Stop()
 
-	for range t.C {
-		r.reportMatcherQueues()
+	for {
+		select {
+		case <-t.C:
+			r.reportMatcherQueues()
+
+		case <-r.stopper:
+			return
+		}
 	}
 }

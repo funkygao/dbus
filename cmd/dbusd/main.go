@@ -40,8 +40,10 @@ func main() {
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
 	globals.RouterTrack = options.routerTrack
-	globals.RecyclePoolSize = options.mpoolSize
-	globals.PluginChanSize = options.ppoolSize
+	globals.InputRecyclePoolSize = options.inputPoolSize
+	globals.FilterRecyclePoolSize = options.filterPoolSize
+	globals.HubChanSize = options.hubPoolSize
+	globals.PluginChanSize = options.pluginPoolSize
 
 	e := engine.New(globals).
 		LoadConfigFile(options.configfile)

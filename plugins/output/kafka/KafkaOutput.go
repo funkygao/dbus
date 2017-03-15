@@ -77,6 +77,8 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		}
 
 		// safe to recycle
+		// FIXME delayed recycle will block input channel, so currently let input chan
+		// larger than batch size
 		pack.Recycle()
 	})
 
@@ -98,15 +100,15 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	tick := time.NewTicker(time.Second * 10)
 	defer tick.Stop()
 
-	var ticker <-chan time.Time
+	var reportTimer <-chan time.Time
 	if this.reporter {
-		ticker = tick.C
+		reportTimer = tick.C
 	}
 
 	var n, lastN int64
 	for {
 		select {
-		case <-ticker:
+		case <-reportTimer:
 			log.Trace("[%s] throughput %s/s", r.Name(), gofmt.Comma((n-lastN)/10))
 			lastN = n
 
