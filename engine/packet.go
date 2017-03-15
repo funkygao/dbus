@@ -19,26 +19,26 @@ type Payloader interface {
 
 // Packet is the pipeline data structure that is transferred between plugins.
 type Packet struct {
-	_padding0   [sys.CacheLineSize]uint64 // avoid false sharing
+	_padding0   [sys.CacheLineSize / 8]uint64 // avoid false sharing
 	recycleChan chan *Packet
 
-	_padding1 [sys.CacheLineSize]uint64
+	_padding1 [sys.CacheLineSize / 8]uint64
 	refCount  int32
 
-	_padding2 [sys.CacheLineSize]uint64
+	_padding2 [sys.CacheLineSize / 8]uint64
 	// Ident is used for routing.
 	Ident string
 
-	_padding3 [sys.CacheLineSize]uint64 // TODO [7]uint64 should be enough
+	_padding3 [sys.CacheLineSize / 8]uint64 // TODO [7]uint64 should be enough
 	// Metadata is used to hold arbitrary data you wish to include.
 	// Engine completely ignores this field and is only to be used for
 	// pass-through data.
 	Metadata interface{}
 
-	_padding4 [sys.CacheLineSize]uint64
+	_padding4 [sys.CacheLineSize / 8]uint64
 	input     Acker
 
-	_padding5 [sys.CacheLineSize]uint64
+	_padding5 [sys.CacheLineSize / 8]uint64
 	Payload   Payloader
 
 	//	buf     []byte TODO
