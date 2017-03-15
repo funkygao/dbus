@@ -61,8 +61,8 @@ func (p *Packet) String() string {
 	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.input, atomic.LoadInt32(&p.refCount), p.Payload)
 }
 
-// CopyTo will copy itself to another Packet.
-func (p *Packet) CopyTo(other *Packet) {
+// copyTo will copy itself to another Packet.
+func (p *Packet) copyTo(other *Packet) {
 	other.Ident = p.Ident
 	other.input = p.input
 	other.Payload = p.Payload // FIXME clone deep copy
@@ -75,6 +75,8 @@ func (p *Packet) Reset() {
 	p.input = nil
 }
 
+// Recycle decrement packet reference count and place it back
+// to its recycle pool if possible.
 func (p *Packet) Recycle() {
 	if atomic.AddInt32(&p.refCount, -1) == 0 {
 		p.Reset()

@@ -104,7 +104,7 @@ func (e *Engine) stopInputRunner(name string) {
 func (e *Engine) ClonePacket(p *Packet) *Packet {
 	pack := <-e.filterRecycleChan
 	pack.Reset()
-	p.CopyTo(pack)
+	p.copyTo(pack)
 	return pack
 }
 
