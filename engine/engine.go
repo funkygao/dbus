@@ -265,7 +265,6 @@ func (e *Engine) ServeForever() {
 	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
 	go e.runWatchdog(globals.WatchdogTick)
 
-	log.Info("launching Router...")
 	routerWg.Add(1)
 	go e.router.Start(routerWg)
 
@@ -279,9 +278,10 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
-	// hot reload
 	cfChanged := make(chan *conf.Conf)
-	go conf.Watch(e.Conf, time.Second, cfChanged)
+	poller := time.Second
+	log.Info("hot reload watching %s with poller=%s", e.fn, poller)
+	go conf.Watch(e.Conf, poller, cfChanged)
 
 	for !globals.Stopping {
 		select {
