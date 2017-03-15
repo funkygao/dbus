@@ -10,7 +10,53 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-// Router is the router/hub shared among all plugins.
+/*
+Router is the router/hub shared among all plugins which dispatches
+packet along the plugins.
+
+A normal packet lifecycle:
+
+        +-------------+
+   	+-- | | | | | | | | Input(ipool)
+    |   +-------------+
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Hub(hpool)
+    |   +-------------+
+    |          |
+    |          |-------------------------------------+
+    |          |                                     |
+    |   +-------------+                       +-------------+
+    |   | | | | | | | | Output/Filter(ppool)  | | | | | | | | Output/Filter(ppool)
+    |   +-------------+                       +-------------+
+    |          |                                     |
+    |          +-------------------------------------+
+    |                        |
+	+-------<----------------+
+	     Recycle
+
+
+A normal cloned packet lifecycle:
+
+        +-------------+
+   	+-- | | | | | | | | Engine(fpool)
+    |   +-------------+
+    |          |
+    |          | ClonePacket
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Filter
+    |   +-------------+
+    |          |
+    |   +-------------+
+    |   | | | | | | | | Output/Filter(ppool)
+    |   +-------------+
+    |          |
+	+-------<--+
+	     Recycle
+
+
+*/
 type Router struct {
 	hub chan *Packet
 
