@@ -33,6 +33,7 @@ type Engine struct {
 
 	// Engine will load json config file
 	*conf.Conf
+	fn string
 
 	// REST exporter
 	httpListener net.Listener
@@ -120,6 +121,7 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 		panic(err)
 	}
 
+	e.fn = fn
 	e.Conf = cf
 	Globals().Conf = cf
 
@@ -274,8 +276,16 @@ func (e *Engine) ServeForever() {
 		}
 	}
 
+	// hot reload
+	cfChanged := make(chan *conf.Conf)
+	go conf.Watch(e.Conf, time.Second, cfChanged)
+
 	for !globals.Stopping {
 		select {
+		case <-cfChanged:
+			log.Info("%s updated, reloading...", e.fn)
+			// TODO
+
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 
