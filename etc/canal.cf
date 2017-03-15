@@ -13,6 +13,7 @@
         {
             name: "out.kafka"
             class: "KafkaOutput"
+            reporter: true
             dsn: "local://me/foobar"
             match: ["in.binlog", ]
         }
