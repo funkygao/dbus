@@ -38,7 +38,7 @@ Flags:
 )
 
 func parseFlags() {
-	iPool := 100
+	iPool := 5000
 	fPool := iPool * 15 / 10
 	hPool := 2 * iPool
 	pPool := iPool

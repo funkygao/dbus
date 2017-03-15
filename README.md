@@ -94,15 +94,17 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 - KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
 - Mysql binlog positioner commit every 1s, channal buffer 100
-- inputRecycleChan buffer 100, filterRecycleChan 150
 
 ### TODO
 
+- [ ] some goroutine leakage
 - [ ] each Input have its own recycle chan, one block will not block others
 - [ ] hot reload on config file changed
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] sharding binlog across the dbusd cluster
 - [ ] router finding matcher is slow
+- [X] make canal, high cpu usage
+  - because CAS backoff 1us, cpu busy
 - [X] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
 - [X] pipeline
