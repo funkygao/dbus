@@ -56,12 +56,13 @@ func (p *Packet) incRef() *Packet {
 }
 
 func (p *Packet) String() string {
-	return fmt.Sprintf("{%s, %d, %s}", p.Ident, atomic.LoadInt32(&p.refCount), p.Payload)
+	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.input, atomic.LoadInt32(&p.refCount), p.Payload)
 }
 
 // CopyTo will copy itself to another Packet.
 func (p *Packet) CopyTo(other *Packet) {
 	other.Ident = p.Ident
+	other.input = p.input
 	other.Payload = p.Payload // FIXME clone deep copy
 }
 
@@ -69,6 +70,7 @@ func (p *Packet) Reset() {
 	p.refCount = int32(1)
 	p.Ident = ""
 	p.Payload = nil
+	p.input = nil
 }
 
 func (p *Packet) Recycle() {

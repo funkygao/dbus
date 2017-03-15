@@ -23,6 +23,10 @@ func (this *KafkaInput) Stop(r engine.InputRunner) {
 	close(this.stopChan)
 }
 
+func (this *KafkaInput) OnAck(pack *engine.Packet) error {
+	return nil
+}
+
 func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	for {
 		select {
