@@ -30,7 +30,7 @@ _testmain.go
 *.pprof
 
 hh/
-target/
+.target/
 var/
 
 dbusd

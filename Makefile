@@ -45,10 +45,10 @@ all: help
 
 # Run the unit tests
 test:
-	@mkdir -p target/test
+	@mkdir -p .target/test
 	GOPATH=$(GOPATH) \
 	go test -covermode=atomic -bench=. -race -v ./... | \
-	tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > target/test/report.xml); \
+	tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > .target/test/report.xml); \
 	test $${PIPESTATUS[0]} -eq 0
 
 # Format the source code inplace
@@ -60,9 +60,9 @@ escape:
 
 # Check if the source code has been formatted
 fmtcheck:
-	@mkdir -p target
-	@find . -type f -name "*.go" -exec gofmt -s -d {} \; | tee target/format.diff
-	@test ! -s target/format.diff || { echo "ERROR: the source code has not been formatted - please use 'make format' or 'gofmt'"; exit 1; }
+	@mkdir -p .target
+	@find . -type f -name "*.go" -exec gofmt -s -d {} \; | tee .target/format.diff
+	@test ! -s .target/format.diff || { echo "ERROR: the source code has not been formatted - please use 'make format' or 'gofmt'"; exit 1; }
 
 # Check for syntax errors
 vet:
@@ -74,38 +74,38 @@ lint:
 
 # Generate the coverage report
 coverage:
-	@mkdir -p target/report
+	@mkdir -p .target/report
 	GOPATH=$(GOPATH) \
-	go test -covermode=count -coverprofile=target/report/coverage.out -v ./... && \
+	go test -covermode=count -coverprofile=.target/report/coverage.out -v ./... && \
 	GOPATH=$(GOPATH) \
-	go tool cover -html=target/report/coverage.out -o target/report/coverage.html
+	go tool cover -html=.target/report/coverage.out -o .target/report/coverage.html
 
 # Report cyclomatic complexity
 cyclo:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) gocyclo -avg . | tee target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
+	@mkdir -p .target/report
+	GOPATH=$(GOPATH) gocyclo -avg . | tee .target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect ineffectual assignments
 ineffassign:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) ineffassign . | tee target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
+	@mkdir -p .target/report
+	GOPATH=$(GOPATH) ineffassign . | tee .target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect commonly misspelled words in source files
 misspell:
-	find . -type f -name "*.go" -exec misspell -error {} \; | tee target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
+	find . -type f -name "*.go" -exec misspell -error {} \; | tee .target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
 	misspell README.md
 
 # AST scanner
 astscan:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) gas ./... | tee target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0
+	@mkdir -p .target/report
+	GOPATH=$(GOPATH) gas ./... | tee .target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Generate source docs
 docs:
-	@mkdir -p target/docs
-	nohup sh -c 'GOPATH=$(GOPATH) godoc -http=127.0.0.1:6060' > target/godoc_server.log 2>&1 &
-	wget --directory-prefix=target/docs/ --execute robots=off --retry-connrefused --recursive --no-parent --adjust-extension --page-requisites --convert-links http://127.0.0.1:6060/pkg/github.com/${VENDOR}/${PROJECT}/ ; kill -9 `lsof -ti :6060`
-	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > target/docs/index.html
+	@mkdir -p .target/docs
+	nohup sh -c 'GOPATH=$(GOPATH) godoc -http=127.0.0.1:6060' > .target/godoc_server.log 2>&1 &
+	wget --directory-prefix=.target/docs/ --execute robots=off --retry-connrefused --recursive --no-parent --adjust-extension --page-requisites --convert-links http://127.0.0.1:6060/pkg/github.com/${VENDOR}/${PROJECT}/ ; kill -9 `lsof -ti :6060`
+	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > .target/docs/index.html
 
 # Alias to run all quality-assurance checks
 qa: fmtcheck test vet lint coverage cyclo ineffassign misspell astscan
@@ -128,7 +128,7 @@ clean:
 
 # Deletes any intermediate file
 nuke:
-	rm -rf ./target
+	rm -rf ./.target
 	GOPATH=$(GOPATH) go clean -i ./...
 
 generate:
