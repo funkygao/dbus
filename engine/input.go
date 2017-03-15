@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"runtime/debug"
 	"sync"
 
 	log "github.com/funkygao/log4go"
@@ -11,13 +12,20 @@ var (
 	_ InputRunner  = &iRunner{}
 )
 
+// Input is the input plugin.
 type Input interface {
 	Plugin
 
+	Acker
+
+	// Run starts the main loop of the Input plugin.
 	Run(r InputRunner, h PluginHelper) (err error)
+
+	// Stop is the callback which stops the Input plugin.
 	Stop(InputRunner)
 }
 
+// InputRunner is a helper for Input plugin to access some context data.
 type InputRunner interface {
 	PluginRunner
 
@@ -51,6 +59,8 @@ func (ir *iRunner) Inject(pack *Packet) {
 	if pack.Ident == "" {
 		pack.Ident = ir.Name()
 	}
+
+	pack.input = ir.Input()
 	ir.engine.router.hub <- pack
 }
 
@@ -73,7 +83,7 @@ func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", ir.Name(), err)
+			log.Critical("[%s] %v\n%s", ir.Name(), err, string(debug.Stack()))
 		}
 
 		wg.Done()

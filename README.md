@@ -98,11 +98,13 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] router finding matcher is slow
-- [ ] ugly design of Input/Output ack mechanism
-  - we might learn from storm bolt ack
+- [ ] each Input have its own recycle chan, one block will not block others
+- [ ] hot reload on config file changed
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] sharding binlog across the dbusd cluster
+- [ ] router finding matcher is slow
+- [X] ugly design of Input/Output ack mechanism
+  - we might learn from storm bolt ack
 - [X] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output
@@ -137,7 +139,6 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - [X] what if replication conn broken
 - [X] position will be stored in zk
 - [X] play with binlog_row_image
-- [ ] each Input have its own recycle chan, one block will not block others
 - [ ] project feature for multi-tenant
 - [ ] bug fix
   - [ ] next log position leads to failure after resume

@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"runtime/debug"
 	"sync"
 
 	"github.com/Shopify/sarama"
@@ -30,7 +31,7 @@ type Producer struct {
 
 // NewProducer creates a uniform kafka producer.
 func NewProducer(name string, brokers []string, cf *Config) *Producer {
-	if len(brokers) == 0 {
+	if !cf.dryrun && len(brokers) == 0 {
 		panic(name + " empty brokers")
 	}
 
@@ -49,6 +50,13 @@ func (p *Producer) Start() error {
 	p.m = newMetrics(p.name)
 
 	var err error
+	if p.cf.dryrun {
+		// dryrun mode
+		p.b = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
+		p.Send = p.dryrunSend
+		return nil
+	}
+
 	if !p.cf.async {
 		// sync mode
 		p.p, err = sarama.NewSyncProducer(p.brokers, p.cf.Sarama)
@@ -79,6 +87,10 @@ func (p *Producer) Start() error {
 // Close will drain and close the Producer.
 func (p *Producer) Close() error {
 	close(p.stopper)
+
+	if p.cf.dryrun {
+		return nil
+	}
 
 	if p.cf.async {
 		p.ap.AsyncClose()
@@ -143,6 +155,12 @@ func (p *Producer) syncSend(m *sarama.ProducerMessage) error {
 	return err
 }
 
+func (p *Producer) dryrunSend(m *sarama.ProducerMessage) error {
+	p.b.Put(m)
+	p.b.Succeed() // i,e. onSuccess called silently
+	return nil
+}
+
 func (p *Producer) asyncSend(m *sarama.ProducerMessage) error {
 	p.b.Put(m)
 	return nil
@@ -174,7 +192,7 @@ func (p *Producer) asyncSendWorker() {
 func (p *Producer) dispatchCallbacks() {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", p.name, err)
+			log.Critical("[%s] %v\n%s", p.name, err, string(debug.Stack()))
 		}
 
 		p.wg.Done()

@@ -2,6 +2,13 @@ mock:
 	@go build
 	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
+batcher:
+	@go build
+	./dbusd -conf ../../etc/batcher.cf -routerstat=false
+
+v2:buildv2
+	./dbusd -conf ../../etc/mock.cf -routerstat=false
+
 fanout:build
 	./dbusd -conf ../../etc/fanout.cf
 
@@ -20,6 +27,9 @@ dump:build
 build:
 	@go build -race
 	@mkdir -p var
+
+buildv2:
+	go build -tags v2
 
 pprof:
 	go tool pprof http://localhost:10120/debug/pprof/profile?seconds=60

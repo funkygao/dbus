@@ -15,7 +15,8 @@ var clientID uint32
 
 // Config is the configuration of kafka pkg.
 type Config struct {
-	async bool
+	async  bool
+	dryrun bool
 
 	Sarama *sarama.Config
 }
@@ -58,6 +59,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		Sarama: cf,
 		async:  true,
+		dryrun: false,
 	}
 }
 
@@ -81,6 +83,11 @@ func (c *Config) SyncMode() *Config {
 // SyncMode will switch the kafka producer to async mode.
 func (c *Config) AsyncMode() *Config {
 	c.async = true
+	return c
+}
+
+func (c *Config) DryrunMode() *Config {
+	c.dryrun = true
 	return c
 }
 

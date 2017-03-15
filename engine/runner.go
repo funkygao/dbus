@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"runtime/debug"
 	"sync"
 
 	log "github.com/funkygao/log4go"
@@ -79,6 +80,10 @@ func (fo *foRunner) getMatcher() *matcher {
 	return fo.matcher
 }
 
+func (fo *foRunner) Ack(pack *Packet) error {
+	return pack.input.OnAck(pack)
+}
+
 func (fo *foRunner) Inject(pack *Packet) {
 	fo.engine.router.hub <- pack
 }
@@ -105,7 +110,7 @@ func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
 func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v", fo.Name(), err)
+			log.Critical("[%s] %v\n%s", fo.Name(), err, string(debug.Stack()))
 		}
 
 		wg.Done()

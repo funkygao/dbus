@@ -1,0 +1,19 @@
+{
+    plugins: [
+        {
+            name: "in.mock"
+            class: "MockInput"
+            payload: "RowsEvent"
+        }            
+
+        {
+            name: "out.mock"
+            class: "KafkaOutput"
+            dsn: "local://me/foobar"
+            mode: "dryrun"
+            reporter: true
+            match: ["in.mock", ]
+        }
+    ]
+
+}

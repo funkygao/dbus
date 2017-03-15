@@ -17,6 +17,10 @@ func (this *RedisbinlogInput) Init(config *conf.Conf) {
 	this.stopChan = make(chan struct{})
 }
 
+func (this *RedisbinlogInput) OnAck(pack *engine.Packet) error {
+	return nil
+}
+
 func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
 	log.Trace("[%s] stopping...", r.Name())
 	close(this.stopChan)

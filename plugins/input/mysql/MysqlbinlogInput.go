@@ -1,10 +1,10 @@
 package mysql
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -23,9 +23,6 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
-
-	// so that KafkaOutput can reuse
-	engine.Globals().Register(fmt.Sprintf("myslave.%s", config.String("name", "")), this.slave)
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
@@ -33,6 +30,10 @@ func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 
 	close(this.stopChan)
 	this.slave.StopReplication()
+}
+
+func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
+	return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {

@@ -1,3 +1,5 @@
+// +build !v2
+
 package engine
 
 import (
@@ -8,8 +10,8 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-// messageRouter is the router/hub shared among all plugins.
-type messageRouter struct {
+// Router is the router/hub shared among all plugins.
+type Router struct {
 	hub chan *Packet
 
 	metrics *routerMetrics
@@ -21,8 +23,8 @@ type messageRouter struct {
 	outputMatchers []*matcher
 }
 
-func newMessageRouter() *messageRouter {
-	return &messageRouter{
+func newMessageRouter() *Router {
+	return &Router{
 		hub:                 make(chan *Packet, Globals().PluginChanSize),
 		metrics:             newMetrics(),
 		removeFilterMatcher: make(chan *matcher),
@@ -32,15 +34,15 @@ func newMessageRouter() *messageRouter {
 	}
 }
 
-func (r *messageRouter) addFilterMatcher(matcher *matcher) {
+func (r *Router) addFilterMatcher(matcher *matcher) {
 	r.filterMatchers = append(r.filterMatchers, matcher)
 }
 
-func (r *messageRouter) addOutputMatcher(matcher *matcher) {
+func (r *Router) addOutputMatcher(matcher *matcher) {
 	r.outputMatchers = append(r.outputMatchers, matcher)
 }
 
-func (r *messageRouter) reportMatcherQueues() {
+func (r *Router) reportMatcherQueues() {
 	globals := Globals()
 	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
 	if len(r.hub) == globals.PluginChanSize {
@@ -64,7 +66,7 @@ func (r *messageRouter) reportMatcherQueues() {
 }
 
 // Dispatch pack from Input to MatchRunners
-func (r *messageRouter) Start(wg *sync.WaitGroup) {
+func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var (
@@ -107,32 +109,21 @@ LOOP:
 
 			foundMatch = false
 
-			// If we send pack to filterMatchers and then outputMatchers
-			// because filter may change pack Ident, and this pack because
-			// of shared mem, may match both filterMatcher and outputMatcher
-			// then dup dispatching happens!!!
-			//
-			// We have to dispatch to Output then Filter to avoid that case
+			// dispatch pack to output plugins, 1 to many
 			for _, matcher = range r.outputMatchers {
-				// a pack can match several Output
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
-					pack.incRef()
-					matcher.InChan() <- pack
+					matcher.InChan() <- pack.incRef()
 				}
 			}
 
-			// got pack from Input, now dispatch
-			// for each target, pack will inc ref count
-			// and the router will dec ref count only once
+			// dispatch pack to filter plugins, 1 to many
 			for _, matcher = range r.filterMatchers {
-				// a pack can match several Filter
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
-					pack.incRef()
-					matcher.InChan() <- pack
+					matcher.InChan() <- pack.incRef()
 				}
 			}
 
@@ -151,7 +142,7 @@ LOOP:
 
 }
 
-func (r *messageRouter) removeMatcher(matcher *matcher, matchers []*matcher) {
+func (r *Router) removeMatcher(matcher *matcher, matchers []*matcher) {
 	for idx, m := range matchers {
 		if m == matcher {
 			log.Trace("closing matcher for %s", m.runner.Name())
