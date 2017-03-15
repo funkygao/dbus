@@ -5,6 +5,45 @@ import (
 	"testing"
 )
 
+func BenchmarkGolangChannelBuffer100(b *testing.B) {
+	c := make(chan struct{}, 100)
+	go func() {
+		for i := 0; i < b.N; i++ {
+			c <- struct{}{}
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		<-c
+	}
+}
+
+func BenchmarkGolangChannelBuffer1000(b *testing.B) {
+	c := make(chan struct{}, 1000)
+	go func() {
+		for i := 0; i < b.N; i++ {
+			c <- struct{}{}
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		<-c
+	}
+}
+
+func BenchmarkGolangChannelBuffer10000(b *testing.B) {
+	c := make(chan struct{}, 10000)
+	go func() {
+		for i := 0; i < b.N; i++ {
+			c <- struct{}{}
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		<-c
+	}
+}
+
 func BenchmarkChannel(b *testing.B) {
 	ch := NewChannel()
 	b.ResetTimer()
@@ -49,21 +88,6 @@ func BenchmarkChannelContention(b *testing.B) {
 
 func BenchmarkGolangChannelUnbuffered(b *testing.B) {
 	ch := make(chan interface{})
-	b.ResetTimer()
-
-	go func() {
-		for i := 0; i < b.N; i++ {
-			<-ch
-		}
-	}()
-
-	for i := 0; i < b.N; i++ {
-		ch <- 'X'
-	}
-}
-
-func BenchmarkGolangChannelBuffer100(b *testing.B) {
-	ch := make(chan interface{}, 100)
 	b.ResetTimer()
 
 	go func() {
