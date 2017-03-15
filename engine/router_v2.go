@@ -100,9 +100,13 @@ LOOP:
 }
 
 func (r *Router) Stop() {
+	log.Trace("Router stopping...")
 	close(r.hub)
 	close(r.stopper)
-}
+
+	for ident, m := range r.metrics.m {
+		log.Trace("routed to [%s] %d", ident, m.Count())
+	}
 
 func (r *Router) runReporter(wg *sync.WaitGroup) {
 	defer wg.Done()
