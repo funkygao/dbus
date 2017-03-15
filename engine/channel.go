@@ -3,6 +3,8 @@ package engine
 import (
 	"runtime"
 	"sync/atomic"
+
+	"github.com/funkygao/dbus/pkg/sys"
 )
 
 const (
@@ -13,19 +15,19 @@ const (
 // Channel is a lock-free ringbuffer that is 2X faster than golang channel.
 // However, it is lacking in the rich features of golang channel.
 type Channel struct {
-	_padding1          [8]uint64
+	_padding1          [sys.CacheLineSize]uint64
 	lastCommittedIndex uint64
 
-	_padding2     [8]uint64
+	_padding2     [sys.CacheLineSize]uint64
 	nextFreeIndex uint64
 
-	_padding3   [8]uint64
+	_padding3   [sys.CacheLineSize]uint64
 	readerIndex uint64
 
-	_padding4 [8]uint64
+	_padding4 [sys.CacheLineSize]uint64
 	contents  [queueSize]interface{}
 
-	_padding5 [8]uint64
+	_padding5 [sys.CacheLineSize]uint64
 }
 
 func NewChannel() *Channel {
