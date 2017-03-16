@@ -3,7 +3,6 @@ package myslave
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/pkg/model"
@@ -110,12 +109,6 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 					timeout *= 2
 				}
 
-				continue
-			}
-
-			if strings.HasPrefix(err.Error(), "invalid table id") {
-				log.Error("[%s] %s", m.name, err)
-				// TODO how to handle this?
 				continue
 			}
 
