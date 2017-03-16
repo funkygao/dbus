@@ -126,13 +126,19 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 	Globals().Conf = cf
 
 	// 'plugins' section
+	var names = make(map[string]struct{})
 	for i := 0; i < len(e.List("plugins", nil)); i++ {
 		section, err := e.Section(fmt.Sprintf("plugins[%d]", i))
 		if err != nil {
 			panic(err)
 		}
 
-		e.loadPluginSection(section)
+		name := e.loadPluginSection(section)
+		if _, duplicated := names[name]; duplicated {
+			// router.metrics will be bad with dup name
+			panic("duplicated plugin name: " + name)
+		}
+		names[name] = struct{}{}
 	}
 
 	// 'topology' section
@@ -147,9 +153,10 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 	return e
 }
 
-func (e *Engine) loadPluginSection(section *conf.Conf) {
+func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.loadConfig(section)
+	name = pluginCommons.name
 	if pluginCommons.disabled {
 		log.Warn("%s disabled", pluginCommons.name)
 
@@ -200,6 +207,8 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	default:
 		panic("unknown plugin: " + pluginCategory)
 	}
+
+	return
 }
 
 func (e *Engine) ServeForever() (ret error) {
