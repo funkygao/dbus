@@ -189,8 +189,10 @@ func (r *Router) Stop() {
 	close(r.hub)
 	close(r.stopper)
 
-	for ident, m := range r.metrics.m {
-		log.Trace("routed to [%s] %d", ident, m.Count())
+	if Globals().RouterTrack {
+		for ident, m := range r.metrics.m {
+			log.Trace("routed to [%s] %d", ident, m.Count())
+		}
 	}
 }
 
