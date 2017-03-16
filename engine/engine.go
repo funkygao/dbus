@@ -255,7 +255,7 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	for inputName, _ := range e.inputRecycleChans {
+	for inputName := range e.inputRecycleChans {
 		log.Info("building Input[%s] Packet pool with size=%d", inputName, globals.InputRecyclePoolSize)
 
 		for i := 0; i < globals.InputRecyclePoolSize; i++ {
