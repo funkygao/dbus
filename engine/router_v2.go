@@ -20,7 +20,7 @@ type Router struct {
 	metrics *routerMetrics
 }
 
-func newMessageRouter() *Router {
+func newRouter() *Router {
 	return &Router{
 		hub:     make(chan *Packet, Globals().HubChanSize),
 		stopper: make(chan struct{}),

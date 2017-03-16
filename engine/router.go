@@ -77,7 +77,7 @@ type Router struct {
 	outputMatchers []*matcher
 }
 
-func newMessageRouter() *Router {
+func newRouter() *Router {
 	return &Router{
 		hub:                 make(chan *Packet, Globals().HubChanSize),
 		stopper:             make(chan struct{}),
