@@ -97,10 +97,10 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] hot reload on config file changed
+- [ ] sharding binlog across the dbusd cluster
 - [ ] each Input have its own recycle chan, one block will not block others
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [ ] sharding binlog across the dbusd cluster
+- [X] hot reload on config file changed
 - [ ] router finding matcher is slow
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy
