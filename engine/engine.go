@@ -33,7 +33,6 @@ type Engine struct {
 
 	// Engine will load json config file
 	*conf.Conf
-	fn string
 
 	// REST exporter
 	httpListener net.Listener
@@ -123,7 +122,6 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 		panic(err)
 	}
 
-	e.fn = fn
 	e.Conf = cf
 	Globals().Conf = cf
 
@@ -286,13 +284,13 @@ func (e *Engine) ServeForever() (ret error) {
 
 	cfChanged := make(chan *conf.Conf)
 	poller := time.Second
-	log.Info("hot reload watching %s with poller=%s", e.fn, poller)
+	log.Info("watching %s with poller=%s", e.Conf.ConfPath(), poller)
 	go conf.Watch(e.Conf, poller, cfChanged)
 
 	for !globals.Stopping {
 		select {
 		case <-cfChanged:
-			log.Info("%s updated, closing...", e.fn)
+			log.Info("%s updated, closing...", e.Conf.ConfPath())
 			globals.Stopping = true
 
 		case sig := <-globals.sigChan:
