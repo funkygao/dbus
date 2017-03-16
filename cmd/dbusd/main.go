@@ -45,26 +45,37 @@ func main() {
 	globals.HubChanSize = options.hubPoolSize
 	globals.PluginChanSize = options.pluginPoolSize
 
-	e := engine.New(globals).
-		LoadConfigFile(options.configfile)
+	if !options.validateConf && len(options.visualizeFile) == 0 {
+		// daemon mode
+		log4go.Info("dbus[%s@%s] starting", dbus.BuildID, dbus.Version)
 
-	if options.visualizeFile != "" {
-		e.ExportDiagram(options.visualizeFile)
-		return
+		agent.HttpAddr = options.pprofAddr
+		log4go.Info("pprof agent ready on %s", agent.Start())
 	}
-
-	if options.validateConf {
-		fmt.Println("ok")
-		return
-	}
-
-	log4go.Info("dbus[%s@%s] starting", dbus.BuildID, dbus.Version)
-
-	agent.HttpAddr = ":10120" // FIXME security issue
-	log4go.Info("pprof agent ready on %s", agent.Start())
 
 	t0 := time.Now()
-	e.ServeForever()
+	var err error
+	for {
+		e := engine.New(globals).LoadConfigFile(options.configfile)
+
+		if options.visualizeFile != "" {
+			e.ExportDiagram(options.visualizeFile)
+			return
+		}
+
+		if options.validateConf {
+			fmt.Println("ok")
+			return
+		}
+
+		if err = e.ServeForever(); err != nil {
+			// e,g. SIGTERM received
+			log4go.Info("%v", err)
+			break
+		}
+
+		globals.Stopping = false
+	}
 
 	log4go.Info("dbus[%s@%s] %s, bye!", dbus.BuildID, dbus.Version, time.Since(t0))
 	log4go.Close()

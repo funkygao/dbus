@@ -17,6 +17,7 @@ var (
 		validateConf  bool
 		showversion   bool
 		visualizeFile string
+		pprofAddr     string
 		lockfile      string
 		routerTrack   bool
 
@@ -48,6 +49,7 @@ func parseFlags() {
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
 	flag.BoolVar(&options.showversion, "version", false, "show version and exit")
 	flag.BoolVar(&options.debug, "debug", false, "debug mode")
+	flag.StringVar(&options.pprofAddr, "pprof", ":10120", "pprof agent listen address")
 	flag.BoolVar(&options.routerTrack, "routerstat", true, "track router metrics")
 	flag.IntVar(&options.inputPoolSize, "ipool", iPool, "input recycle pool size")
 	flag.IntVar(&options.filterPoolSize, "fpool", fPool, "filter recycle pool size")
