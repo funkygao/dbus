@@ -97,6 +97,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
+- [ ] router metrics grafana empty
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
