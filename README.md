@@ -98,10 +98,11 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 ### TODO
 
 - [ ] sharding binlog across the dbusd cluster
-- [ ] each Input have its own recycle chan, one block will not block others
+  - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [X] hot reload on config file changed
 - [ ] router finding matcher is slow
+- [X] hot reload on config file changed
+- [X] each Input have its own recycle chan, one block will not block others
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy
 - [X] ugly design of Input/Output ack mechanism
@@ -161,7 +162,6 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   - [X] MysqlbinlogInput max_event_length
   - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
 - [ ] GTID
-- [ ] integration with helix
   - place config to central zk znode and watch changes
 - [ ] Roadmap
   - pubsub audit reporter

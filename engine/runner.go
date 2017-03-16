@@ -124,7 +124,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	globals := Globals()
 	for {
 		if filter, ok := fo.plugin.(Filter); ok {
-			log.Info("Filter[%s] starting", fo.Name())
+			log.Info("Filter[%s] started", fo.Name())
 
 			pluginType = "filter"
 			if err := filter.Run(fo, fo.engine); err != nil {
@@ -133,7 +133,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 				log.Info("Filter[%s] stopped", fo.Name())
 			}
 		} else if output, ok := fo.plugin.(Output); ok {
-			log.Info("Output[%s] starting", fo.Name())
+			log.Info("Output[%s] started", fo.Name())
 
 			pluginType = "output"
 			if err := output.Run(fo, fo.engine); err != nil {

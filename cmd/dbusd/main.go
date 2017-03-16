@@ -51,6 +51,9 @@ func main() {
 
 		agent.HttpAddr = options.pprofAddr
 		log4go.Info("pprof agent ready on %s", agent.Start())
+		go func() {
+			log4go.Error("%s", <-agent.Errors)
+		}()
 	}
 
 	t0 := time.Now()

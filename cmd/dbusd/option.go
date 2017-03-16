@@ -39,9 +39,9 @@ Flags:
 )
 
 func parseFlags() {
-	iPool := 5000
+	iPool := 3000
 	fPool := iPool * 15 / 10
-	hPool := 2 * iPool
+	hPool := 3 * iPool
 	pPool := iPool
 	flag.StringVar(&options.configfile, "conf", "", "main config file")
 	flag.BoolVar(&options.validateConf, "validate", false, "validate config file and exit")
