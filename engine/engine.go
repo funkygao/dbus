@@ -142,8 +142,6 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 		cf.String("influx_db", "dbus"), "", "",
 		cf.Duration("influx_tick", time.Minute)); err == nil {
 		telemetry.Default = influxdb.New(metrics.DefaultRegistry, c)
-	} else {
-		log.Warn("telemetry disabled for: %s", err)
 	}
 
 	return e
@@ -203,7 +201,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	}
 }
 
-func (e *Engine) ServeForever() {
+func (e *Engine) ServeForever() (ret error) {
 	var (
 		outputsWg = new(sync.WaitGroup)
 		filtersWg = new(sync.WaitGroup)
@@ -214,11 +212,17 @@ func (e *Engine) ServeForever() {
 		err     error
 	)
 
+	if telemetry.Default == nil {
+		log.Info("engine starting, with telemetry disabled...")
+	} else {
+		log.Info("engine starting...")
+	}
+
 	// setup signal handler first to avoid race condition
 	// if Input terminates very soon, global.Shutdown will
 	// not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	e.launchHttpServ()
 
@@ -286,23 +290,17 @@ func (e *Engine) ServeForever() {
 	for !globals.Stopping {
 		select {
 		case <-cfChanged:
-			log.Info("%s updated, reloading...", e.fn)
-			// TODO
+			log.Info("%s updated, closing...", e.fn)
+			globals.Stopping = true
 
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 
 			switch sig {
-			case syscall.SIGHUP:
-				log.Info("Reloading...")
-				observer.Publish(RELOAD, nil)
-
 			case syscall.SIGINT, syscall.SIGTERM:
 				log.Info("shutdown...")
 				globals.Stopping = true
-				if telemetry.Default != nil {
-					telemetry.Default.Stop()
-				}
+				ret = ErrQuitingSigal
 
 			case syscall.SIGUSR1:
 				observer.Publish(SIGUSR1, nil)
@@ -311,6 +309,10 @@ func (e *Engine) ServeForever() {
 				observer.Publish(SIGUSR2, nil)
 			}
 		}
+	}
+
+	if telemetry.Default != nil {
+		telemetry.Default.Stop()
 	}
 
 	e.Lock()
@@ -353,5 +355,11 @@ func (e *Engine) ServeForever() {
 
 	e.stopHttpServ()
 
-	log.Info("shutdown complete")
+	if ret != nil {
+		log.Info("shutdown complete: %s!", ret)
+	} else {
+		log.Info("shutdown complete!")
+	}
+
+	return
 }
