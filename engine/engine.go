@@ -58,6 +58,7 @@ type Engine struct {
 
 	hostname string
 	pid      int
+	stopper  chan struct{}
 }
 
 func New(globals *GlobalConfig) *Engine {
@@ -91,6 +92,7 @@ func New(globals *GlobalConfig) *Engine {
 
 		pid:      os.Getpid(),
 		hostname: hostname,
+		stopper:  make(chan struct{}),
 	}
 }
 
@@ -310,6 +312,8 @@ func (e *Engine) ServeForever() (ret error) {
 			}
 		}
 	}
+
+	close(e.stopper)
 
 	if telemetry.Default != nil {
 		telemetry.Default.Stop()

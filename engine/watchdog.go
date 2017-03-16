@@ -7,14 +7,20 @@ import (
 )
 
 func (e *Engine) runWatchdog(interval time.Duration) {
-	// not a goroutine leakage because it will run once even when engine reload
-	for {
-		inputPoolSize := len(e.inputRecycleChan)
-		filterPoolSize := len(e.filterRecycleChan)
-		if inputPoolSize == 0 || filterPoolSize == 0 {
-			log.Warn("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
-		}
+	tick := time.NewTicker(interval)
+	defer tick.Stop()
 
-		time.Sleep(interval)
+	for {
+		select {
+		case <-tick.C:
+			inputPoolSize := len(e.inputRecycleChan)
+			filterPoolSize := len(e.filterRecycleChan)
+			if inputPoolSize == 0 || filterPoolSize == 0 {
+				log.Warn("Recycle pool reservation: [input]%d [filter]%d", inputPoolSize, filterPoolSize)
+			}
+
+		case <-e.stopper:
+			return
+		}
 	}
 }
