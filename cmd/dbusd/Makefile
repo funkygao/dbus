@@ -9,6 +9,10 @@ batcher:
 v2:buildv2
 	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
+inputs:
+	@go build
+	./dbusd -conf ../../etc/inputs.cf -routerstat=false
+
 fanout:build
 	./dbusd -conf ../../etc/fanout.cf
 

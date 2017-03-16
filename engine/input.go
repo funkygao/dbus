@@ -74,7 +74,7 @@ func (ir *iRunner) Input() Input {
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 	ir.engine = e
-	ir.inChan = e.inputRecycleChan
+	ir.inChan = e.inputRecycleChans[ir.Name()]
 
 	go ir.runMainloop(e, wg)
 	return nil
@@ -91,7 +91,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Info("Input[%s] starting", ir.Name())
+		log.Info("Input[%s] started", ir.Name())
 		if err := ir.Input().Run(ir, e); err == nil {
 			log.Info("Input[%s] stopped", ir.Name())
 		} else {

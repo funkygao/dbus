@@ -92,19 +92,19 @@ func (r *Router) addOutputMatcher(matcher *matcher) {
 
 func (r *Router) reportMatcherQueues() {
 	globals := Globals()
-	s := fmt.Sprintf("Queued hub=%d", len(r.hub))
+	s := fmt.Sprintf("Queued hub=%d/%d", len(r.hub), globals.HubChanSize)
 	if len(r.hub) == globals.HubChanSize {
 		s = fmt.Sprintf("%s(F)", s)
 	}
 
 	for _, fm := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, fm.runner.Name(), len(fm.InChan()))
+		s = fmt.Sprintf("%s %s=%d/%d", s, fm.runner.Name(), len(fm.InChan()), globals.FilterRecyclePoolSize)
 		if len(fm.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}
 	}
 	for _, om := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s=%d", s, om.runner.Name(), len(om.InChan()))
+		s = fmt.Sprintf("%s %s=%d/%d", s, om.runner.Name(), len(om.InChan()), globals.PluginChanSize)
 		if len(om.InChan()) == globals.PluginChanSize {
 			s = fmt.Sprintf("%s(F)", s)
 		}

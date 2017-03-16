@@ -98,7 +98,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 ### TODO
 
 - [ ] sharding binlog across the dbusd cluster
-- [ ] each Input have its own recycle chan, one block will not block others
+- [X] each Input have its own recycle chan, one block will not block others
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [X] hot reload on config file changed
 - [ ] router finding matcher is slow
