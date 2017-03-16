@@ -282,10 +282,8 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	cfChanged := make(chan *conf.Conf)
-	poller := time.Second
-	log.Info("watching %s with poller=%s", e.Conf.ConfPath(), poller)
-	go conf.Watch(e.Conf, poller, cfChanged)
+	cfChanged := make(chan struct{})
+	go e.watchConfig(cfChanged, time.Second)
 
 	for !globals.Stopping {
 		select {
