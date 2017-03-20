@@ -35,6 +35,10 @@ func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 	this.slave.StopReplication()
 }
 
+func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
+	return this.slave
+}
+
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }

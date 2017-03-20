@@ -163,6 +163,10 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// 00000000  03
 			// NULL bitmap:
 			// 00000000  01
+			//
+			// https://github.com/siddontang/go-mysql/issues/48
+			// If we have processed TableMapEvent and then restart, the following
+			// rows event may miss the table id when we sync from last saved position.
 
 		case *replication.GenericEvent:
 			// known misc types of event

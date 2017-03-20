@@ -51,6 +51,13 @@ func init() {
 				Cmd: cmd,
 			}, nil
 		},
+
+		"binlog": func() (cli.Command, error) {
+			return &command.Binlog{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
 	}
 
 }
