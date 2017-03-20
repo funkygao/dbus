@@ -19,6 +19,23 @@ func (m *MySlave) BinlogRowImage() (string, error) {
 	}
 }
 
+// AssertValidRowFormat asserts the mysql master binlog format is ROW.
+func (m *MySlave) AssertValidRowFormat() error {
+	res, err := m.Execute(`SHOW GLOBAL VARIABLES LIKE "binlog_format";`)
+	if err != nil {
+		return err
+	}
+
+	if f, err := res.GetString(0, 1); err != nil {
+		return err
+	} else if f != "ROW" {
+		return ErrInvalidRowFormat
+	}
+
+	return nil
+}
+
+// Execute executes a SQL against the mysql master.
 func (m *MySlave) Execute(cmd string, args ...interface{}) (rr *mysql.Result, err error) {
 	const maxRetry = 3
 	for i := 0; i < maxRetry; i++ {

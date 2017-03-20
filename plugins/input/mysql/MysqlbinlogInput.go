@@ -23,6 +23,9 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
+	if err := this.slave.AssertValidRowFormat(); err != nil {
+		panic(err)
+	}
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
