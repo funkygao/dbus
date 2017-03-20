@@ -42,6 +42,9 @@ system mediation logic.
   - edge cases fully covered
   - network jitter tested
   - dependent components failure tested
+- Systemic Quality
+  - hot reload
+  - dryrun throughput 1.9M packets/s
 
 ### Getting Started
 
@@ -95,13 +98,29 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
 - Mysql binlog positioner commit every 1s, channal buffer 100
 
+### FAQ
+
+#### mysql binlog
+
+- is it totally data loss tolerant?
+  
+  if the binlog exceeds 1MB, it will be discarded(lost)
+
+- ERROR 1236 (HY000): Could not find first log file name in binary log index file
+
+  the checkpointed binlog position is gone on master, reset the zk znode and replication will 
+  automatically resume
+
 ### TODO
 
+- [ ] display mysql master position
+- [ ] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [ ] sharding binlog across the dbusd cluster
-- [ ] each Input have its own recycle chan, one block will not block others
+  - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [X] hot reload on config file changed
 - [ ] router finding matcher is slow
+- [X] hot reload on config file changed
+- [X] each Input have its own recycle chan, one block will not block others
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy
 - [X] ugly design of Input/Output ack mechanism
@@ -161,8 +180,9 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   - [X] MysqlbinlogInput max_event_length
   - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
 - [ ] GTID
-- [ ] integration with helix
   - place config to central zk znode and watch changes
+- [ ] Known issues
+  - Binlog Dump thread not close https://github.com/github/gh-ost/issues/292
 - [ ] Roadmap
   - pubsub audit reporter
   - universal kafka listener and outputer

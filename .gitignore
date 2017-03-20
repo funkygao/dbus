@@ -33,6 +33,7 @@ hh/
 .target/
 var/
 
-dbusd
+cmd/dbusd/dbusd
 pkg/kafka/kpub/kpub
 pkg/model/rowsevent_ffjson.go
+cmd/dm/dm

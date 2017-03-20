@@ -23,6 +23,9 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
+	if err := this.slave.AssertValidRowFormat(); err != nil {
+		panic(err)
+	}
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
@@ -30,6 +33,10 @@ func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 
 	close(this.stopChan)
 	this.slave.StopReplication()
+}
+
+func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
+	return this.slave
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
@@ -44,6 +51,11 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	RESTART_REPLICATION:
 
 		log.Trace("[%s] starting replication...", name)
+		if img, err := this.slave.BinlogRowImage(); err != nil {
+			log.Error("[%s] %v", name, err)
+		} else {
+			log.Trace("[%s] binlog row image=%s", name, img)
+		}
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)

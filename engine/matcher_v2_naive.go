@@ -36,7 +36,7 @@ func (n *naiveMatcher) Subscribe(topic string, sub Subscriber) (*Subscription, e
 func (n *naiveMatcher) Unsubscribe(sub *Subscription) {
 	n.mu.Lock()
 	if subscribers, ok := n.subs[sub.topic]; ok {
-		for existing, _ := range subscribers {
+		for existing := range subscribers {
 			if existing != sub.subscriber {
 				continue
 			}
@@ -62,7 +62,7 @@ func (n *naiveMatcher) Lookup(topic string, subs []Subscriber) int {
 	n.mu.RUnlock()
 
 	i := 0
-	for sub, _ := range subscriberSet {
+	for sub := range subscriberSet {
 		subs[i] = sub
 		i++
 	}

@@ -93,7 +93,7 @@ func (b *invertedBitmapMatcher) Lookup(topic string) []Subscriber {
 
 	subscribers := make([]Subscriber, len(subscriberSet))
 	i := 0
-	for sub, _ := range subscriberSet {
+	for sub := range subscriberSet {
 		subscribers[i] = sub
 		i++
 	}

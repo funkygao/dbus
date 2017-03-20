@@ -84,7 +84,7 @@ func New(globals *GlobalConfig) *Engine {
 		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
 		top:    newTopology(),
-		router: newMessageRouter(),
+		router: newRouter(),
 
 		httpPaths: make([]string, 0, 6),
 

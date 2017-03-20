@@ -20,7 +20,7 @@ type Router struct {
 	metrics *routerMetrics
 }
 
-func newMessageRouter() *Router {
+func newRouter() *Router {
 	return &Router{
 		hub:     make(chan *Packet, Globals().HubChanSize),
 		stopper: make(chan struct{}),
@@ -107,6 +107,7 @@ func (r *Router) Stop() {
 	for ident, m := range r.metrics.m {
 		log.Trace("routed to [%s] %d", ident, m.Count())
 	}
+}
 
 func (r *Router) runReporter(wg *sync.WaitGroup) {
 	defer wg.Done()

@@ -8,16 +8,18 @@ import (
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
+	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/replication"
 )
 
 // MySlave is a mimic mysql slave that replicates binlog from mysql master using IO thread.
 type MySlave struct {
-	c *conf.Conf
-	r *replication.BinlogSyncer
-	p positioner
-	m *slaveMetrics
-	z *zk.ZkZone
+	c    *conf.Conf
+	r    *replication.BinlogSyncer
+	p    positioner
+	m    *slaveMetrics
+	z    *zk.ZkZone
+	conn *client.Conn
 
 	name string
 

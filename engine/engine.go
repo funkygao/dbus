@@ -52,7 +52,7 @@ type Engine struct {
 	top    *topology
 	router *Router
 
-	inputRecycleChan  chan *Packet
+	inputRecycleChans map[string]chan *Packet
 	filterRecycleChan chan *Packet
 
 	hostname string
@@ -81,11 +81,11 @@ func New(globals *GlobalConfig) *Engine {
 		OutputRunners:  make(map[string]OutputRunner),
 		outputWrappers: make(map[string]*pluginWrapper),
 
-		inputRecycleChan:  make(chan *Packet, globals.InputRecyclePoolSize),
+		inputRecycleChans: make(map[string]chan *Packet),
 		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
 		top:    newTopology(),
-		router: newMessageRouter(),
+		router: newRouter(),
 
 		httpPaths: make([]string, 0, 6),
 
@@ -126,13 +126,19 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 	Globals().Conf = cf
 
 	// 'plugins' section
+	var names = make(map[string]struct{})
 	for i := 0; i < len(e.List("plugins", nil)); i++ {
 		section, err := e.Section(fmt.Sprintf("plugins[%d]", i))
 		if err != nil {
 			panic(err)
 		}
 
-		e.loadPluginSection(section)
+		name := e.loadPluginSection(section)
+		if _, duplicated := names[name]; duplicated {
+			// router.metrics will be bad with dup name
+			panic("duplicated plugin name: " + name)
+		}
+		names[name] = struct{}{}
 	}
 
 	// 'topology' section
@@ -147,9 +153,10 @@ func (e *Engine) LoadConfigFile(fn string) *Engine {
 	return e
 }
 
-func (e *Engine) loadPluginSection(section *conf.Conf) {
+func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.loadConfig(section)
+	name = pluginCommons.name
 	if pluginCommons.disabled {
 		log.Warn("%s disabled", pluginCommons.name)
 
@@ -173,6 +180,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	plugin := wrapper.Create()
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
+		e.inputRecycleChans[wrapper.name] = make(chan *Packet, Globals().InputRecyclePoolSize)
 		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
@@ -199,6 +207,8 @@ func (e *Engine) loadPluginSection(section *conf.Conf) {
 	default:
 		panic("unknown plugin: " + pluginCategory)
 	}
+
+	return
 }
 
 func (e *Engine) ServeForever() (ret error) {
@@ -254,13 +264,16 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	log.Info("initializing Input Packet pool with size=%d", globals.InputRecyclePoolSize)
-	for i := 0; i < globals.InputRecyclePoolSize; i++ {
-		inputPack := newPacket(e.inputRecycleChan)
-		e.inputRecycleChan <- inputPack
+	for inputName := range e.inputRecycleChans {
+		log.Info("building Input[%s] Packet pool with size=%d", inputName, globals.InputRecyclePoolSize)
+
+		for i := 0; i < globals.InputRecyclePoolSize; i++ {
+			inputPack := newPacket(e.inputRecycleChans[inputName])
+			e.inputRecycleChans[inputName] <- inputPack
+		}
 	}
 
-	log.Info("initializing Filter Packet pool with size=%d", globals.FilterRecyclePoolSize)
+	log.Info("building Filter Packet pool with size=%d", globals.FilterRecyclePoolSize)
 	for i := 0; i < globals.FilterRecyclePoolSize; i++ {
 		filterPack := newPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack

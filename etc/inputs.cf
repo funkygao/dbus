@@ -1,0 +1,21 @@
+{
+    // demonstrate multiple Input
+    plugins: [
+        {
+            name: "m1"
+            class: "MockInput"
+        }
+        
+        {
+            name: "m2"
+            class: "MockInput"
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: true
+            match:  ["m1", "m2"]
+        }
+    ]
+
+}

@@ -18,7 +18,7 @@ type KafkaOutput struct {
 	zone, cluster, topic string
 	reporter             bool
 
-	p *kafka.Producer
+	cf *conf.Conf
 }
 
 // Init setup KafkaOutput state according to config section.
@@ -30,11 +30,18 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
 	this.reporter = config.Bool("reporter", false)
+	this.cf = config
+}
 
+func (this *KafkaOutput) CleanupForRestart() bool {
+	return true // yes, restart allowed
+}
+
+func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 	cf := kafka.DefaultConfig()
-	cf.Sarama.Producer.Flush.Messages = config.Int("batch_size", 1024)
-	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(config.Int("ack", int(sarama.WaitForAll)))
-	switch config.String("mode", "async") {
+	cf.Sarama.Producer.Flush.Messages = this.cf.Int("batch_size", 1024)
+	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(this.cf.Int("ack", int(sarama.WaitForAll)))
+	switch this.cf.String("mode", "async") {
 	case "sync":
 		cf.SyncMode()
 	case "async":
@@ -48,15 +55,9 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	// get the bootstrap broker list
 	zkzone := engine.Globals().GetOrRegisterZkzone(this.zone)
 	zkcluster := zkzone.NewCluster(this.cluster)
-	this.p = kafka.NewProducer(config.String("name", "undefined"), zkcluster.BrokerList(), cf)
-}
+	producer := kafka.NewProducer(this.cf.String("name", "undefined"), zkcluster.BrokerList(), cf)
 
-func (this *KafkaOutput) CleanupForRestart() bool {
-	return true // yes, restart allowed
-}
-
-func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
-	this.p.SetErrorHandler(func(err *sarama.ProducerError) {
+	producer.SetErrorHandler(func(err *sarama.ProducerError) {
 		// e,g.
 		// kafka: Failed to produce message to topic dbustest: kafka server: Message was too large, server rejected it to avoid allocation error.
 		// kafka server: Unexpected (unknown?) server error.
@@ -65,7 +66,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 		log.Error("[%s.%s.%s] %s %s", this.zone, this.cluster, this.topic, err, row.MetaInfo())
 	})
 
-	this.p.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
+	producer.SetSuccessHandler(func(msg *sarama.ProducerMessage) {
 		// FIXME what if:
 		// [1, 2, 3, 4, 5] sent
 		// [1, 2, 4, 5] ok, [3] fails
@@ -83,14 +84,14 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	})
 
 	// start the producer background routines
-	if err := this.p.Start(); err != nil {
+	if err := producer.Start(); err != nil {
 		return err
 	}
 
 	defer func() {
 		log.Trace("[%s.%s.%s] start draining...", this.zone, this.cluster, this.topic)
 
-		if err := this.p.Close(); err != nil {
+		if err := producer.Close(); err != nil {
 			log.Error("[%s.%s.%s] drain: %s", this.zone, this.cluster, this.topic, err)
 		} else {
 			log.Trace("[%s.%s.%s] drained ok", this.zone, this.cluster, this.topic)
@@ -130,7 +131,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 			// loop is for sync mode only: async send will never return error
 			for {
-				if err := this.p.Send(&sarama.ProducerMessage{
+				if err := producer.Send(&sarama.ProducerMessage{
 					Topic:    this.topic,
 					Value:    row,
 					Metadata: pack,

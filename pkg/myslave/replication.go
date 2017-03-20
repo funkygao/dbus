@@ -3,7 +3,6 @@ package myslave
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/pkg/model"
@@ -39,7 +38,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
 		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough?
-		Flavor:          m.c.String("flavor", "mysql"),
+		Flavor:          m.c.String("flavor", mysql.MySQLFlavor),
 		Host:            m.host,
 		Port:            m.port,
 		User:            m.user,
@@ -113,12 +112,6 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 				continue
 			}
 
-			if strings.HasPrefix(err.Error(), "invalid table id") {
-				log.Error("[%s] %s", m.name, err)
-				// TODO how to handle this?
-				continue
-			}
-
 			// TODO try out all the cases
 			m.emitFatalError(err)
 			return
@@ -170,6 +163,10 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// 00000000  03
 			// NULL bitmap:
 			// 00000000  01
+			//
+			// https://github.com/siddontang/go-mysql/issues/48
+			// If we have processed TableMapEvent and then restart, the following
+			// rows event may miss the table id when we sync from last saved position.
 
 		case *replication.GenericEvent:
 			// known misc types of event
