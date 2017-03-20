@@ -44,6 +44,11 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	RESTART_REPLICATION:
 
 		log.Trace("[%s] starting replication...", name)
+		if img, err := this.slave.BinlogRowImage(); err != nil {
+			log.Error("[%s] %v", name, err)
+		} else {
+			log.Trace("[%s] binlog row image=%s", name, img)
+		}
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
