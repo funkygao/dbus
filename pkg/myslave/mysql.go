@@ -75,3 +75,23 @@ func (m *MySlave) MasterPosition() (*mysql.Position, error) {
 		Pos:  uint32(pos),
 	}, nil
 }
+
+// MasterBinlogs returns all binlog files on master.
+func (m *MySlave) MasterBinlogs() ([]string, error) {
+	rr, err := m.conn.Execute("SHOW BINARY LOGS")
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, rr.RowNumber())
+	for i := 0; i < rr.RowNumber(); i++ {
+		name, err := rr.GetString(i, 0) // [0] is Log_name, [1] is File_size
+		if err != nil {
+			return nil, err
+		}
+
+		names[i] = name
+	}
+
+	return names, nil
+}
