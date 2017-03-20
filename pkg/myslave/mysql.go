@@ -60,3 +60,18 @@ func (m *MySlave) Execute(cmd string, args ...interface{}) (rr *mysql.Result, er
 
 	return
 }
+
+// MasterPosition returns the latest mysql master binlog position info.
+func (m *MySlave) MasterPosition() (*mysql.Position, error) {
+	rr, err := m.conn.Execute("SHOW MASTER STATUS")
+	if err != nil {
+		return nil, err
+	}
+
+	name, _ := rr.GetString(0, 0)
+	pos, _ := rr.GetInt(0, 1)
+	return &mysql.Position{
+		Name: name,
+		Pos:  uint32(pos),
+	}, nil
+}
