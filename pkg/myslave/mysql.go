@@ -1,6 +1,8 @@
 package myslave
 
 import (
+	"fmt"
+
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
 )
@@ -33,6 +35,16 @@ func (m *MySlave) AssertValidRowFormat() error {
 	}
 
 	return nil
+}
+
+// BinlogByPos fetches a single binlog event by position.
+func (m *MySlave) BinlogByPos(file string, pos int) (*mysql.Result, error) {
+	res, err := m.Execute(fmt.Sprintf(`SHOW BINLOG EVENTS IN '%s' FROM %d LIMIT 1`, file, pos))
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // Execute executes a SQL against the mysql master.
