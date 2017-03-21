@@ -96,6 +96,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 ### Configuration
 
 - KafkaOutput async mode with batch=1024/500ms, ack=WaitForAll
+- KafkaOutput retry=3, retry.backoff=350ms
 - Mysql binlog positioner commit every 1s, channal buffer 100
 
 ### FAQ
