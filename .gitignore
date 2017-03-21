@@ -28,6 +28,7 @@ _testmain.go
 .DS_Store
 
 *.pprof
+*.log
 
 hh/
 .target/

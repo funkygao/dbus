@@ -98,6 +98,27 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// 2017/02/08 08:42:09 binlogstreamer.go:47: [error] close sync with err: ERROR 1236 (HY000): Client requested master to start replication from position > file size; the first event 'mysql.000004' at 2274, the last event read from '/usr/local/var/mysql.000004' at 4, the last byte read from '/usr/local/var/mysql.000004' at 4.
 		//
 		// [02/08/17 17:39:20] [EROR] ( mysqlbinlog.go:64) backoff 5s: invalid table id 2413, no correspond table map event
+		// mysql> SHOW BINLOG EVENTS IN '8623306-bin.008517' FROM 117752230 limit 10;
+		// +--------------------+-----------+------------+-----------+-------------+-----------------------------------------------------------------------------+
+		// | Log_name           | Pos       | Event_type | Server_id | End_log_pos | Info                                                                        |
+		// +--------------------+-----------+------------+-----------+-------------+-----------------------------------------------------------------------------+
+		// | 8623306-bin.008517 | 117732471 | Query      |  81413306 |   117732534 | BEGIN                                                                       |
+		// | 8623306-bin.008517 | 117732534 | Table_map  |  81413306 |   117732590 | table_id: 2925 (zabbix.history)                                             |
+		// | 8623306-bin.008517 | 117732590 | Write_rows |  81413306 |   117735750 | table_id: 2925 flags: STMT_END_F                                            |
+		// | 8623306-bin.008517 | 117735750 | Table_map  |  81413306 |   117735810 | table_id: 2968 (zabbix.history_uint)                                        |
+		// | 8623306-bin.008517 | 117735810 | Write_rows |  81413306 |   117744020 | table_id: 2968                                                              |
+		// | 8623306-bin.008517 | 117744020 | Write_rows |  81413306 |   117752230 | table_id: 2968                                                              |
+		// | 8623306-bin.008517 | 117752230 | Write_rows |  81413306 |   117755340 | table_id: 2968 flags: STMT_END_F                                            | <- checkpoint
+		// | 8623306-bin.008517 | 117755340 | Xid        |  81413306 |   117755371 | COMMIT /* xid=2243095633 */                                                 |
+		// | 8623306-bin.008517 | 117755371 | Gtid       |  81413306 |   117755419 | SET @@SESSION.GTID_NEXT= 'a0f36bb1-fdbb-11e5-8413-a0369f7c3bb4:16393135780' |
+		// | 8623306-bin.008517 | 117755419 | Query      |  81413306 |   117755482 | BEGIN                                                                       |
+		// | 8623306-bin.008517 | 117755482 | Table_map  |  81413306 |   117755538 | table_id: 2925 (zabbix.history)                                             |
+		// | 8623306-bin.008517 | 117755538 | Write_rows |  81413306 |   117758123 | table_id: 2925 flags: STMT_END_F                                            |
+		// | 8623306-bin.008517 | 117758123 | Table_map  |  81413306 |   117758183 | table_id: 2968 (zabbix.history_uint)                                        |
+		// | 8623306-bin.008517 | 117758183 | Write_rows |  81413306 |   117766393 | table_id: 2968                                                              |
+		// | 8623306-bin.008517 | 117766393 | Write_rows |  81413306 |   117772728 | table_id: 2968 flags: STMT_END_F                                            |
+		// | 8623306-bin.008517 | 117772728 | Xid        |  81413306 |   117772759 | COMMIT /* xid=2243095636 */                                                 |
+		// +--------------------+-----------+------------+-----------+-------------+-----------------------------------------------------------------------------+
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := syncer.GetEvent(ctx)
 		cancel()
@@ -130,6 +151,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Position: 4
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
+			// e.Position is End_log_pos(i,e. next log position)
 			log.Trace("[%s] rotate to (%s, %d)", m.name, file, e.Position)
 
 		case *replication.RowsEvent:
@@ -144,7 +166,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// e,g. flush tables
 
 		case *replication.XIDEvent:
-			// e,g. xid: 1293
+			// e,g. COMMIT /* xid=403013040 */
 
 		case *replication.FormatDescriptionEvent:
 			// Version: 4

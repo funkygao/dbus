@@ -111,16 +111,24 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   the checkpointed binlog position is gone on master, reset the zk znode and replication will 
   automatically resume
 
+- why not canal?
+
+  - no Delivery Guarantee
+  - no Data Provenance
+  - no integration with kafka
+  - only hot standby deployment mode, we need sharding load
+  - dbus is a dataflow engine, while canal only support mysql binlog pipeline
+
 ### TODO
 
-- [ ] display mysql master position
-- [ ] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
+- [ ] batcher only retries after full batch ack'ed
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
+- [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy
 - [X] ugly design of Input/Output ack mechanism
