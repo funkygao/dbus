@@ -10,6 +10,7 @@ OWNER=funkygao
 VENDOR=funkygao
 PROJECT=dbus
 PKGNAME=${VENDOR}-${PROJECT}
+GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown')
 GIT_ID=$(shell git rev-parse HEAD | cut -c1-7)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
 
@@ -140,4 +141,4 @@ loc:
 
 # Install dbsud to $GOPATH/bin
 install:generate
-	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.BuildID=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
+	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.Branch=${GIT_BRANCH} -X github.com/funkygao/dbus.Revision=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd

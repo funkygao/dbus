@@ -47,7 +47,7 @@ func main() {
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
-		log4go.Info("dbus[%s@%s] starting", dbus.BuildID, dbus.Version)
+		log4go.Info("dbus[%s@%s] starting", dbus.Revision, dbus.Version)
 
 		agent.HttpAddr = options.pprofAddr
 		log4go.Info("pprof agent ready on %s", agent.Start())
@@ -80,6 +80,6 @@ func main() {
 		globals.Stopping = false
 	}
 
-	log4go.Info("dbus[%s@%s] %s, bye!", dbus.BuildID, dbus.Version, time.Since(t0))
+	log4go.Info("dbus[%s@%s] %s, bye!", dbus.Revision, dbus.Version, time.Since(t0))
 	log4go.Close()
 }
