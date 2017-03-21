@@ -121,6 +121,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// +--------------------+-----------+------------+-----------+-------------+-----------------------------------------------------------------------------+
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := syncer.GetEvent(ctx)
+		//ev, err := syncer.GetEvent(context.Background())
 		cancel()
 
 		if err != nil {

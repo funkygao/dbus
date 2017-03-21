@@ -173,6 +173,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - [ ] bug fix
   - [ ] kill dbusd, dbusd-slave did not leave cluster
   - [ ] next log position leads to failure after resume
+  - [ ] KafkaOutput only support 1 partition topic for MysqlbinlogInput
   - [X] table id issue
   - [X] what if invalid position
   - [X] router stat wrong
