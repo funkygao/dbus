@@ -151,6 +151,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Position: 4
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
+			// e.Position is End_log_pos(i,e. next log position)
 			log.Trace("[%s] rotate to (%s, %d)", m.name, file, e.Position)
 
 		case *replication.RowsEvent:
@@ -165,7 +166,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// e,g. flush tables
 
 		case *replication.XIDEvent:
-			// e,g. xid: 1293
+			// e,g. COMMIT /* xid=403013040 */
 
 		case *replication.FormatDescriptionEvent:
 			// Version: 4
