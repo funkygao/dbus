@@ -31,7 +31,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		return
 	}
 
-	m.rowsEvent <- &model.RowsEvent{
+	rowsEvent := &model.RowsEvent{
 		Log:       f,
 		Position:  h.LogPos, // next binlog pos
 		Schema:    schema,
@@ -40,4 +40,5 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		Timestamp: h.Timestamp,
 		Rows:      e.Rows,
 	}
+	m.rowsEvent <- rowsEvent.SetFlags(e.Flags)
 }
