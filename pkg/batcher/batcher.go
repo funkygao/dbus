@@ -125,11 +125,15 @@ func (b *Batcher) Succeed() {
 }
 
 // Fail marks an item handling failure.
-func (b *Batcher) Fail() {
+func (b *Batcher) Fail() (rewind bool) {
 	if failN := atomic.AddUint32(&b.failN, 1); failN+atomic.LoadUint32(&b.okN) == b.capacity {
-		// batch rollback
+		// batch rewind
 		atomic.StoreUint32(&b.okN, 0)
 		atomic.StoreUint32(&b.failN, 0)
 		atomic.StoreUint32(&b.r, 1)
+
+		rewind = true
 	}
+
+	return
 }

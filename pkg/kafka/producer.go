@@ -3,6 +3,7 @@ package kafka
 import (
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
@@ -218,7 +219,13 @@ func (p *Producer) dispatchCallbacks() {
 			if !ok {
 				errChan = nil
 			} else {
-				p.b.Fail()
+				if rewind := p.b.Fail(); rewind {
+					// FIXME if kafka got wrong(e,g. Messages are rejected since there are fewer in-sync replicas than required)
+					// there will be many duplicated messages
+					//
+					// we do sleep between the same batch reties to solve it
+					time.Sleep(time.Second)
+				}
 				p.m.asyncFail.Mark(1)
 				p.onError(err)
 			}
