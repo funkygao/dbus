@@ -170,14 +170,13 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - [X] play with binlog_row_image
 - [ ] project feature for multi-tenant
 - [ ] bug fix
-  - [ ] next log position leads to failure after resume
-  - [ ] when replication stops, mysql show processlist still exists
-  - [ ] table id issue
-  - [ ] what if invalid position
   - [ ] kill dbusd, dbusd-slave did not leave cluster
+  - [ ] next log position leads to failure after resume
+  - [X] table id issue
+  - [X] what if invalid position
   - [X] router stat wrong
     Total:142,535,625      0.00B speed:22,671/s      0.00B/s max: 0.00B/0.00B
-  - [ ] ffjson marshalled bytes has NL before the ending bracket
+  - [X] ffjson marshalled bytes has NL before the ending bracket
 - [ ] test cases
   - [X] restart mysql master
   - [X] mysql kill process
@@ -186,7 +185,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   - [ ] mysql binlog zk session expire
   - [X] reset binlog pos, and check kafka didn't recv dup events
   - [X] MysqlbinlogInput max_event_length
-  - [ ] min.insync.replicas=2, shutdown 1 kafka broker then start
+  - [X] min.insync.replicas=2, shutdown 1 kafka broker then start
 - [ ] GTID
   - place config to central zk znode and watch changes
 - [ ] Known issues
@@ -200,7 +199,8 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - mysqlbinlog input peak with mock output
   - 140k event per second
   - 30k row event per second
-  - 200Mb network bandwidth
+  - 260Mb network bandwidth
+  - KafkaOutput 35K msg per second
   - it takes 2h25m to zero lag for platform of 2d lag
 
 - dryrun MockInput -> MockOutput
