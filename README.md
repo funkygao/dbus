@@ -112,13 +112,13 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   the checkpointed binlog position is gone on master, reset the zk znode and replication will 
   automatically resume
 
-- why not canal?
+#### why not canal?
 
-  - no Delivery Guarantee
-  - no Data Provenance
-  - no integration with kafka
-  - only hot standby deployment mode, we need sharding load
-  - dbus is a dataflow engine, while canal only support mysql binlog pipeline
+- no Delivery Guarantee
+- no Data Provenance
+- no integration with kafka
+- only hot standby deployment mode, we need sharding load
+- dbus is a dataflow engine, while canal only support mysql binlog pipeline
 
 ### TODO
 
