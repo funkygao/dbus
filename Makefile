@@ -5,7 +5,7 @@ VERSION=0.2.2-release
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
-CVSPATH=github.com/funkygao
+REPOPATH=github.com/funkygao
 OWNER=funkygao
 VENDOR=funkygao
 PROJECT=dbus
@@ -13,6 +13,14 @@ PKGNAME=${VENDOR}-${PROJECT}
 GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown')
 GIT_ID=$(shell git rev-parse HEAD | cut -c1-7)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
+go_version=$(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
+GO_FLAGS=${GO_FLAGS:-} # Extra go flags to use in the build.
+
+ldflags="\
+-X github.com/funkygao/dbus.Version=$(VERSION) \
+-X github.com/funkygao/dbus.Branch=${GIT_BRANCH} \
+-X github.com/funkygao/dbus.Revision=${GIT_ID}${GIT_DIRTY} \
+-w"
 
 help:
 	@echo "The following commands are available:"
@@ -106,7 +114,7 @@ docs:
 	@mkdir -p .target/docs
 	nohup sh -c 'GOPATH=$(GOPATH) godoc -http=127.0.0.1:6060' > .target/godoc_server.log 2>&1 &
 	wget --directory-prefix=.target/docs/ --execute robots=off --retry-connrefused --recursive --no-parent --adjust-extension --page-requisites --convert-links http://127.0.0.1:6060/pkg/github.com/${VENDOR}/${PROJECT}/ ; kill -9 `lsof -ti :6060`
-	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${CVSPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > .target/docs/index.html
+	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > .target/docs/index.html
 
 # Alias to run all quality-assurance checks
 qa: fmtcheck test vet lint coverage cyclo ineffassign misspell astscan
@@ -141,4 +149,5 @@ loc:
 
 # Install dbsud to $GOPATH/bin
 install:generate
-	go install -ldflags "-X github.com/funkygao/dbus.Version=$(VERSION) -X github.com/funkygao/dbus.Branch=${GIT_BRANCH} -X github.com/funkygao/dbus.Revision=${GIT_ID}${GIT_DIRTY} -w" ./cmd/dbusd
+	go install ${GO_FLAGS} -ldflags ${ldflags} ./cmd/dbusd
+
