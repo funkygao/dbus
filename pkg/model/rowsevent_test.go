@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/funkygao/assert"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -17,6 +18,12 @@ func makeRowsEvent() *RowsEvent {
 		Timestamp: 1486554654,
 		Rows:      [][]interface{}{{"user", 15, "hello world"}},
 	}
+}
+
+func TestRowsEventFlags(t *testing.T) {
+	r := makeRowsEvent()
+	r.SetFlags(1)
+	assert.Equal(t, true, r.IsStmtEnd())
 }
 
 func TestRowsEventEncode(t *testing.T) {

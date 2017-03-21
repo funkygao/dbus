@@ -154,7 +154,7 @@ func (this *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params
 	output["elapsed"] = time.Since(Globals().StartedAt).String()
 	output["pid"] = this.pid
 	output["hostname"] = this.hostname
-	output["build"] = dbus.BuildID
+	output["revision"] = dbus.Revision
 	return output, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/funkygao/dbus/engine"
 	"github.com/pquerna/ffjson/ffjson"
+	"github.com/siddontang/go-mysql/replication"
 )
 
 var (
@@ -35,6 +36,10 @@ type RowsEvent struct {
 	// Two rows for one event, format is [before update row, after update row]
 	// for update v0, only one row for a event, and we don't support this version.
 	Rows [][]interface{} `json:"rows"`
+
+	// RowsEvent flag
+	// e,g. RowsEventStmtEndFlag
+	flags uint16
 
 	encoded []byte
 	err     error
@@ -65,6 +70,15 @@ func (r *RowsEvent) Encode() (b []byte, err error) {
 func (r *RowsEvent) Length() int {
 	r.ensureEncoded()
 	return len(r.encoded)
+}
+
+func (r *RowsEvent) SetFlags(flag uint16) *RowsEvent {
+	r.flags = flag
+	return r
+}
+
+func (r *RowsEvent) IsStmtEnd() bool {
+	return (r.flags & replication.RowsEventStmtEndFlag) > 0
 }
 
 func init() {

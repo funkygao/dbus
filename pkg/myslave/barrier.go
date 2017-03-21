@@ -40,7 +40,7 @@ func (m *MySlave) joinClusterAndBecomeMaster() {
 	// become present
 	backoff := time.Second
 	for {
-		if err := m.z.CreateEphemeralZnode(myNodePath(m.masterAddr), []byte(dbus.BuildID)); err != nil {
+		if err := m.z.CreateEphemeralZnode(myNodePath(m.masterAddr), []byte(dbus.Revision)); err != nil {
 			log.Error("[%s] unable join: %s", m.name, err)
 
 			time.Sleep(backoff)
