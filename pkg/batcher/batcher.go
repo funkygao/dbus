@@ -4,6 +4,7 @@ package batcher
 
 import (
 	"sync/atomic"
+	"time"
 
 	"github.com/funkygao/dbus/pkg/sys"
 )
@@ -32,8 +33,11 @@ type Batcher struct {
 	_padding6 [sys.CacheLineSize / 8]uint64
 	failN     uint32
 
-	// [nil, item1, item2, ..., itemN]
 	_padding7 [sys.CacheLineSize / 8]uint64
+	kickoff   time.Time
+
+	// [nil, item1, item2, ..., itemN]
+	_padding8 [sys.CacheLineSize / 8]uint64
 	contents  []interface{}
 }
 
@@ -115,6 +119,7 @@ func (b *Batcher) Succeed() {
 		atomic.StoreUint32(&b.c, 0)
 		atomic.StoreUint32(&b.w, 1)
 		atomic.StoreUint32(&b.r, 1)
+		b.kickoff = time.Now()
 	} else if okN+atomic.LoadUint32(&b.failN) == b.capacity {
 		b.rewind()
 	}
@@ -135,4 +140,6 @@ func (b *Batcher) rewind() {
 	atomic.StoreUint32(&b.okN, 0)
 	atomic.StoreUint32(&b.failN, 0)
 	atomic.StoreUint32(&b.r, 1)
+
+	b.kickoff = time.Now()
 }
