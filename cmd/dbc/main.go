@@ -49,12 +49,12 @@ func main() {
 		}
 	}
 
-	c := cli.NewCLI(app, dbus.Version+"-"+dbus.BuildID)
+	c := cli.NewCLI(app, dbus.Version+"-"+dbus.Revision)
 	c.Args = os.Args[1:]
 	c.Commands = commands
 	c.HelpFunc = func(m map[string]cli.CommandFactory) string {
 		var buf bytes.Buffer
-		buf.WriteString(fmt.Sprintf("Dbus management console\n\n"))
+		buf.WriteString(fmt.Sprintf("DBus Console\n\n"))
 		buf.WriteString(cli.BasicHelpFunc(app)(m))
 		return buf.String()
 	}

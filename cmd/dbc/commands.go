@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/funkygao/dbus/cmd/dm/command"
+	"github.com/funkygao/dbus/cmd/dbc/command"
 	"github.com/funkygao/gocli"
 )
 
