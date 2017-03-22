@@ -59,7 +59,7 @@ func main() {
 	t0 := time.Now()
 	var err error
 	for {
-		e := engine.New(globals).LoadConfigFile(options.configfile)
+		e := engine.New(globals).LoadConfig(options.configfile)
 
 		if options.visualizeFile != "" {
 			e.ExportDiagram(options.visualizeFile)

@@ -108,14 +108,8 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 	return pack
 }
 
-func (e *Engine) LoadConfigFile(fn string) *Engine {
-	if fn == "" {
-		panic("config file is required")
-	}
-	if _, err := os.Stat(fn); err != nil {
-		panic(err)
-	}
-	cf, err := conf.Load(fn)
+func (e *Engine) LoadConfig(path string) *Engine {
+	cf, err := conf.Load(path)
 	if err != nil {
 		panic(err)
 	}

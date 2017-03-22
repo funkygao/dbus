@@ -37,7 +37,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	e := engine.New(nil).LoadConfigFile(this.fn)
+	e := engine.New(nil).LoadConfig(this.fn)
 
 	switch {
 	case this.binlogPos != "":

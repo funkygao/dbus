@@ -110,8 +110,8 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 	return pack
 }
 
-func (e *Engine) LoadConfigFile(fn string) *Engine {
-	cf, err := conf.Load(fn)
+func (e *Engine) LoadConfig(path string) *Engine {
+	cf, err := conf.Load(path)
 	if err != nil {
 		panic(err)
 	}
