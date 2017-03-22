@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
@@ -111,6 +112,11 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 }
 
 func (e *Engine) LoadConfig(path string) *Engine {
+	if len(path) == 0 {
+		// if no path provided, use the default zk
+		path = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), DbusConfZnode)
+	}
+
 	zkSvr, realPath := parseConfigPath(path)
 	var (
 		cf  *conf.Conf
@@ -122,6 +128,9 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	} else {
 		// from zookeeper
 		cf, err = conf.Load(realPath, conf.WithZkSvr(zkSvr))
+		if err != nil {
+			err = fmt.Errorf("%s %v", path, err)
+		}
 	}
 	if err != nil {
 		panic(err)
