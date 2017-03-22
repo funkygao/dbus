@@ -13,7 +13,7 @@ var (
 	options struct {
 		debug bool
 
-		configfile    string
+		configPath    string
 		validateConf  bool
 		showversion   bool
 		visualizeFile string
@@ -43,7 +43,7 @@ func parseFlags() {
 	fPool := iPool * 15 / 10
 	hPool := 3 * iPool
 	pPool := iPool
-	flag.StringVar(&options.configfile, "conf", "", "main config file")
+	flag.StringVar(&options.configPath, "conf", "", "main config path: file or zk accepted")
 	flag.BoolVar(&options.validateConf, "validate", false, "validate config file and exit")
 	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
