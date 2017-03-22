@@ -213,7 +213,4 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 func (m *MySlave) emitFatalError(err error) {
 	m.errors <- err
-	if m.r != nil {
-		m.r.Close()
-	}
 }
