@@ -49,7 +49,7 @@ func main() {
 		}
 	}
 
-	c := cli.NewCLI(app, dbus.Version+"-"+dbus.BuildID)
+	c := cli.NewCLI(app, dbus.Version+"-"+dbus.Revision)
 	c.Args = os.Args[1:]
 	c.Commands = commands
 	c.HelpFunc = func(m map[string]cli.CommandFactory) string {
