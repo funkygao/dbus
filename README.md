@@ -122,7 +122,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] batcher only retries after full batch ack'ed
+- [ ] batcher only retries after full batch ack'ed, add timer?
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
