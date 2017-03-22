@@ -128,6 +128,8 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - only hot standby deployment mode, we need sharding load
 - dbus is a dataflow engine, while canal only support mysql binlog pipeline
 
+### compared with logstash
+
 ### TODO
 
 - [ ] batcher only retries after full batch ack'ed, add timer?

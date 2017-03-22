@@ -38,6 +38,13 @@ func init() {
 			}, nil
 		},
 
+		"migrate": func() (cli.Command, error) {
+			return &command.Migrate{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"clusters": func() (cli.Command, error) {
 			return &command.Clusters{
 				Ui:  ui,
