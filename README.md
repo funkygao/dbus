@@ -112,6 +112,14 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   the checkpointed binlog position is gone on master, reset the zk znode and replication will 
   automatically resume
 
+- how to migrate mysql database?
+
+  mysqldump --user=root --master-data --single-transaction --skip-lock-tables --compact --skip-opt --quick --no-create-info --skip-extended-insert --all-databases
+
+  parse CHANGE MASTER TO MASTER_LOG_FILE='mysql.000005', MASTER_LOG_POS=80955497;
+
+  MysqlbinlogInput load position for incremental loading
+
 #### why not canal?
 
 - no Delivery Guarantee

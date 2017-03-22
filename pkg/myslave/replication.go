@@ -14,7 +14,9 @@ import (
 
 // StopReplication stops the slave and do necessary cleanups.
 func (m *MySlave) StopReplication() {
-	if m.isMaster {
+	if m.isMaster.Get() {
+		log.Trace("[%s] stopping replication...", m.name)
+
 		m.r.Close()
 
 		if err := m.p.Flush(); err != nil {
@@ -23,7 +25,7 @@ func (m *MySlave) StopReplication() {
 	}
 
 	m.leaveCluster()
-	m.isMaster = false
+	m.isMaster.Set(false)
 }
 
 // StartReplication start the mysql binlog replication.
@@ -31,7 +33,7 @@ func (m *MySlave) StopReplication() {
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.joinClusterAndBecomeMaster() // block till become master
-	m.isMaster = true
+	m.isMaster.Set(true)
 
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))
 	m.errors = make(chan error, 1)
@@ -83,7 +85,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 	timeout := time.Second
 	maxTimeout := time.Minute
-	for {
+	for m.isMaster.Get() {
 		// what if the conn broken?
 		// 2017/02/08 08:31:39 binlogsyncer.go:529: [info] receive EOF packet, retry ReadPacket
 		// 2017/02/08 08:31:39 binlogsyncer.go:484: [error] connection was bad

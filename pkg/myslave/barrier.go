@@ -14,10 +14,6 @@ func (m *MySlave) leaveCluster() {
 		log.Error("[%s] %s", m.name, err)
 	}
 
-	if !m.isMaster {
-		return
-	}
-
 	masterData := []byte(myNode())
 	data, stat, err := m.z.Conn().Get(masterPath(m.masterAddr))
 	if err != nil {
