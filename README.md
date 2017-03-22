@@ -128,7 +128,10 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - only hot standby deployment mode, we need sharding load
 - dbus is a dataflow engine, while canal only support mysql binlog pipeline
 
-### compared with logstash
+#### compared with logstash
+
+- logstash has better ecosystem
+- dbus provides delivery guarantee, data provenance
 
 ### TODO
 
