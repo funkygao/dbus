@@ -116,24 +116,23 @@ func (b *Batcher) Succeed() {
 		atomic.StoreUint32(&b.w, 1)
 		atomic.StoreUint32(&b.r, 1)
 	} else if okN+atomic.LoadUint32(&b.failN) == b.capacity {
-		// batch rollback, reset reader cursor, retry the batch, hold writer
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.r, 1)
+		b.rewind()
 	}
-
 }
 
 // Fail marks an item handling failure.
 func (b *Batcher) Fail() (rewind bool) {
 	if failN := atomic.AddUint32(&b.failN, 1); failN+atomic.LoadUint32(&b.okN) == b.capacity {
-		// batch rewind
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.r, 1)
-
+		b.rewind()
 		rewind = true
 	}
 
 	return
+}
+
+// batch rollback, reset reader cursor, retry the batch, hold writer
+func (b *Batcher) rewind() {
+	atomic.StoreUint32(&b.okN, 0)
+	atomic.StoreUint32(&b.failN, 0)
+	atomic.StoreUint32(&b.r, 1)
 }
