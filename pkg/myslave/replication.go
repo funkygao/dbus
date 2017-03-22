@@ -121,6 +121,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		// +--------------------+-----------+------------+-----------+-------------+-----------------------------------------------------------------------------+
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := syncer.GetEvent(ctx)
+		//ev, err := syncer.GetEvent(context.Background())
 		cancel()
 
 		if err != nil {
@@ -156,7 +157,12 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)
-			m.m.Lag.Update(time.Now().Unix() - int64(ev.Header.Timestamp))
+			// depends on ntp to sync clock, but there is sure clock drift
+			lag := time.Now().Unix() - int64(ev.Header.Timestamp)
+			if lag < 0 {
+				lag = 0
+			}
+			m.m.Lag.Update(lag)
 			m.handleRowsEvent(file, ev.Header, e)
 
 		case *replication.QueryEvent:

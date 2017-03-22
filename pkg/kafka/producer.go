@@ -181,7 +181,7 @@ func (p *Producer) asyncSendWorker() {
 		default:
 			if msg, err := p.b.Get(); err == nil {
 				// FIXME what if msg is nil
-				// FIXME a batch of 10, msg7 is too big message size, lead to dead loop
+				// FIXME a batch of 10, msg7 always fail, lead to dead loop
 				pm := msg.(*sarama.ProducerMessage)
 				p.ap.Input() <- pm
 				p.m.asyncSend.Mark(1)
