@@ -18,6 +18,8 @@ const (
 	STOP    = "stop"
 	SIGUSR1 = "user1"
 	SIGUSR2 = "user2"
+
+	DbusConfZnode = "/dbus/conf"
 )
 
 var (

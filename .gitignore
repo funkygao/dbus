@@ -37,4 +37,4 @@ var/
 cmd/dbusd/dbusd
 pkg/kafka/kpub/kpub
 pkg/model/rowsevent_ffjson.go
-cmd/dm/dm
+cmd/dbc/dbc
