@@ -10,24 +10,26 @@ import (
 )
 
 func (m *MySlave) leaveCluster() {
-	if err := m.z.Conn().Delete(myNodePath(m.masterAddr), -1); err != nil {
-		log.Error("[%s] %s", m.name, err)
+	path := myNodePath(m.masterAddr)
+	if err := m.z.Conn().Delete(path, -1); err != nil {
+		log.Error("[%s] %s %s", m.name, path, err)
 	}
 
 	masterData := []byte(myNode())
-	data, stat, err := m.z.Conn().Get(masterPath(m.masterAddr))
+	path = masterPath(m.masterAddr)
+	data, stat, err := m.z.Conn().Get(path)
 	if err != nil {
-		log.Error("[%s] %s", m.name, err)
+		log.Error("[%s] %s %s", m.name, path, err)
 		return
 	}
 
 	if bytes.Equal(data, masterData) {
 		// I'm the master
-		if err := m.z.Conn().Delete(masterPath(m.masterAddr), stat.Version); err != nil {
-			log.Error("[%s] %s", m.name, err)
+		if err := m.z.Conn().Delete(path, stat.Version); err != nil {
+			log.Error("[%s] %s %s", m.name, path, err)
 		}
 	} else {
-		log.Critical("[%s] {%s} != {%s}", m.name, string(data), string(masterData))
+		log.Critical("[%s] %s {%s} != {%s}", m.name, path, string(data), string(masterData))
 	}
 }
 
