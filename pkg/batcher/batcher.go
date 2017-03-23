@@ -4,7 +4,6 @@ package batcher
 
 import (
 	"sync/atomic"
-	"time"
 
 	"github.com/funkygao/dbus/pkg/sys"
 )
@@ -32,9 +31,6 @@ type Batcher struct {
 
 	_padding6 [sys.CacheLineSize / 8]uint64
 	failN     uint32
-
-	_padding7 [sys.CacheLineSize / 8]uint64
-	kickoff   time.Time
 
 	// [nil, item1, item2, ..., itemN]
 	_padding8 [sys.CacheLineSize / 8]uint64
@@ -113,13 +109,7 @@ func (b *Batcher) Get() (interface{}, error) {
 // Succeed marks an item handling success.
 func (b *Batcher) Succeed() {
 	if okN := atomic.AddUint32(&b.okN, 1); okN == b.capacity {
-		// batch commit
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.c, 0)
-		atomic.StoreUint32(&b.w, 1)
-		atomic.StoreUint32(&b.r, 1)
-		b.kickoff = time.Now()
+		b.commit()
 	} else if okN+atomic.LoadUint32(&b.failN) == b.capacity {
 		b.rewind()
 	}
@@ -135,11 +125,17 @@ func (b *Batcher) Fail() (rewind bool) {
 	return
 }
 
+func (b *Batcher) commit() {
+	atomic.StoreUint32(&b.okN, 0)
+	atomic.StoreUint32(&b.failN, 0)
+	atomic.StoreUint32(&b.c, 0)
+	atomic.StoreUint32(&b.w, 1)
+	atomic.StoreUint32(&b.r, 1)
+}
+
 // batch rollback, reset reader cursor, retry the batch, hold writer
 func (b *Batcher) rewind() {
 	atomic.StoreUint32(&b.okN, 0)
 	atomic.StoreUint32(&b.failN, 0)
 	atomic.StoreUint32(&b.r, 1)
-
-	b.kickoff = time.Now()
 }
