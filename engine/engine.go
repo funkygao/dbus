@@ -168,10 +168,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	e.Conf = cf
 	Globals().Conf = cf
 
-	e.controller, err = czk.New(zkSvr, e.participantID(), e.participantWeight())
-	if err != nil {
-		panic(err)
-	}
+	e.controller = czk.New(zkSvr, e.participantID(), e.participantWeight(), e.onControllerRebalance)
 
 	// 'plugins' section
 	var names = make(map[string]struct{})

@@ -5,6 +5,6 @@ import (
 )
 
 var (
-	ErrResourceNotFound   = errors.New("resource not found")
-	ErrResourceDuplicated = errors.New("dup resource not allowed")
+	ErrResourceNotFound = errors.New("resource not found")
+	ErrInvalidCallback  = errors.New("callback cannot be nil when resources present")
 )

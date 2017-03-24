@@ -23,34 +23,25 @@ type controller struct {
 	pcl zkclient.ZkChildListener
 	lcl zkclient.ZkDataListener
 
-	resources map[string]struct{}
+	resources []string
+
+	// only when participant is leader will this callback be triggered.
+	rebalanceCallback func(decision map[string][]string)
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func New(zkSvr string, participantID string, weight int) (cluster.Controller, error) {
-	c := &controller{
-		kb:            newKeyBuilder(),
-		participantID: participantID,
-		weight:        weight,
-		zc:            zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+func New(zkSvr string, participantID string, weight int, callback func(decision map[string][]string)) cluster.Controller {
+	return &controller{
+		kb:                newKeyBuilder(),
+		participantID:     participantID,
+		weight:            weight,
+		rebalanceCallback: callback,
+		zc:                zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
-	c.lcl = newLeaderChangeListener(c)
-	c.pcl = newParticipantChangeListener(c)
-	if err := c.connectToZookeeper(zkSvr); err != nil {
-		return nil, err
-	}
-
-	for _, path := range c.kb.persistentKeys() {
-		if err := c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
-			return nil, err
-		}
-	}
-
-	return c, nil
 }
 
-func (c *controller) connectToZookeeper(zkSvr string) (err error) {
-	log.Debug("connecting to %s...", zkSvr)
+func (c *controller) connectToZookeeper() (err error) {
+	log.Debug("connecting to zookeeper...")
 	c.zc.SubscribeStateChanges(c)
 
 	if err = c.zc.Connect(); err != nil {
@@ -59,17 +50,42 @@ func (c *controller) connectToZookeeper(zkSvr string) (err error) {
 
 	for retries := 0; retries < 3; retries++ {
 		if err = c.zc.WaitUntilConnected(c.zc.SessionTimeout()); err == nil {
-			log.Debug("connected to %s", zkSvr)
+			log.Debug("connected to zookeeper")
 			break
 		}
 
-		log.Warn("%s retry=%d %v", zkSvr, retries, err)
+		log.Warn("retry=%d %v", retries, err)
 	}
 
 	return
 }
 
+func (c *controller) RegisterResources(resources []string) {
+	c.resources = resources
+}
+
 func (c *controller) Start() (err error) {
+	if len(c.resources) == 0 {
+		log.Warn("empty resources, controller stopped")
+		return nil
+	}
+	if c.rebalanceCallback == nil {
+		return cluster.ErrInvalidCallback
+	}
+
+	c.lcl = newLeaderChangeListener(c)
+	c.pcl = newParticipantChangeListener(c)
+
+	if err = c.connectToZookeeper(); err != nil {
+		return
+	}
+
+	for _, path := range c.kb.persistentKeys() {
+		if err = c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
+			return
+		}
+	}
+
 	c.tryElect()
 	return
 }

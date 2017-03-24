@@ -37,13 +37,17 @@ func (c *controller) refreshLeaderID() {
 
 func (c *controller) onBecomingLeader() {
 	c.zc.SubscribeChildChanges(c.kb.participants(), c.pcl)
-	log.Trace("I'm leader")
+	log.Trace("become leader!")
+	c.rebalance()
 }
 
-func (c *controller) onResigningAsLeader() {
+func (c *controller) rebalance() {
+	participants, err := c.zc.Children(c.kb.participants())
+	if err != nil {
+		// TODO
+		log.Error("%s", err)
+		return
+	}
 
-}
-
-func (c *controller) resign() {
-
+	c.rebalanceCallback(assignResourcesToParticipants(participants, c.resources))
 }

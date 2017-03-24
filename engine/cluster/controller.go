@@ -17,4 +17,7 @@ type Controller interface {
 
 	// IsLeader returns whether current participant is leader of the cluster.
 	IsLeader() bool
+
+	// RegisterResources notifies the controller all configured resources.
+	RegisterResources([]string)
 }
