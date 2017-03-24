@@ -26,6 +26,10 @@ func (kb *keyBuilder) participants() string {
 	return path.Join(rootPath, "participants")
 }
 
+func (kb *keyBuilder) participant(id string) string {
+	return path.Join(kb.participants(), id)
+}
+
 func (kb *keyBuilder) persistentKeys() []string {
 	return []string{
 		kb.resources(),

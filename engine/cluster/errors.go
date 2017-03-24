@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	ErrResourceNotFound = errors.New("resource not found")
+	ErrResourceNotFound   = errors.New("resource not found")
+	ErrResourceDuplicated = errors.New("dup resource not allowed")
 )

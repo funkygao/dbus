@@ -23,7 +23,8 @@ complex:build
 	./dbusd -conf ../../etc/complex.cf
 
 canal:build
-	./dbusd -conf ../../etc/canal.cf
+	cat ../../etc/canal.cf | zk set -p /dbus/conf
+	./dbusd
 
 dump:build
 	./dbusd -conf ../../etc/complex.cf -dump canal.png

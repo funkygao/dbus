@@ -110,6 +110,10 @@ func (e *Engine) participantID() string {
 	return fmt.Sprintf("%s-%d", e.hostname, e.pid)
 }
 
+func (e *Engine) DeclareResource(inputName, resource string) error {
+	return nil
+}
+
 // ClonePacket is used for plugin Filter to generate new Packet.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
@@ -147,7 +151,10 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	e.Conf = cf
 	Globals().Conf = cf
 
-	e.controller = czk.New(zkSvr)
+	e.controller, err = czk.New(zkSvr)
+	if err != nil {
+		panic(err)
+	}
 
 	// 'plugins' section
 	var names = make(map[string]struct{})
