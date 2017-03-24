@@ -168,7 +168,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	e.Conf = cf
 	Globals().Conf = cf
 
-	e.controller, err = czk.New(zkSvr)
+	e.controller, err = czk.New(zkSvr, e.participantID(), e.participantWeight())
 	if err != nil {
 		panic(err)
 	}
@@ -279,9 +279,7 @@ func (e *Engine) ServeForever() (ret error) {
 	if err = e.controller.Start(); err != nil {
 		panic(err)
 	}
-	if err = e.controller.RegisterParticipent(e.participantID(), e.participantWeight()); err != nil {
-		panic(err)
-	}
+
 	log.Info("participant[%s] registered in controller", e.participantID())
 
 	// setup signal handler first to avoid race condition

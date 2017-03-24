@@ -17,7 +17,4 @@ type Controller interface {
 
 	// IsLeader returns whether current participant is leader of the cluster.
 	IsLeader() bool
-
-	// RegisterParticipent registers a participant instance acorss the cluster.
-	RegisterParticipent(participant string, weight int) error
 }
