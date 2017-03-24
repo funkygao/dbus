@@ -91,6 +91,10 @@ func (c *controller) Start() (err error) {
 }
 
 func (c *controller) Close() (err error) {
+	if len(c.resources) == 0 {
+		return nil
+	}
+
 	c.zc.Delete(c.kb.participant(c.participantID))
 
 	c.zc.Disconnect()
