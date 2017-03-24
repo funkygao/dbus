@@ -39,10 +39,6 @@ type InputRunner interface {
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
 
-	// WaitforTicket waits for controller to assign ticket for the current Input plugin.
-	// It will block until got the ticket.
-	WaitForTicket()
-
 	// DeclareResource declares the current Input plugin is interested in the specified resource.
 	DeclareResource(resource string) error
 }
@@ -82,11 +78,8 @@ func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
 }
 
-func (ir *iRunner) WaitForTicket() {
-	ir.engine.controller.WaitForTicket(ir.resource)
-}
-
 func (ir *iRunner) DeclareResource(resource string) error {
+	ir.resource = resource
 	return ir.engine.DeclareResource(ir.Name(), resource)
 }
 

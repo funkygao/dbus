@@ -55,25 +55,8 @@ func (c *controller) IsLeader() bool {
 	return false
 }
 
-func (c *controller) WaitForTicket(participant string) (err error) {
-	return nil
-}
-
-func (c *controller) RegisterResource(resource string) (err error) {
-	if _, dup := c.resources[resource]; dup {
-		return cluster.ErrResourceDuplicated
-	}
-	c.resources[resource] = struct{}{}
-
-	return c.zc.CreateEmptyPersistent(c.kb.resource(resource))
-}
-
-func (c *controller) RegisterParticipent(participant string) (err error) {
+func (c *controller) RegisterParticipent(participant string, weight int) (err error) {
 	c.participantID = participant
-
-	if err = c.zc.CreateLiveNode(c.kb.participant(participant), nil, 3); err != nil {
-		return
-	}
 
 	return nil
 }

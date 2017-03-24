@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -37,6 +38,7 @@ type Engine struct {
 	// Engine will load json config file
 	*conf.Conf
 
+	roi        map[string]map[string]struct{} // resource of interest input:resource
 	controller cluster.Controller
 
 	// REST exporter
@@ -96,6 +98,7 @@ func New(globals *GlobalConfig) *Engine {
 
 		pid:      os.Getpid(),
 		hostname: hostname,
+		roi:      make(map[string]map[string]struct{}),
 		stopper:  make(chan struct{}),
 	}
 }
@@ -110,8 +113,22 @@ func (e *Engine) participantID() string {
 	return fmt.Sprintf("%s-%d", e.hostname, e.pid)
 }
 
+func (e *Engine) participantWeight() int {
+	return runtime.NumCPU() * 100
+}
+
 func (e *Engine) DeclareResource(inputName, resource string) error {
+	if _, present := e.roi[inputName]; !present {
+		e.roi[inputName] = make(map[string]struct{})
+	}
+
+	e.roi[inputName][resource] = struct{}{}
 	return nil
+}
+
+// Leader returns the cluster leader RPC address.
+func (e *Engine) Leader() string {
+	return ""
 }
 
 // ClonePacket is used for plugin Filter to generate new Packet.
@@ -212,18 +229,8 @@ func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
 		e.inputRecycleChans[wrapper.name] = make(chan *Packet, Globals().InputRecyclePoolSize)
-		ir := newInputRunner(plugin.(Input), pluginCommons)
-		e.InputRunners[wrapper.name] = ir
+		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
-
-		if resource := section.String("resource", ""); resource != "" {
-			// cluster resource
-			if err := e.controller.RegisterResource(resource); err != nil {
-				panic(err)
-			}
-
-			ir.resource = resource
-		}
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 		return
 	}
@@ -272,7 +279,7 @@ func (e *Engine) ServeForever() (ret error) {
 	if err = e.controller.Start(); err != nil {
 		panic(err)
 	}
-	if err = e.controller.RegisterParticipent(e.participantID()); err != nil {
+	if err = e.controller.RegisterParticipent(e.participantID(), e.participantWeight()); err != nil {
 		panic(err)
 	}
 	log.Info("participant[%s] registered in controller", e.participantID())
@@ -344,8 +351,8 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	cfChanged := make(chan struct{})
-	go e.watchConfig(cfChanged, time.Second)
+	cfChanged := make(chan *conf.Conf)
+	go e.Conf.Watch(time.Second, e.stopper, cfChanged)
 
 	for !globals.Stopping {
 		select {

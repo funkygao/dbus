@@ -5,8 +5,13 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (c *controller) HandleNewSession() error {
+func (c *controller) HandleNewSession() (err error) {
 	log.Trace("handling new session")
+
+	if err = c.zc.CreateLiveNode(c.kb.participant(c.participantID), nil, 3); err != nil {
+		return
+	}
+
 	return nil
 }
 

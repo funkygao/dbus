@@ -18,13 +18,6 @@ type Controller interface {
 	// IsLeader returns whether current participant is leader of the cluster.
 	IsLeader() bool
 
-	// WaitforTicket waits for controller to assign ticket for the specified participant.
-	// The participant must call RegisterResource to let controller know its resource beforehand.
-	WaitForTicket(participant string) error
-
-	// RegisterResource is called by a participant to register its interested resource.
-	RegisterResource(resource string) error
-
 	// RegisterParticipent registers a participant instance acorss the cluster.
-	RegisterParticipent(participant string) error
+	RegisterParticipent(participant string, weight int) error
 }
