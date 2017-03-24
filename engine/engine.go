@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/dbus/engine/cluster"
+	czk "github.com/funkygao/dbus/engine/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
@@ -34,6 +36,8 @@ type Engine struct {
 
 	// Engine will load json config file
 	*conf.Conf
+
+	controller cluster.Controller
 
 	// REST exporter
 	httpListener net.Listener
@@ -102,6 +106,10 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Unlock()
 }
 
+func (e *Engine) participantID() string {
+	return fmt.Sprintf("%s-%d", e.hostname, e.pid)
+}
+
 // ClonePacket is used for plugin Filter to generate new Packet.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
@@ -138,6 +146,8 @@ func (e *Engine) LoadConfig(path string) *Engine {
 
 	e.Conf = cf
 	Globals().Conf = cf
+
+	e.controller = czk.New(zkSvr)
 
 	// 'plugins' section
 	var names = make(map[string]struct{})
@@ -195,8 +205,18 @@ func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
 		e.inputRecycleChans[wrapper.name] = make(chan *Packet, Globals().InputRecyclePoolSize)
-		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
+		ir := newInputRunner(plugin.(Input), pluginCommons)
+		e.InputRunners[wrapper.name] = ir
 		e.inputWrappers[wrapper.name] = wrapper
+
+		if resource := section.String("resource", ""); resource != "" {
+			// cluster resource
+			if err := e.controller.RegisterResource(resource); err != nil {
+				panic(err)
+			}
+
+			ir.resource = resource
+		}
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 		return
 	}
@@ -241,6 +261,14 @@ func (e *Engine) ServeForever() (ret error) {
 	} else {
 		log.Info("engine starting...")
 	}
+
+	if err = e.controller.Start(); err != nil {
+		panic(err)
+	}
+	if err = e.controller.RegisterParticipent(e.participantID()); err != nil {
+		panic(err)
+	}
+	log.Info("participant[%s] registered in controller", e.participantID())
 
 	// setup signal handler first to avoid race condition
 	// if Input terminates very soon, global.Shutdown will
@@ -381,6 +409,10 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Info("Router stopped")
 
 	e.stopHttpServ()
+
+	if err = e.controller.Close(); err != nil {
+		log.Error("%v", err)
+	}
 
 	if ret != nil {
 		log.Info("shutdown complete: %s!", ret)

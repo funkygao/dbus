@@ -38,15 +38,22 @@ type InputRunner interface {
 	// Injects Packet into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
+
+	// WaitforTicket waits for controller to assign ticket for the current Input plugin.
+	// It will block until got the ticket.
+	WaitForTicket()
 }
 
 type iRunner struct {
 	pRunnerBase
 
 	inChan chan *Packet
+
+	// the cluster resource of the Input plugin.
+	resource string
 }
 
-func newInputRunner(input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        input.(Plugin),
@@ -70,6 +77,10 @@ func (ir *iRunner) InChan() chan *Packet {
 
 func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
+}
+
+func (ir *iRunner) WaitForTicket() {
+	ir.engine.controller.WaitForTicket(ir.resource)
 }
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {

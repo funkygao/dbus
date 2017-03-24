@@ -131,7 +131,7 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 #### compared with logstash
 
 - logstash has better ecosystem
-- dbus provides delivery guarantee, data provenance
+- dbus is cluster aware, provides delivery guarantee, data provenance
 
 ### TODO
 
