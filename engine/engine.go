@@ -123,6 +123,15 @@ func (e *Engine) DeclareResource(inputName, resource string) error {
 	}
 
 	e.roi[inputName][resource] = struct{}{}
+
+	resources := make([]string, 0)
+	for _, res := range e.roi {
+		for r := range res {
+			// TODO assure resource unique
+			resources = append(resources, r)
+		}
+	}
+	e.controller.RegisterResources(resources)
 	return nil
 }
 

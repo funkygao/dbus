@@ -14,17 +14,18 @@ import (
 
 // StopReplication stops the slave and do necessary cleanups.
 func (m *MySlave) StopReplication() {
-	if m.isMaster.Get() {
-		log.Trace("[%s] stopping replication...", m.name)
-
-		m.r.Close()
-
-		if err := m.p.Flush(); err != nil {
-			log.Error("[%s] flush: %s", m.name, err)
-		}
+	if !m.isMaster.Get() {
+		return
 	}
 
-	m.leaveCluster()
+	log.Trace("[%s] stopping replication...", m.name)
+
+	m.r.Close()
+
+	if err := m.p.Flush(); err != nil {
+		log.Error("[%s] flush: %s", m.name, err)
+	}
+
 	m.isMaster.Set(false)
 }
 
@@ -32,7 +33,6 @@ func (m *MySlave) StopReplication() {
 // TODO graceful shutdown
 // TODO GTID
 func (m *MySlave) StartReplication(ready chan struct{}) {
-	m.joinClusterAndBecomeMaster() // block till become master
 	m.isMaster.Set(true)
 
 	m.rowsEvent = make(chan *model.RowsEvent, m.c.Int("event_buffer_len", 100))

@@ -62,13 +62,12 @@ func (c *controller) connectToZookeeper() (err error) {
 
 func (c *controller) RegisterResources(resources []string) {
 	c.resources = resources
+	if c.IsLeader() {
+		c.rebalance()
+	}
 }
 
 func (c *controller) Start() (err error) {
-	if len(c.resources) == 0 {
-		log.Warn("empty resources, controller stopped")
-		return nil
-	}
 	if c.rebalanceCallback == nil {
 		return cluster.ErrInvalidCallback
 	}
@@ -83,6 +82,8 @@ func (c *controller) Start() (err error) {
 	for _, path := range c.kb.persistentKeys() {
 		if err = c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
 			return
+		} else {
+			err = nil
 		}
 	}
 
@@ -96,7 +97,6 @@ func (c *controller) Close() (err error) {
 	}
 
 	c.zc.Delete(c.kb.participant(c.participantID))
-
 	c.zc.Disconnect()
 	return
 }

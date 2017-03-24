@@ -41,6 +41,9 @@ func (c *controller) onBecomingLeader() {
 	c.rebalance()
 }
 
+// rebalance is called when either:
+// 1. participants change
+// 2. resources change
 func (c *controller) rebalance() {
 	participants, err := c.zc.Children(c.kb.participants())
 	if err != nil {
