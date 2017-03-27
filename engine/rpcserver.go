@@ -11,7 +11,7 @@ import (
 func (this *Engine) launchRPCServer() {
 	this.rpcRouter = mux.NewRouter()
 	this.rpcServer = &http.Server{
-		Addr:    this.String("rpcsvr_addr", "127.0.0.1:9877"),
+		Addr:    this.participantID,
 		Handler: this.rpcRouter,
 	}
 

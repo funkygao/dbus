@@ -6,7 +6,7 @@ import (
 
 func (e *Engine) onControllerRebalance(decision map[string][]string) {
 	for participant, resources := range decision {
-		if e.participantID() == participant {
+		if e.participantID == participant {
 			// TODO
 			log.Trace("%+v", resources)
 		} else {

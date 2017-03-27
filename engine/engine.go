@@ -37,8 +37,9 @@ type Engine struct {
 	// Engine will load json config file
 	*conf.Conf
 
-	roi        map[string]map[string]struct{} // resource of interest input:resource
-	controller cluster.Controller
+	participantID string
+	roi           map[string]map[string]struct{} // resource of interest input:resource
+	controller    cluster.Controller
 
 	// API
 	apiListener net.Listener
@@ -84,6 +85,12 @@ func New(globals *GlobalConfig) *Engine {
 		panic(err)
 	}
 
+	ip, err := ctx.LocalIP()
+	if err != nil {
+		panic(err)
+	}
+	participantID := fmt.Sprintf("%s:9877", ip.String())
+
 	return &Engine{
 		InputRunners:   make(map[string]InputRunner),
 		inputWrappers:  make(map[string]*pluginWrapper),
@@ -100,9 +107,10 @@ func New(globals *GlobalConfig) *Engine {
 
 		httpPaths: make([]string, 0, 6),
 
-		pid:      os.Getpid(),
-		hostname: hostname,
-		stopper:  make(chan struct{}),
+		pid:           os.Getpid(),
+		hostname:      hostname,
+		stopper:       make(chan struct{}),
+		participantID: participantID,
 	}
 }
 
@@ -110,10 +118,6 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Lock()
 	e.InputRunners[name] = nil
 	e.Unlock()
-}
-
-func (e *Engine) participantID() string {
-	return fmt.Sprintf("%s-%d", e.hostname, e.pid)
 }
 
 func (e *Engine) participantWeight() int {
@@ -181,7 +185,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	Globals().Conf = cf
 
 	e.roi = make(map[string]map[string]struct{})
-	e.controller = czk.New(zkSvr, e.participantID(), e.participantWeight(), e.onControllerRebalance)
+	e.controller = czk.New(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
 
 	// 'plugins' section
 	var names = make(map[string]struct{})
@@ -298,7 +302,7 @@ func (e *Engine) ServeForever() (ret error) {
 	if err = e.controller.Start(); err != nil {
 		panic(err)
 	}
-	log.Info("participant[%s] registered in controller", e.participantID())
+	log.Info("participant[%s] registered in controller", e.participantID)
 
 	if telemetry.Default != nil {
 		log.Info("launching telemetry dumper...")
