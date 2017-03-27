@@ -37,6 +37,8 @@ func (c *controller) refreshLeaderID() {
 
 func (c *controller) onBecomingLeader() {
 	c.zc.SubscribeChildChanges(c.kb.participants(), c.pcl)
+	c.zc.SubscribeChildChanges(c.kb.resources(), c.rcl)
+
 	log.Trace("become controller leader!")
 	c.rebalance()
 }
@@ -52,5 +54,13 @@ func (c *controller) rebalance() {
 		return
 	}
 
-	c.onRebalance(assignResourcesToParticipants(participants, c.resources))
+	resources, err := c.zc.Children(c.kb.resources())
+	if err != nil {
+		// TODO
+		log.Error("%s", err)
+		return
+	}
+
+	log.Trace("[%s] reblance %+v to %+v", c.participantID, resources, participants)
+	c.onRebalance(assignResourcesToParticipants(participants, resources))
 }

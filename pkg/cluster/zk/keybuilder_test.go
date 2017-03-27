@@ -12,4 +12,5 @@ func TestKeyBuilder(t *testing.T) {
 	assert.Equal(t, "/dbus/participants", kb.participants())
 	assert.Equal(t, "/dbus/participants/12.11.11.11-9876", kb.participant("12.11.11.11-9876"))
 	assert.Equal(t, true, strings.HasPrefix(kb.participant("foobar"), kb.participants()))
+	assert.Equal(t, "/dbus/resources/bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg==", kb.resource("local://root:@localhost:3306"))
 }
