@@ -26,17 +26,21 @@ type controller struct {
 	resources []string
 
 	// only when participant is leader will this callback be triggered.
-	rebalanceCallback func(decision map[string][]string)
+	onRebalance func(decision map[string][]string)
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func New(zkSvr string, participantID string, weight int, callback func(decision map[string][]string)) cluster.Controller {
+func New(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
+	if onRebalance == nil {
+		panic("onRebalance nil not allowed")
+	}
+
 	return &controller{
-		kb:                newKeyBuilder(),
-		participantID:     participantID,
-		weight:            weight,
-		rebalanceCallback: callback,
-		zc:                zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+		kb:            newKeyBuilder(),
+		participantID: participantID,
+		weight:        weight,
+		onRebalance:   onRebalance,
+		zc:            zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
 }
 
@@ -68,10 +72,6 @@ func (c *controller) RegisterResources(resources []string) {
 }
 
 func (c *controller) Start() (err error) {
-	if c.rebalanceCallback == nil {
-		return cluster.ErrInvalidCallback
-	}
-
 	c.lcl = newLeaderChangeListener(c)
 	c.pcl = newParticipantChangeListener(c)
 

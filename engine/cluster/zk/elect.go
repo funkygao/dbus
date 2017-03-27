@@ -52,5 +52,5 @@ func (c *controller) rebalance() {
 		return
 	}
 
-	c.rebalanceCallback(assignResourcesToParticipants(participants, c.resources))
+	c.onRebalance(assignResourcesToParticipants(participants, c.resources))
 }
