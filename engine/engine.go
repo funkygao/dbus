@@ -38,7 +38,8 @@ type Engine struct {
 	*conf.Conf
 
 	participantID string
-	roi           map[string]map[string]struct{} // resource of interest input:resource
+	roi           map[string]string // resource of interest resource:input
+	roiMu         sync.RWMutex
 	controller    cluster.Controller
 
 	// API
@@ -111,7 +112,7 @@ func New(globals *GlobalConfig) *Engine {
 		hostname:      hostname,
 		stopper:       make(chan struct{}),
 		participantID: participantID,
-		roi:           make(map[string]map[string]struct{}),
+		roi:           make(map[string]string),
 	}
 }
 
@@ -125,26 +126,23 @@ func (e *Engine) participantWeight() int {
 	return runtime.NumCPU() * 100
 }
 
-func (e *Engine) DeclareResource(inputName string, resource []string) error {
+func (e *Engine) DeclareResource(inputName string, resources []string) error {
 	if e.controller == nil {
 		return ErrClusterDisabled
 	}
 
-	if _, present := e.roi[inputName]; !present {
-		e.roi[inputName] = make(map[string]struct{})
-	}
+	log.Trace("%s -> %+v", inputName, resources)
 
-	for _, r := range resource {
-		e.roi[inputName][r] = struct{}{}
-	}
-
-	resources := make([]string, 0)
-	for _, res := range e.roi {
-		for r := range res {
-			// TODO assure resource unique
-			resources = append(resources, r)
+	e.roiMu.Lock()
+	for _, res := range resources {
+		if _, present := e.roi[res]; present {
+			return ErrDupResource
 		}
+
+		e.roi[res] = inputName
 	}
+	e.roiMu.Unlock()
+
 	e.controller.RegisterResources(resources)
 	return nil
 }

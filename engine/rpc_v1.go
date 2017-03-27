@@ -35,10 +35,25 @@ func (e *Engine) doRebalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, res := range resources {
-		resource, err := e.controller.DecodeResource(res)
+	e.roiMu.RLock()
+	defer e.roiMu.RUnlock()
+
+	for _, encodedResource := range resources {
+		resource, err := e.controller.DecodeResource(encodedResource)
+		if err != nil {
+			// FIXME
+			log.Error("[%s] {%s}: %v", e.participantID, encodedResource, err)
+			continue
+		}
+
+		inputName, ok := e.roi[resource]
+		if !ok {
+			log.Warn("[%s] resource[%s] not declared yet", e.participantID, resource)
+			continue
+		}
+
 		// TODO
-		log.Info("%s %v", resource, err)
+		log.Info("%s %v", resource, inputName)
 	}
 
 }
