@@ -8,6 +8,7 @@ import (
 
 var (
 	_ zkclient.ZkStateListener = &controller{}
+	_ cluster.Controller       = &controller{}
 )
 
 type controller struct {
@@ -79,10 +80,6 @@ func (c *controller) RegisterResources(resources []string) error {
 	}
 
 	return nil
-}
-
-func (c *controller) DecodeResource(encodedResource string) (string, error) {
-	return c.kb.decodeResource(encodedResource)
 }
 
 func (c *controller) Start() (err error) {

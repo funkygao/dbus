@@ -65,14 +65,24 @@ func (c *controller) rebalance() {
 		return
 	}
 
-	resources, err := c.zc.Children(c.kb.resources())
+	encodedResources, err := c.zc.Children(c.kb.resources())
 	if err != nil {
 		log.Error("[%s] %s", c.participantID, err)
 		return
 	}
-	if len(resources) == 0 {
+	if len(encodedResources) == 0 {
 		log.Warn("[%s] no resources found", c.participantID)
 		return
+	}
+
+	resources := make([]string, len(encodedResources))
+	for i, encodedResource := range encodedResources {
+		resources[i], err = c.kb.decodeResource(encodedResource)
+		if err != nil {
+			// should never happen
+			log.Critical("%s: %v", encodedResource, err)
+			continue
+		}
 	}
 
 	c.onRebalance(assignResourcesToParticipants(participants, resources))
