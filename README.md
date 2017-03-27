@@ -135,6 +135,8 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 
 ### TODO
 
+- [ ] controller
+  - [ ] engine shutdown, controller still send rpc
 - [ ] batcher only retries after full batch ack'ed, add timer?
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix

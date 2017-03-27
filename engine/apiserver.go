@@ -20,27 +20,27 @@ import (
 
 type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error)
 
-func (this *Engine) launchHttpServ() {
-	this.httpRouter = mux.NewRouter()
-	this.httpServer = &http.Server{
+func (this *Engine) launchAPIServer() {
+	this.apiRouter = mux.NewRouter()
+	this.apiServer = &http.Server{
 		Addr:    this.String("apisvr_addr", "127.0.0.1:9876"),
-		Handler: this.httpRouter,
+		Handler: this.apiRouter,
 	}
 
 	this.setupAPIRoutings()
 
 	var err error
-	if this.httpListener, err = net.Listen("tcp", this.httpServer.Addr); err != nil {
+	if this.apiListener, err = net.Listen("tcp", this.apiServer.Addr); err != nil {
 		panic(err)
 	}
 
-	go this.httpServer.Serve(this.httpListener)
-	log.Info("API server ready on http://%s", this.httpServer.Addr)
+	go this.apiServer.Serve(this.apiListener)
+	log.Info("API server ready on http://%s", this.apiServer.Addr)
 }
 
-func (this *Engine) stopHttpServ() {
-	if this.httpListener != nil {
-		this.httpListener.Close()
+func (this *Engine) stopAPIServer() {
+	if this.apiListener != nil {
+		this.apiListener.Close()
 		log.Info("API server stopped")
 	}
 }
@@ -166,7 +166,7 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 	}
 	this.httpPaths = append(this.httpPaths, path)
 
-	return this.httpRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	return this.apiRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ret interface{}
 			t1  = time.Now()

@@ -37,7 +37,7 @@ func (c *controller) refreshLeaderID() {
 
 func (c *controller) onBecomingLeader() {
 	c.zc.SubscribeChildChanges(c.kb.participants(), c.pcl)
-	log.Trace("become leader!")
+	log.Trace("become controller leader!")
 	c.rebalance()
 }
 
