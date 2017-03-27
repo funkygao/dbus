@@ -21,9 +21,8 @@ type controller struct {
 	leaderID string
 
 	pcl zkclient.ZkChildListener
+	rcl zkclient.ZkChildListener
 	lcl zkclient.ZkDataListener
-
-	resources []string
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance func(decision map[string][]string)
@@ -65,15 +64,23 @@ func (c *controller) connectToZookeeper() (err error) {
 }
 
 func (c *controller) RegisterResources(resources []string) {
-	c.resources = resources
-	if c.IsLeader() {
-		c.rebalance()
+	for _, resource := range resources {
+		path := c.kb.resource(resource)
+		for {
+			// FIXME might dead loop
+			if err := c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
+				log.Error("%s %v", path, err)
+			} else {
+				break
+			}
+		}
 	}
 }
 
 func (c *controller) Start() (err error) {
 	c.lcl = newLeaderChangeListener(c)
 	c.pcl = newParticipantChangeListener(c)
+	c.rcl = newResourceChangeListener(c)
 
 	if err = c.connectToZookeeper(); err != nil {
 		return
@@ -92,15 +99,13 @@ func (c *controller) Start() (err error) {
 }
 
 func (c *controller) Close() (err error) {
-	if len(c.resources) == 0 {
-		return nil
-	}
-
 	c.zc.Delete(c.kb.participant(c.participantID))
 	c.zc.Disconnect()
+	log.Trace("[%s] controller disconnected", c.participantID)
 	return
 }
 
 func (c *controller) IsLeader() bool {
+	// TODO refresh leader id?
 	return c.leaderID == c.participantID
 }

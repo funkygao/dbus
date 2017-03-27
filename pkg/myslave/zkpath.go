@@ -3,10 +3,16 @@ package myslave
 import (
 	"fmt"
 	"os"
+	"path"
+)
+
+var (
+	rootPath  = "/dbus"
+	slaveRoot = path.Join(rootPath, "myslave")
 )
 
 func posPath(masterAddr string) string {
-	return fmt.Sprintf("/dbus/myslave/%s", masterAddr)
+	return fmt.Sprintf("%s/%s", slaveRoot, masterAddr)
 }
 
 func masterPath(masterAddr string) string {
