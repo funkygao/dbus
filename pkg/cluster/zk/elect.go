@@ -6,11 +6,13 @@ import (
 )
 
 func (c *controller) tryElect() {
+	log.Trace("[%s] try electing...", c.participantID)
+
 	c.zc.SubscribeDataChanges(c.kb.controller(), c.lcl)
 
 	c.refreshLeaderID()
 	if c.leaderID != "" {
-		// found leader, give up elect
+		log.Trace("[%s] found leader: %s", c.participantID, c.leaderID)
 		return
 	}
 
@@ -28,7 +30,7 @@ func (c *controller) refreshLeaderID() {
 	b, err := c.zc.Get(c.kb.controller())
 	if err != nil && err != zk.ErrNoNode {
 		log.Warn("[%s] %v", c.participantID, err)
-	} else if len(b) == 0 {
+	} else if err == nil && len(b) == 0 {
 		log.Warn("[%s] empty controller znode, why?", c.participantID)
 	} else {
 		c.leaderID = string(b)
@@ -73,6 +75,5 @@ func (c *controller) rebalance() {
 		return
 	}
 
-	log.Trace("[%s] reblance %+v to %+v", c.participantID, resources, participants)
 	c.onRebalance(assignResourcesToParticipants(participants, resources))
 }

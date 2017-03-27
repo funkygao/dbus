@@ -23,4 +23,9 @@ type Controller interface {
 
 	// RegisterResources notifies the controller all configured resources.
 	RegisterResources([]string) error
+
+	// DecodeResource decodes the resource into original format.
+	//
+	// IMPORTANT RegisterResources might encode the resource, so client need to decode resource.
+	DecodeResource(encodedResource string) (string, error)
 }

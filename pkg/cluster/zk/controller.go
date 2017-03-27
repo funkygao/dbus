@@ -56,15 +56,11 @@ func (c *controller) connectToZookeeper() (err error) {
 
 	for retries := 0; retries < 3; retries++ {
 		if err = c.zc.WaitUntilConnected(c.zc.SessionTimeout()); err == nil {
-			log.Debug("connected to zookeeper")
+			log.Trace("connected to zookeeper")
 			break
 		}
 
 		log.Warn("retry=%d %v", retries, err)
-	}
-
-	if err == nil {
-		c.zc.SubscribeStateChanges(c)
 	}
 
 	return
@@ -72,8 +68,7 @@ func (c *controller) connectToZookeeper() (err error) {
 
 func (c *controller) RegisterResources(resources []string) error {
 	for _, resource := range resources {
-		path := c.kb.resource(resource)
-		if err := c.zc.CreateEmptyPersistentIfNotPresent(path); err != nil {
+		if err := c.zc.CreateEmptyPersistentIfNotPresent(c.kb.resource(resource)); err != nil {
 			return err
 		}
 	}
@@ -81,10 +76,16 @@ func (c *controller) RegisterResources(resources []string) error {
 	return nil
 }
 
+func (c *controller) DecodeResource(encodedResource string) (string, error) {
+	return c.kb.decodeResource(encodedResource)
+}
+
 func (c *controller) Start() (err error) {
 	c.lcl = newLeaderChangeListener(c)
 	c.pcl = newParticipantChangeListener(c)
 	c.rcl = newResourceChangeListener(c)
+
+	c.zc.SubscribeStateChanges(c)
 
 	if err = c.connectToZookeeper(); err != nil {
 		return
@@ -96,14 +97,13 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
-	c.tryElect()
 	return
 }
 
 func (c *controller) Close() (err error) {
 	c.zc.Delete(c.kb.participant(c.participantID))
 	c.zc.Disconnect()
-	log.Trace("[%s] controller disconnected", c.participantID)
+	log.Trace("[%s] controller stopped", c.participantID)
 	return
 }
 

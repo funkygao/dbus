@@ -311,7 +311,7 @@ func (e *Engine) ServeForever() (ret error) {
 		if err = e.controller.Start(); err != nil {
 			panic(err)
 		}
-		log.Info("participant[%s] registered in controller", e.participantID)
+		log.Info("[%s] controller started", e.participantID)
 	}
 
 	if telemetry.Default != nil {

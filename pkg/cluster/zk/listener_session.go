@@ -7,6 +7,8 @@ import (
 
 func (c *controller) HandleNewSession() (err error) {
 	log.Trace("[%s] handling zookeeper new session", c.participantID)
+
+	log.Trace("[%s] bring participant alive", c.participantID)
 	if err = c.zc.CreateLiveNode(c.kb.participant(c.participantID), nil, 3); err != nil {
 		return
 	}

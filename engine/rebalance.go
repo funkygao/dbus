@@ -1,16 +1,22 @@
 package engine
 
 import (
+	"net/http"
+
 	log "github.com/funkygao/log4go"
 )
 
 func (e *Engine) onControllerRebalance(decision map[string][]string) {
-	for participant, resources := range decision {
-		if e.participantID == participant {
+	log.Info("decision: %+v", decision)
+
+	for participantID, resources := range decision {
+		log.Trace("[%s] rpc calling [%s]: %+v", e.participantID, participantID, resources)
+		if statusCode := e.callRPC(participantID, resources); statusCode != http.StatusOK {
+			log.Error("[%s] %s <- %d", e.participantID, participantID, statusCode)
 			// TODO
-			log.Trace("%+v", resources)
 		} else {
-			// TODO RPC remote dbus
+			log.Trace("[%s] rpc call ok [%s]: %+v", e.participantID, participantID, resources)
 		}
+
 	}
 }

@@ -31,7 +31,20 @@ func (kb *keyBuilder) resources() string {
 }
 
 func (kb *keyBuilder) resource(resource string) string {
-	return path.Join(kb.resources(), base64.URLEncoding.EncodeToString([]byte(resource)))
+	return path.Join(kb.resources(), kb.encodeResource(resource))
+}
+
+func (kb *keyBuilder) encodeResource(resource string) string {
+	return base64.URLEncoding.EncodeToString([]byte(resource))
+}
+
+func (kb *keyBuilder) decodeResource(encodedResource string) (string, error) {
+	b, err := base64.URLEncoding.DecodeString(encodedResource)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
 
 func (kb *keyBuilder) persistentKeys() []string {
