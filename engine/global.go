@@ -33,10 +33,11 @@ var (
 type GlobalConfig struct {
 	*conf.Conf
 
-	StartedAt   time.Time
-	Stopping    bool
-	Debug       bool
-	RouterTrack bool
+	StartedAt      time.Time
+	Stopping       bool
+	Debug          bool
+	ClusterEnabled bool
+	RouterTrack    bool
 
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
@@ -94,6 +95,7 @@ func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 func DefaultGlobals() *GlobalConfig {
 	return &GlobalConfig{
 		Debug:                 false,
+		ClusterEnabled:        true,
 		InputRecyclePoolSize:  100,
 		FilterRecyclePoolSize: 100,
 		HubChanSize:           200,

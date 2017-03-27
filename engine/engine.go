@@ -297,12 +297,14 @@ func (e *Engine) ServeForever() (ret error) {
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	e.launchAPIServer()
-	e.launchRPCServer()
+	if globals.ClusterEnabled {
+		e.launchRPCServer()
 
-	if err = e.controller.Start(); err != nil {
-		panic(err)
+		if err = e.controller.Start(); err != nil {
+			panic(err)
+		}
+		log.Info("participant[%s] registered in controller", e.participantID)
 	}
-	log.Info("participant[%s] registered in controller", e.participantID)
 
 	if telemetry.Default != nil {
 		log.Info("launching telemetry dumper...")
@@ -435,10 +437,13 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Info("Router stopped")
 
 	e.stopAPIServer()
-	e.stopRPCServer()
 
-	if err = e.controller.Close(); err != nil {
-		log.Error("%v", err)
+	if globals.ClusterEnabled {
+		e.stopRPCServer()
+
+		if err = e.controller.Close(); err != nil {
+			log.Error("%v", err)
+		}
 	}
 
 	if ret != nil {

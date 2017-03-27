@@ -44,6 +44,7 @@ func main() {
 	globals.FilterRecyclePoolSize = options.filterPoolSize
 	globals.HubChanSize = options.hubPoolSize
 	globals.PluginChanSize = options.pluginPoolSize
+	globals.ClusterEnabled = options.clusterEnable
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
