@@ -7,6 +7,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/gafka/zk"
+	"github.com/funkygao/golib/sync2"
 	conf "github.com/funkygao/jsconf"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/replication"
@@ -34,7 +35,7 @@ type MySlave struct {
 	dbAllowed  map[string]struct{}
 	dbExcluded map[string]struct{}
 
-	isMaster  bool
+	isMaster  sync2.AtomicBool
 	errors    chan error
 	rowsEvent chan *model.RowsEvent
 }

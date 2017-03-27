@@ -13,13 +13,14 @@ var (
 	options struct {
 		debug bool
 
-		configfile    string
+		configPath    string
 		validateConf  bool
 		showversion   bool
 		visualizeFile string
 		pprofAddr     string
 		lockfile      string
 		routerTrack   bool
+		clusterEnable bool
 
 		logfile  string
 		loglevel string
@@ -43,7 +44,7 @@ func parseFlags() {
 	fPool := iPool * 15 / 10
 	hPool := 3 * iPool
 	pPool := iPool
-	flag.StringVar(&options.configfile, "conf", "", "main config file")
+	flag.StringVar(&options.configPath, "conf", "", "main config path: file or zk accepted")
 	flag.BoolVar(&options.validateConf, "validate", false, "validate config file and exit")
 	flag.StringVar(&options.logfile, "logfile", "", "master log file path, default stdout")
 	flag.StringVar(&options.loglevel, "loglevel", "trace", "log level")
@@ -53,6 +54,7 @@ func parseFlags() {
 	flag.BoolVar(&options.routerTrack, "routerstat", true, "track router metrics")
 	flag.IntVar(&options.inputPoolSize, "ipool", iPool, "input recycle pool size")
 	flag.IntVar(&options.filterPoolSize, "fpool", fPool, "filter recycle pool size")
+	flag.BoolVar(&options.clusterEnable, "cluster", false, "enable cluster feature")
 	flag.IntVar(&options.hubPoolSize, "hpool", hPool, "hub pool size")
 	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")

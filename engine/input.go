@@ -38,25 +38,38 @@ type InputRunner interface {
 	// Injects Packet into the Router's input channel for delivery
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
+
+	// DeclareResource declares the current Input plugin is interested in the specified resource.
+	DeclareResource(resources ...string) error
+
+	// RebalanceChannel returns a channel that notifies client every reblance event.
+	RebalanceChannel() chan struct{}
+
+	// LeadingResources returns all the resources this InputRunner is leading.
+	LeadingResources() []string
 }
 
 type iRunner struct {
 	pRunnerBase
 
 	inChan chan *Packet
+
+	leadingResources []string
+	rebalanceCh      chan struct{}
 }
 
-func newInputRunner(input Input, pluginCommons *pluginCommons) (r InputRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
+		rebalanceCh: make(chan struct{}, 1),
 	}
 }
 
 func (ir *iRunner) Inject(pack *Packet) {
-	if pack.Ident == "" {
+	if len(pack.Ident) == 0 {
 		pack.Ident = ir.Name()
 	}
 
@@ -70,6 +83,26 @@ func (ir *iRunner) InChan() chan *Packet {
 
 func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
+}
+
+func (ir *iRunner) DeclareResource(resources ...string) error {
+	return ir.engine.DeclareResource(ir.Name(), resources)
+}
+
+func (ir *iRunner) LeadingResources() []string {
+	return ir.leadingResources
+}
+
+func (ir *iRunner) feedResources(resources []string) {
+	ir.leadingResources = resources
+}
+
+func (ir *iRunner) rebalance() {
+	ir.rebalanceCh <- struct{}{}
+}
+
+func (ir *iRunner) RebalanceChannel() chan struct{} {
+	return ir.rebalanceCh
 }
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {

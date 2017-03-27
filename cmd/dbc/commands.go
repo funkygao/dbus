@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/funkygao/dbus/cmd/dm/command"
+	"github.com/funkygao/dbus/cmd/dbc/command"
 	"github.com/funkygao/gocli"
 )
 
@@ -33,6 +33,13 @@ func init() {
 
 		"zones": func() (cli.Command, error) {
 			return &command.Zones{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
+		"migrate": func() (cli.Command, error) {
+			return &command.Migrate{
 				Ui:  ui,
 				Cmd: cmd,
 			}, nil

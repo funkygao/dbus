@@ -68,10 +68,7 @@ $ $GOPATH/dbusd -conf $myfile
 
 ### Dependencies
 
-dbus itself has no external dependencies. 
-
-But the plugins might have. 
-For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
+dbus uses zookeeper for sharding/balance/election.
 
 ### Plugins
 
@@ -112,6 +109,14 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
   the checkpointed binlog position is gone on master, reset the zk znode and replication will 
   automatically resume
 
+- how to migrate mysql database?
+
+  mysqldump --user=root --master-data --single-transaction --skip-lock-tables --compact --skip-opt --quick --no-create-info --skip-extended-insert --all-databases
+
+  parse CHANGE MASTER TO MASTER_LOG_FILE='mysql.000005', MASTER_LOG_POS=80955497;
+
+  MysqlbinlogInput load position for incremental loading
+
 #### why not canal?
 
 - no Delivery Guarantee
@@ -120,8 +125,16 @@ For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
 - only hot standby deployment mode, we need sharding load
 - dbus is a dataflow engine, while canal only support mysql binlog pipeline
 
+#### compared with logstash
+
+- logstash has better ecosystem
+- dbus is cluster aware, provides delivery guarantee, data provenance
+
 ### TODO
 
+- [ ] controller
+  - [ ] engine shutdown, controller still send rpc
+  - [ ] what if a participant encounters brain split
 - [ ] batcher only retries after full batch ack'ed, add timer?
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix

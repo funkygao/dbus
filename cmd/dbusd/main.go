@@ -44,6 +44,7 @@ func main() {
 	globals.FilterRecyclePoolSize = options.filterPoolSize
 	globals.HubChanSize = options.hubPoolSize
 	globals.PluginChanSize = options.pluginPoolSize
+	globals.ClusterEnabled = options.clusterEnable
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
@@ -59,7 +60,7 @@ func main() {
 	t0 := time.Now()
 	var err error
 	for {
-		e := engine.New(globals).LoadConfigFile(options.configfile)
+		e := engine.New(globals).LoadConfig(options.configPath)
 
 		if options.visualizeFile != "" {
 			e.ExportDiagram(options.visualizeFile)

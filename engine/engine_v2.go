@@ -108,14 +108,19 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 	return pack
 }
 
-func (e *Engine) LoadConfigFile(fn string) *Engine {
-	if fn == "" {
-		panic("config file is required")
+func (e *Engine) LoadConfig(path string) *Engine {
+	zkSvr, realPath := parseConfigPath(path)
+	var (
+		cf  *conf.Conf
+		err error
+	)
+	if len(zkSvr) == 0 {
+		// from file system
+		cf, err = conf.Load(realPath)
+	} else {
+		// from zookeeper
+		cf, err = conf.Load(realPath, conf.WithZkSvr(zkSvr))
 	}
-	if _, err := os.Stat(fn); err != nil {
-		panic(err)
-	}
-	cf, err := conf.Load(fn)
 	if err != nil {
 		panic(err)
 	}

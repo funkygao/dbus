@@ -41,7 +41,8 @@ help:
 	@echo "    make generate    : Recursively invoke go generate"
 	@echo "    make escape      : Escape analysis"
 	@echo ""
-	@echo "    make install     : Build and install dbusd to $(GOPATH)/bin"
+	@echo "    make dbusd       : Build and install dbusd to $(GOPATH)/bin"
+	@echo "    make dbc         : Build and install dbc to $(GOPATH)/bin"
 	@echo ""
 	@echo "    make docs        : Generate source code documentation"
 	@echo ""
@@ -148,6 +149,10 @@ loc:
 	@find . -name "*.go" | xargs wc -l | tail -1
 
 # Install dbsud to $GOPATH/bin
-install:generate
+dbusd:generate
 	go install ${GO_FLAGS} -ldflags ${ldflags} ./cmd/dbusd
+
+# Install dbc to $GOPATH/bin
+dbc:generate
+	go install ${GO_FLAGS} -ldflags ${ldflags} ./cmd/dbc
 

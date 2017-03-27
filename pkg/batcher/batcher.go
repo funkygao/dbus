@@ -33,7 +33,7 @@ type Batcher struct {
 	failN     uint32
 
 	// [nil, item1, item2, ..., itemN]
-	_padding7 [sys.CacheLineSize / 8]uint64
+	_padding8 [sys.CacheLineSize / 8]uint64
 	contents  []interface{}
 }
 
@@ -109,31 +109,33 @@ func (b *Batcher) Get() (interface{}, error) {
 // Succeed marks an item handling success.
 func (b *Batcher) Succeed() {
 	if okN := atomic.AddUint32(&b.okN, 1); okN == b.capacity {
-		// batch commit
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.c, 0)
-		atomic.StoreUint32(&b.w, 1)
-		atomic.StoreUint32(&b.r, 1)
+		b.commit()
 	} else if okN+atomic.LoadUint32(&b.failN) == b.capacity {
-		// batch rollback, reset reader cursor, retry the batch, hold writer
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.r, 1)
+		b.rewind()
 	}
-
 }
 
 // Fail marks an item handling failure.
 func (b *Batcher) Fail() (rewind bool) {
 	if failN := atomic.AddUint32(&b.failN, 1); failN+atomic.LoadUint32(&b.okN) == b.capacity {
-		// batch rewind
-		atomic.StoreUint32(&b.okN, 0)
-		atomic.StoreUint32(&b.failN, 0)
-		atomic.StoreUint32(&b.r, 1)
-
+		b.rewind()
 		rewind = true
 	}
 
 	return
+}
+
+func (b *Batcher) commit() {
+	atomic.StoreUint32(&b.okN, 0)
+	atomic.StoreUint32(&b.failN, 0)
+	atomic.StoreUint32(&b.c, 0)
+	atomic.StoreUint32(&b.w, 1)
+	atomic.StoreUint32(&b.r, 1)
+}
+
+// batch rollback, reset reader cursor, retry the batch, hold writer
+func (b *Batcher) rewind() {
+	atomic.StoreUint32(&b.okN, 0)
+	atomic.StoreUint32(&b.failN, 0)
+	atomic.StoreUint32(&b.r, 1)
 }

@@ -28,7 +28,7 @@ type PositionerZk struct {
 }
 
 func newPositionerZk(name string, zkzone *zk.ZkZone, masterAddr string, interval time.Duration) *PositionerZk {
-	return &PositionerZk{
+	p := &PositionerZk{
 		masterAddr: masterAddr,
 		interval:   interval,
 		posPath:    posPath(masterAddr),
@@ -36,6 +36,13 @@ func newPositionerZk(name string, zkzone *zk.ZkZone, masterAddr string, interval
 		Owner:      myNode(),
 		Name:       name,
 	}
+	p.init()
+	return p
+}
+
+func (z *PositionerZk) init() {
+	z.zkzone.Conn().Create(rootPath, nil, 0, zklib.WorldACL(zklib.PermAll))
+	z.zkzone.Conn().Create(slaveRoot, nil, 0, zklib.WorldACL(zklib.PermAll))
 }
 
 func (z *PositionerZk) MarkAsProcessed(file string, offset uint32) error {
