@@ -68,10 +68,7 @@ $ $GOPATH/dbusd -conf $myfile
 
 ### Dependencies
 
-dbus itself has no external dependencies. 
-
-But the plugins might have. 
-For example, MysqlbinlogInput uses zookeeper for sharding/balance/election.
+dbus uses zookeeper for sharding/balance/election.
 
 ### Plugins
 
