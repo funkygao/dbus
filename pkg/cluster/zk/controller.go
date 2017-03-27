@@ -2,7 +2,6 @@ package zk
 
 import (
 	"github.com/funkygao/dbus/pkg/cluster"
-	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
 )
@@ -15,7 +14,7 @@ type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
 
-	participantID string
+	participantID string // in the form of host:port
 	weight        int
 
 	leaderID string
@@ -32,6 +31,12 @@ type controller struct {
 func New(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
+	}
+	if len(zkSvr) == 0 {
+		panic("invalid zkSvr")
+	}
+	if err := validateParticipantID(participantID); err != nil {
+		panic(err)
 	}
 
 	return &controller{
@@ -63,18 +68,15 @@ func (c *controller) connectToZookeeper() (err error) {
 	return
 }
 
-func (c *controller) RegisterResources(resources []string) {
+func (c *controller) RegisterResources(resources []string) error {
 	for _, resource := range resources {
 		path := c.kb.resource(resource)
-		for {
-			// FIXME might dead loop
-			if err := c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
-				log.Error("%s %v", path, err)
-			} else {
-				break
-			}
+		if err := c.zc.CreateEmptyPersistentIfNotPresent(path); err != nil {
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (c *controller) Start() (err error) {
@@ -87,10 +89,8 @@ func (c *controller) Start() (err error) {
 	}
 
 	for _, path := range c.kb.persistentKeys() {
-		if err = c.zc.CreateEmptyPersistent(path); err != nil && err != zk.ErrNodeExists {
+		if err = c.zc.CreateEmptyPersistentIfNotPresent(path); err != nil {
 			return
-		} else {
-			err = nil
 		}
 	}
 

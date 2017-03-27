@@ -22,5 +22,5 @@ type Controller interface {
 	IsLeader() bool
 
 	// RegisterResources notifies the controller all configured resources.
-	RegisterResources([]string)
+	RegisterResources([]string) error
 }
