@@ -1,6 +1,7 @@
 package zk
 
 import (
+	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
 )
 
@@ -17,6 +18,8 @@ func newParticipantChangeListener(ctx *controller) *participantChangeListener {
 }
 
 func (p *participantChangeListener) HandleChildChange(parentPath string, lastChilds []string) error {
+	log.Trace("[%s] participants changed", p.ctx.participantID)
+
 	p.ctx.rebalance()
 	return nil
 }

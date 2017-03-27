@@ -101,6 +101,7 @@ func (c *controller) Start() (err error) {
 func (c *controller) Close() (err error) {
 	c.zc.Delete(c.kb.participant(c.participantID))
 	c.zc.Disconnect()
+	log.Trace("[%s] controller disconnected", c.participantID)
 	return
 }
 

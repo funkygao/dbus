@@ -1,6 +1,7 @@
 package zk
 
 import (
+	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
 )
 
@@ -16,7 +17,9 @@ func newResourceChangeListener(ctx *controller) *resourceChangeListener {
 	return &resourceChangeListener{ctx: ctx}
 }
 
-func (p *resourceChangeListener) HandleChildChange(parentPath string, lastChilds []string) error {
-	p.ctx.rebalance()
+func (r *resourceChangeListener) HandleChildChange(parentPath string, lastChilds []string) error {
+	log.Trace("[%s] resources changed", r.ctx.participantID)
+
+	r.ctx.rebalance()
 	return nil
 }
