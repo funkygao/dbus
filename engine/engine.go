@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/funkygao/dbus/engine/cluster"
-	czk "github.com/funkygao/dbus/engine/cluster/zk"
+	"github.com/funkygao/dbus/pkg/cluster"
+	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
@@ -111,6 +111,7 @@ func New(globals *GlobalConfig) *Engine {
 		hostname:      hostname,
 		stopper:       make(chan struct{}),
 		participantID: participantID,
+		roi:           make(map[string]map[string]struct{}),
 	}
 }
 
@@ -125,6 +126,10 @@ func (e *Engine) participantWeight() int {
 }
 
 func (e *Engine) DeclareResource(inputName, resource string) error {
+	if e.controller == nil {
+		return ErrClusterDisabled
+	}
+
 	if _, present := e.roi[inputName]; !present {
 		e.roi[inputName] = make(map[string]struct{})
 	}
@@ -184,8 +189,9 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	e.Conf = cf
 	Globals().Conf = cf
 
-	e.roi = make(map[string]map[string]struct{})
-	e.controller = czk.New(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
+	if Globals().ClusterEnabled {
+		e.controller = czk.New(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
+	}
 
 	// 'plugins' section
 	var names = make(map[string]struct{})

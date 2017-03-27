@@ -1,7 +1,7 @@
 package zk
 
 import (
-	"github.com/funkygao/dbus/engine/cluster"
+	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
