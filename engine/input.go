@@ -40,7 +40,7 @@ type InputRunner interface {
 	Inject(pack *Packet)
 
 	// DeclareResource declares the current Input plugin is interested in the specified resource.
-	DeclareResource(resource string) error
+	DeclareResource(resources ...string) error
 }
 
 type iRunner struct {
@@ -49,7 +49,7 @@ type iRunner struct {
 	inChan chan *Packet
 
 	// the cluster resource of the Input plugin.
-	resource string
+	resources []string
 }
 
 func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
@@ -78,9 +78,9 @@ func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
 }
 
-func (ir *iRunner) DeclareResource(resource string) error {
-	ir.resource = resource
-	return ir.engine.DeclareResource(ir.Name(), resource)
+func (ir *iRunner) DeclareResource(resources ...string) error {
+	ir.resources = resources
+	return ir.engine.DeclareResource(ir.Name(), resources)
 }
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {

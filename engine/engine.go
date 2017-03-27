@@ -125,7 +125,7 @@ func (e *Engine) participantWeight() int {
 	return runtime.NumCPU() * 100
 }
 
-func (e *Engine) DeclareResource(inputName, resource string) error {
+func (e *Engine) DeclareResource(inputName string, resource []string) error {
 	if e.controller == nil {
 		return ErrClusterDisabled
 	}
@@ -134,7 +134,9 @@ func (e *Engine) DeclareResource(inputName, resource string) error {
 		e.roi[inputName] = make(map[string]struct{})
 	}
 
-	e.roi[inputName][resource] = struct{}{}
+	for _, r := range resource {
+		e.roi[inputName][r] = struct{}{}
+	}
 
 	resources := make([]string, 0)
 	for _, res := range e.roi {
