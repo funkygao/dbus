@@ -50,8 +50,6 @@ func New(zkSvr string, participantID string, weight int, onRebalance func(decisi
 
 func (c *controller) connectToZookeeper() (err error) {
 	log.Debug("connecting to zookeeper...")
-	c.zc.SubscribeStateChanges(c)
-
 	if err = c.zc.Connect(); err != nil {
 		return
 	}
@@ -63,6 +61,10 @@ func (c *controller) connectToZookeeper() (err error) {
 		}
 
 		log.Warn("retry=%d %v", retries, err)
+	}
+
+	if err == nil {
+		c.zc.SubscribeStateChanges(c)
 	}
 
 	return
