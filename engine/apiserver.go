@@ -23,8 +23,10 @@ type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string
 func (this *Engine) launchAPIServer() {
 	this.apiRouter = mux.NewRouter()
 	this.apiServer = &http.Server{
-		Addr:    this.String("apisvr_addr", "127.0.0.1:9876"),
-		Handler: this.apiRouter,
+		Addr:         this.String("apisvr_addr", "127.0.0.1:9876"),
+		Handler:      this.apiRouter,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
 	}
 
 	this.setupAPIRoutings()

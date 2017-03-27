@@ -3,6 +3,7 @@ package engine
 import (
 	"net"
 	"net/http"
+	"time"
 
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
@@ -11,8 +12,10 @@ import (
 func (this *Engine) launchRPCServer() {
 	this.rpcRouter = mux.NewRouter()
 	this.rpcServer = &http.Server{
-		Addr:    this.participantID,
-		Handler: this.rpcRouter,
+		Addr:         this.participantID,
+		Handler:      this.rpcRouter,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
 	}
 
 	this.setupRPCRoutings()
