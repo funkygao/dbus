@@ -1,6 +1,5 @@
 // +build !v2
 
-// Package provides a plugin based pipeline engine that decouples Input/Filter/Output plugins.
 package engine
 
 import (
@@ -9,11 +8,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/funkygao/dbus/pkg/cluster"
+	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
@@ -35,13 +37,23 @@ type Engine struct {
 	// Engine will load json config file
 	*conf.Conf
 
-	// REST exporter
-	httpListener net.Listener
-	httpServer   *http.Server
-	httpRouter   *mux.Router
-	httpPaths    []string
+	participantID string
+	roi           map[string]string // resource of interest resource:input
+	roiMu         sync.RWMutex
+	controller    cluster.Controller
 
-	InputRunners  map[string]InputRunner
+	// API
+	apiListener net.Listener
+	apiServer   *http.Server
+	apiRouter   *mux.Router
+	httpPaths   []string
+
+	// RPC
+	rpcListener net.Listener
+	rpcServer   *http.Server
+	rpcRouter   *mux.Router
+
+	InputRunners  map[string]*iRunner
 	inputWrappers map[string]*pluginWrapper
 
 	FilterRunners  map[string]FilterRunner
@@ -74,8 +86,14 @@ func New(globals *GlobalConfig) *Engine {
 		panic(err)
 	}
 
+	ip, err := ctx.LocalIP()
+	if err != nil {
+		panic(err)
+	}
+	participantID := fmt.Sprintf("%s:9877", ip.String())
+
 	return &Engine{
-		InputRunners:   make(map[string]InputRunner),
+		InputRunners:   make(map[string]*iRunner),
 		inputWrappers:  make(map[string]*pluginWrapper),
 		FilterRunners:  make(map[string]FilterRunner),
 		filterWrappers: make(map[string]*pluginWrapper),
@@ -90,9 +108,11 @@ func New(globals *GlobalConfig) *Engine {
 
 		httpPaths: make([]string, 0, 6),
 
-		pid:      os.Getpid(),
-		hostname: hostname,
-		stopper:  make(chan struct{}),
+		pid:           os.Getpid(),
+		hostname:      hostname,
+		stopper:       make(chan struct{}),
+		participantID: participantID,
+		roi:           make(map[string]string),
 	}
 }
 
@@ -100,6 +120,36 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Lock()
 	e.InputRunners[name] = nil
 	e.Unlock()
+}
+
+func (e *Engine) participantWeight() int {
+	return runtime.NumCPU() * 100
+}
+
+func (e *Engine) DeclareResource(inputName string, resources []string) error {
+	if e.controller == nil {
+		return ErrClusterDisabled
+	}
+
+	log.Trace("%s -> %+v", inputName, resources)
+
+	e.roiMu.Lock()
+	for _, res := range resources {
+		if _, present := e.roi[res]; present {
+			return ErrDupResource
+		}
+
+		e.roi[res] = inputName
+	}
+	e.roiMu.Unlock()
+
+	e.controller.RegisterResources(resources)
+	return nil
+}
+
+// Leader returns the cluster leader RPC address.
+func (e *Engine) Leader() string {
+	return ""
 }
 
 // ClonePacket is used for plugin Filter to generate new Packet.
@@ -138,6 +188,10 @@ func (e *Engine) LoadConfig(path string) *Engine {
 
 	e.Conf = cf
 	Globals().Conf = cf
+
+	if Globals().ClusterEnabled {
+		e.controller = czk.New(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
+	}
 
 	// 'plugins' section
 	var names = make(map[string]struct{})
@@ -248,7 +302,15 @@ func (e *Engine) ServeForever() (ret error) {
 	globals.sigChan = make(chan os.Signal)
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
-	e.launchHttpServ()
+	e.launchAPIServer()
+	if globals.ClusterEnabled {
+		e.launchRPCServer()
+
+		if err = e.controller.Start(); err != nil {
+			panic(err)
+		}
+		log.Info("[%s] controller started", e.participantID)
+	}
 
 	if telemetry.Default != nil {
 		log.Info("launching telemetry dumper...")
@@ -309,8 +371,8 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	cfChanged := make(chan struct{})
-	go e.watchConfig(cfChanged, time.Second)
+	cfChanged := make(chan *conf.Conf)
+	go e.Conf.Watch(time.Second, e.stopper, cfChanged)
 
 	for !globals.Stopping {
 		select {
@@ -380,7 +442,15 @@ func (e *Engine) ServeForever() (ret error) {
 	routerWg.Wait()
 	log.Info("Router stopped")
 
-	e.stopHttpServ()
+	e.stopAPIServer()
+
+	if globals.ClusterEnabled {
+		e.stopRPCServer()
+
+		if err = e.controller.Close(); err != nil {
+			log.Error("%v", err)
+		}
+	}
 
 	if ret != nil {
 		log.Info("shutdown complete: %s!", ret)

@@ -17,9 +17,11 @@ type MysqlbinlogInput struct {
 	stopChan       chan struct{}
 
 	slave *myslave.MySlave
+	dsn   string
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
+	this.dsn = config.String("dsn", "")
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.stopChan = make(chan struct{})
 	this.slave = myslave.New().LoadConfig(config)
@@ -47,8 +49,17 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	name := r.Name()
 	backoff := time.Second * 5
 
+	if err := r.DeclareResource(this.dsn); err != nil {
+		return err
+	}
+
 	for {
 	RESTART_REPLICATION:
+
+		clusterRebalance := r.RebalanceChannel()
+		<-clusterRebalance
+
+		log.Debug("%+v", r.LeadingResources())
 
 		log.Trace("[%s] starting replication...", name)
 		if img, err := this.slave.BinlogRowImage(); err != nil {

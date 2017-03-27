@@ -20,6 +20,7 @@ var (
 		pprofAddr     string
 		lockfile      string
 		routerTrack   bool
+		clusterEnable bool
 
 		logfile  string
 		loglevel string
@@ -53,6 +54,7 @@ func parseFlags() {
 	flag.BoolVar(&options.routerTrack, "routerstat", true, "track router metrics")
 	flag.IntVar(&options.inputPoolSize, "ipool", iPool, "input recycle pool size")
 	flag.IntVar(&options.filterPoolSize, "fpool", fPool, "filter recycle pool size")
+	flag.BoolVar(&options.clusterEnable, "cluster", false, "enable cluster feature")
 	flag.IntVar(&options.hubPoolSize, "hpool", hPool, "hub pool size")
 	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
