@@ -41,6 +41,12 @@ type InputRunner interface {
 
 	// DeclareResource declares the current Input plugin is interested in the specified resource.
 	DeclareResource(resources ...string) error
+
+	// RebalanceChannel returns a channel that notifies client every reblance event.
+	RebalanceChannel() chan struct{}
+
+	// LeadingResources returns all the resources this InputRunner is leading.
+	LeadingResources() []string
 }
 
 type iRunner struct {
@@ -48,8 +54,8 @@ type iRunner struct {
 
 	inChan chan *Packet
 
-	// the cluster resource of the Input plugin.
-	resources []string
+	leadingResources []string
+	rebalanceCh      chan struct{}
 }
 
 func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
@@ -58,11 +64,12 @@ func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
+		rebalanceCh: make(chan struct{}, 1),
 	}
 }
 
 func (ir *iRunner) Inject(pack *Packet) {
-	if pack.Ident == "" {
+	if len(pack.Ident) == 0 {
 		pack.Ident = ir.Name()
 	}
 
@@ -79,8 +86,23 @@ func (ir *iRunner) Input() Input {
 }
 
 func (ir *iRunner) DeclareResource(resources ...string) error {
-	ir.resources = resources
 	return ir.engine.DeclareResource(ir.Name(), resources)
+}
+
+func (ir *iRunner) LeadingResources() []string {
+	return ir.leadingResources
+}
+
+func (ir *iRunner) feedResources(resources []string) {
+	ir.leadingResources = resources
+}
+
+func (ir *iRunner) rebalance() {
+	ir.rebalanceCh <- struct{}{}
+}
+
+func (ir *iRunner) RebalanceChannel() chan struct{} {
+	return ir.rebalanceCh
 }
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {

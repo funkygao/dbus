@@ -53,7 +53,7 @@ type Engine struct {
 	rpcServer   *http.Server
 	rpcRouter   *mux.Router
 
-	InputRunners  map[string]InputRunner
+	InputRunners  map[string]*iRunner
 	inputWrappers map[string]*pluginWrapper
 
 	FilterRunners  map[string]FilterRunner
@@ -93,7 +93,7 @@ func New(globals *GlobalConfig) *Engine {
 	participantID := fmt.Sprintf("%s:9877", ip.String())
 
 	return &Engine{
-		InputRunners:   make(map[string]InputRunner),
+		InputRunners:   make(map[string]*iRunner),
 		inputWrappers:  make(map[string]*pluginWrapper),
 		FilterRunners:  make(map[string]FilterRunner),
 		filterWrappers: make(map[string]*pluginWrapper),
