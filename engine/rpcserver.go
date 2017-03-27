@@ -37,5 +37,5 @@ func (this *Engine) stopRPCServer() {
 }
 
 func (this *Engine) setupRPCRoutings() {
-	this.rpcRouter.HandleFunc("/v1/rebalance", this.doRebalance).Methods("POST")
+	this.rpcRouter.HandleFunc("/v1/rebalance", this.doLocalRebalance).Methods("POST")
 }

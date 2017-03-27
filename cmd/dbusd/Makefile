@@ -25,7 +25,7 @@ complex:build
 canal:
 	@go build
 	@cat ../../etc/canal.cf | zk set -p /dbus/conf
-	./dbusd
+	./dbusd -cluster
 
 dump:build
 	./dbusd -conf ../../etc/complex.cf -dump canal.png

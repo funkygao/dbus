@@ -56,6 +56,11 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
+		clusterRebalance := r.RebalanceChannel()
+		<-clusterRebalance
+
+		log.Debug("%+v", r.LeadingResources())
+
 		log.Trace("[%s] starting replication...", name)
 		if img, err := this.slave.BinlogRowImage(); err != nil {
 			log.Error("[%s] %v", name, err)
