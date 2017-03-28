@@ -29,7 +29,7 @@ type PluginRunner interface {
 	start(e *Engine, wg *sync.WaitGroup) (err error)
 }
 
-// Filter and Output runner extends PluginRunner
+// FilterOutputRunner is the common interface shared by FilterRunner and OutputRunner.
 type FilterOutputRunner interface {
 	PluginRunner
 

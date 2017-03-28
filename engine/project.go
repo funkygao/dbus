@@ -14,14 +14,14 @@ type Project struct {
 	ShowError bool   `json:"show_error"`
 }
 
-func (this *Project) fromConfig(c *conf.Conf) {
-	this.Name = c.String("name", "")
-	if this.Name == "" {
+func (p *Project) fromConfig(c *conf.Conf) {
+	p.Name = c.String("name", "")
+	if p.Name == "" {
 		panic("project must has 'name'")
 	}
-	this.ShowError = c.Bool("show_error", true)
+	p.ShowError = c.Bool("show_error", true)
 
-	logfile := c.String("logfile", "var/"+this.Name+".log")
+	logfile := c.String("logfile", "var/"+p.Name+".log")
 	logWriter, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
@@ -33,13 +33,13 @@ func (this *Project) fromConfig(c *conf.Conf) {
 		logOptions |= log.Lmicroseconds
 	}
 
-	this.Logger = log.New(logWriter, "", logOptions)
+	p.Logger = log.New(logWriter, "", logOptions)
 }
 
-func (this *Project) Start() {
-	this.Printf("Project[%s] started", this.Name)
+func (p *Project) Start() {
+	p.Printf("Project[%s] started", p.Name)
 }
 
-func (this *Project) Stop() {
-	this.Printf("Project[%s] stopped", this.Name)
+func (p *Project) Stop() {
+	p.Printf("Project[%s] stopped", p.Name)
 }

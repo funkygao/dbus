@@ -120,7 +120,7 @@ func (r *Router) reportMatcherQueues() {
 	log.Trace(s)
 }
 
-// Dispatch pack from Input to MatchRunners
+// Start starts the router: dispatch pack from Input to MatchRunners.
 func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 

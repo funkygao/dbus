@@ -9,33 +9,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (this *Engine) launchRPCServer() {
-	this.rpcRouter = mux.NewRouter()
-	this.rpcServer = &http.Server{
-		Addr:         this.participantID,
-		Handler:      this.rpcRouter,
+func (e *Engine) launchRPCServer() {
+	e.rpcRouter = mux.NewRouter()
+	e.rpcServer = &http.Server{
+		Addr:         e.participantID,
+		Handler:      e.rpcRouter,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}
 
-	this.setupRPCRoutings()
+	e.setupRPCRoutings()
 
 	var err error
-	if this.rpcListener, err = net.Listen("tcp", this.rpcServer.Addr); err != nil {
+	if e.rpcListener, err = net.Listen("tcp", e.rpcServer.Addr); err != nil {
 		panic(err)
 	}
 
-	go this.rpcServer.Serve(this.rpcListener)
-	log.Info("RPC server ready on http://%s", this.rpcServer.Addr)
+	go e.rpcServer.Serve(e.rpcListener)
+	log.Info("RPC server ready on http://%s", e.rpcServer.Addr)
 }
 
-func (this *Engine) stopRPCServer() {
-	if this.rpcListener != nil {
-		this.rpcListener.Close()
+func (e *Engine) stopRPCServer() {
+	if e.rpcListener != nil {
+		e.rpcListener.Close()
 		log.Info("RPC server stopped")
 	}
 }
 
-func (this *Engine) setupRPCRoutings() {
-	this.rpcRouter.HandleFunc("/v1/rebalance", this.doLocalRebalance).Methods("POST")
+func (e *Engine) setupRPCRoutings() {
+	e.rpcRouter.HandleFunc("/v1/rebalance", e.doLocalRebalance).Methods("POST")
 }
