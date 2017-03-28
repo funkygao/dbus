@@ -54,7 +54,12 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	}
 
 	clusterRebalance := r.RebalanceChannel()
-	<-clusterRebalance
+	select {
+	case <-this.stopChan:
+		log.Trace("[%s] yes sir!", name)
+		return nil
+	case <-clusterRebalance:
+	}
 
 	for {
 	RESTART_REPLICATION:
