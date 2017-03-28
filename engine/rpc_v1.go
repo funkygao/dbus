@@ -37,7 +37,8 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 
 	resourceMap := make(map[string][]string) // inputName:resources
 	e.roiMu.RLock()
-	for _, resource := range resources {
+	for _, encodedResource := range resources {
+		inputName, resource := e.decodeResources(encodedResource)
 		inputName, ok := e.roi[resource]
 		if !ok {
 			// i,e. zk might found a resource that no input is interested in

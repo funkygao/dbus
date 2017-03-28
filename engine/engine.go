@@ -124,27 +124,6 @@ func (e *Engine) participantWeight() int {
 	return runtime.NumCPU() * 100
 }
 
-func (e *Engine) DeclareResource(inputName string, resources []string) error {
-	if e.controller == nil {
-		return ErrClusterDisabled
-	}
-
-	log.Trace("%s -> %+v", inputName, resources)
-
-	e.roiMu.Lock()
-	for _, res := range resources {
-		if _, present := e.roi[res]; present {
-			return ErrDupResource
-		}
-
-		e.roi[res] = inputName
-	}
-	e.roiMu.Unlock()
-
-	e.controller.RegisterResources(resources)
-	return nil
-}
-
 // Leader returns the cluster leader RPC address.
 func (e *Engine) Leader() string {
 	return ""

@@ -86,10 +86,6 @@ func (ir *iRunner) Input() Input {
 }
 
 func (ir *iRunner) DeclareResource(resources ...string) error {
-	if !Globals().ClusterEnabled {
-		return ErrClusterDisabled
-	}
-
 	return ir.engine.DeclareResource(ir.Name(), resources)
 }
 

@@ -75,11 +75,6 @@ func (c *controller) RegisterResources(resources []string) error {
 		}
 	}
 
-	if c.IsLeader() {
-		log.Trace("[%s] trigger reblance: new resources registered", c.participantID)
-		c.rebalance()
-	}
-
 	return nil
 }
 

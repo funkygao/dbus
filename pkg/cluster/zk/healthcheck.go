@@ -27,6 +27,8 @@ func (h *healthCheck) register() (err error) {
 		return
 	}
 
+	h.tryElect()
+
 	return
 }
 
