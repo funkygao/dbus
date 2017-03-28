@@ -15,30 +15,30 @@ var (
 // Right now our definition of health is fairly naive. If we register in zk we are healthy, otherwise
 // we are dead.
 type healthCheck struct {
-	*controller
+	participantID string
+	*zkclient.Client
+	*keyBuilder
 }
 
-func newHealthCheck(ctx *controller) *healthCheck {
-	return &healthCheck{controller: ctx}
+func newHealthCheck(participantID string, zc *zkclient.Client, kb *keyBuilder) *healthCheck {
+	return &healthCheck{Client: zc, keyBuilder: kb, participantID: participantID}
 }
 
 func (h *healthCheck) startup() {
-	h.zc.SubscribeStateChanges(h)
+	h.SubscribeStateChanges(h)
 	h.register()
 }
 
-func (h *healthCheck) register() (err error) {
-	if err = h.zc.CreateLiveNode(h.kb.participant(h.participantID), nil, 2); err != nil {
-		return
+func (h *healthCheck) register() {
+	if err := h.CreateLiveNode(h.participant(h.participantID), nil, 2); err != nil {
+		// 2 same participant running?
+		panic(err)
 	}
 
-	h.tryElect()
-
-	return
+	log.Trace("[%s] alive", h.participantID)
 }
 
 func (h *healthCheck) HandleNewSession() (err error) {
-	log.Trace("[%s] bring participant alive", h.participantID)
 	h.register()
 	return
 }
