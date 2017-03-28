@@ -41,8 +41,9 @@ func newPositionerZk(name string, zkzone *zk.ZkZone, masterAddr string, interval
 }
 
 func (z *PositionerZk) init() {
-	z.zkzone.Conn().Create(rootPath, nil, 0, zklib.WorldACL(zklib.PermAll))
-	z.zkzone.Conn().Create(slaveRoot, nil, 0, zklib.WorldACL(zklib.PermAll))
+	if err := z.zkzone.EnsurePathExists(slaveRoot); err != nil {
+		panic(err)
+	}
 }
 
 func (z *PositionerZk) MarkAsProcessed(file string, offset uint32) error {
