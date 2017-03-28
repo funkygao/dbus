@@ -7,8 +7,7 @@ import (
 )
 
 var (
-	_ zkclient.ZkStateListener = &controller{}
-	_ cluster.Controller       = &controller{}
+	_ cluster.Controller = &controller{}
 )
 
 type controller struct {
@@ -19,6 +18,8 @@ type controller struct {
 	weight        int
 
 	leaderID string
+
+	hc *healthCheck
 
 	pcl zkclient.ZkChildListener
 	rcl zkclient.ZkChildListener
@@ -87,8 +88,6 @@ func (c *controller) Start() (err error) {
 	c.pcl = newParticipantChangeListener(c)
 	c.rcl = newResourceChangeListener(c)
 
-	c.zc.SubscribeStateChanges(c)
-
 	if err = c.connectToZookeeper(); err != nil {
 		return
 	}
@@ -98,6 +97,9 @@ func (c *controller) Start() (err error) {
 			return
 		}
 	}
+
+	c.hc = newHealthCheck(c)
+	c.hc.startup()
 
 	return
 }
