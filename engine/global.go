@@ -39,6 +39,9 @@ type GlobalConfig struct {
 	ClusterEnabled bool
 	RouterTrack    bool
 
+	RPCPort int
+	APIPort int
+
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
 	HubChanSize           int
@@ -94,6 +97,8 @@ func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 
 func DefaultGlobals() *GlobalConfig {
 	return &GlobalConfig{
+		APIPort:               9876,
+		RPCPort:               9877,
 		Debug:                 false,
 		ClusterEnabled:        true,
 		InputRecyclePoolSize:  100,

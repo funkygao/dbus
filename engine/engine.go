@@ -90,7 +90,7 @@ func New(globals *GlobalConfig) *Engine {
 	if err != nil {
 		panic(err)
 	}
-	participantID := fmt.Sprintf("%s:9877", ip.String())
+	participantID := fmt.Sprintf("%s:%d", ip.String(), globals.RPCPort)
 
 	return &Engine{
 		InputRunners:   make(map[string]*iRunner),

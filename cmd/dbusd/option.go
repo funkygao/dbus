@@ -29,6 +29,9 @@ var (
 		filterPoolSize int
 		hubPoolSize    int
 		pluginPoolSize int
+
+		apiPort int
+		rpcPort int
 	}
 )
 
@@ -57,6 +60,8 @@ func parseFlags() {
 	flag.BoolVar(&options.clusterEnable, "cluster", false, "enable cluster feature")
 	flag.IntVar(&options.hubPoolSize, "hpool", hPool, "hub pool size")
 	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
+	flag.IntVar(&options.rpcPort, "rpc", 9877, "rpc server port")
+	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, USAGE)
