@@ -53,15 +53,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		return err
 	}
 
+	clusterRebalance := r.RebalanceChannel()
+	<-clusterRebalance
+
 	for {
 	RESTART_REPLICATION:
 
-		clusterRebalance := r.RebalanceChannel()
-		<-clusterRebalance
-
-		log.Debug("%+v", r.LeadingResources())
-
-		log.Trace("[%s] starting replication...", name)
+		log.Trace("[%s] starting replication %+v...", name, r.LeadingResources()[0])
 		if img, err := this.slave.BinlogRowImage(); err != nil {
 			log.Error("[%s] %v", name, err)
 		} else {
@@ -118,6 +116,10 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 						log.Trace("[%s] yes sir!", name)
 						return nil
 					}
+					goto RESTART_REPLICATION
+
+				case <-clusterRebalance:
+					this.slave.StopReplication()
 					goto RESTART_REPLICATION
 
 				case row, ok := <-rows:
