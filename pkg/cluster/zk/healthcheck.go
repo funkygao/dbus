@@ -3,6 +3,11 @@ package zk
 import (
 	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
+	"github.com/funkygao/zkclient"
+)
+
+var (
+	_ zkclient.ZkStateListener = &healthCheck{}
 )
 
 // healthCheck registers participant in zk ephemeral to allow other cluster components
