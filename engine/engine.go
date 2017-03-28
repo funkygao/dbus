@@ -42,13 +42,13 @@ type Engine struct {
 	roiMu         sync.RWMutex
 	controller    cluster.Controller
 
-	// API
+	// API Server
 	apiListener net.Listener
 	apiServer   *http.Server
 	apiRouter   *mux.Router
 	httpPaths   []string
 
-	// RPC
+	// RPC Server
 	rpcListener net.Listener
 	rpcServer   *http.Server
 	rpcRouter   *mux.Router
@@ -62,7 +62,6 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*pluginWrapper
 
-	top    *topology
 	router *Router
 
 	inputRecycleChans map[string]chan *Packet
@@ -103,7 +102,6 @@ func New(globals *GlobalConfig) *Engine {
 		inputRecycleChans: make(map[string]chan *Packet),
 		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
-		top:    newTopology(),
 		router: newRouter(),
 
 		httpPaths: make([]string, 0, 6),
@@ -208,9 +206,6 @@ func (e *Engine) LoadConfig(path string) *Engine {
 		}
 		names[name] = struct{}{}
 	}
-
-	// 'topology' section
-	e.top.load(e.Conf)
 
 	if c, err := influxdb.NewConfig(cf.String("influx_addr", ""),
 		cf.String("influx_db", "dbus"), "", "",
