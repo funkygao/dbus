@@ -1,3 +1,4 @@
+// dbc is the DBus console.
 package main
 
 import (
