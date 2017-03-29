@@ -56,7 +56,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		dsn := r.LeadingResources()[0]
+		dsn := r.LeadingResources()[0].DSN()
 		log.Trace("[%s] starting replication %+v...", name, dsn)
 		this.slave = myslave.New(dsn).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {

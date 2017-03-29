@@ -4,6 +4,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
 )
 
@@ -43,7 +44,7 @@ type InputRunner interface {
 	RebalanceChannel() chan struct{}
 
 	// LeadingResources returns all the resources this InputRunner is leading.
-	LeadingResources() []string
+	LeadingResources() []cluster.Resource
 }
 
 type iRunner struct {
@@ -51,7 +52,7 @@ type iRunner struct {
 
 	inChan chan *Packet
 
-	leadingResources []string
+	leadingResources []cluster.Resource
 	rebalanceCh      chan struct{}
 }
 
@@ -82,11 +83,11 @@ func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
 }
 
-func (ir *iRunner) LeadingResources() []string {
+func (ir *iRunner) LeadingResources() []cluster.Resource {
 	return ir.leadingResources
 }
 
-func (ir *iRunner) feedResources(resources []string) {
+func (ir *iRunner) feedResources(resources []cluster.Resource) {
 	ir.leadingResources = resources
 }
 
