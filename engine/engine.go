@@ -163,7 +163,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	Globals().Conf = cf
 
 	if Globals().ClusterEnabled {
-		e.controller = czk.NewController(zkSvr, e.participant, e.onControllerRebalance)
+		e.controller = czk.NewController(zkSvr, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
 	}
 
 	// 'plugins' section
