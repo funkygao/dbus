@@ -43,6 +43,7 @@ help:
 	@echo ""
 	@echo "    make dbusd       : Build and install dbusd to $(GOPATH)/bin"
 	@echo "    make dbc         : Build and install dbc to $(GOPATH)/bin"
+	@echo "    make all         : Build and install dbc+dbusd to $(GOPATH)/bin"
 	@echo ""
 	@echo "    make docs        : Generate source code documentation"
 	@echo ""
@@ -50,8 +51,6 @@ help:
 	@echo "    make clean       : Remove any build artifact"
 	@echo "    make nuke        : Deletes any intermediate file"
 	@echo ""
-
-all: help
 
 # Run the unit tests
 test:
@@ -156,3 +155,4 @@ dbusd:generate
 dbc:generate
 	go install ${GO_FLAGS} -ldflags ${ldflags} ./cmd/dbc
 
+all:dbusd dbc

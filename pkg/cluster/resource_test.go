@@ -16,9 +16,9 @@ func TestResource(t *testing.T) {
 
 func TestResourcesSort(t *testing.T) {
 	rs := []Resource{
-		Resource{Name: "2"},
-		Resource{Name: "1"},
-		Resource{Name: "3"},
+		{Name: "2"},
+		{Name: "1"},
+		{Name: "3"},
 	}
 	sorted := Resources(rs)
 	sort.Sort(sorted)

@@ -45,6 +45,9 @@ system mediation logic.
 - Systemic Quality
   - hot reload
   - dryrun throughput 1.9M packets/s
+- Cluster
+  - models of helix+kafka controller
+  - easy to write a distributed plugin
 
 ### Getting Started
 
@@ -78,6 +81,9 @@ dbus uses zookeeper for sharding/balance/election.
 - RedisbinlogInput
 - KafkaInput
 - MockInput
+- StreamInput
+  
+  for polyglot
 
 #### Filter
 
@@ -89,6 +95,9 @@ dbus uses zookeeper for sharding/balance/election.
 - KafkaOutput
 - ESOutput
 - MockOutput
+- StreamOutput
+
+  for polyglot
 
 ### Configuration
 
