@@ -47,15 +47,15 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	}
 
 	// list all resources
-	m, err := mgr.RegisteredResources()
+	resources, err := mgr.RegisteredResources()
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
 	}
 
 	lines := []string{"InputPlugin|Resources"}
-	for input, resources := range m {
-		lines = append(lines, fmt.Sprintf("%s|%+v", input, resources))
+	for _, res := range resources {
+		lines = append(lines, fmt.Sprintf("%s|%s", res.InputPlugin, res.Name))
 	}
 	if len(lines) > 1 {
 		this.Ui.Output(columnize.SimpleFormat(lines))
@@ -65,7 +65,11 @@ func (this *Resources) Run(args []string) (exitCode int) {
 }
 
 func (this *Resources) doAddResource(mgr cluster.Manager, input, resource string) {
-	if err := mgr.RegisterResource(input, resource); err != nil {
+	res := cluster.Resource{
+		Name:        resource,
+		InputPlugin: input,
+	}
+	if err := mgr.RegisterResource(res); err != nil {
 		this.Ui.Error(err.Error())
 	} else {
 		this.Ui.Info("ok")

@@ -35,36 +35,36 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resourceMap := make(map[string][]string) // inputName:resources
-	e.roiMu.RLock()
-	for _, encodedResource := range resources {
-		inputName, resource := e.decodeResources(encodedResource)
-		inputName, ok := e.roi[resource]
-		if !ok {
-			// i,e. zk might found a resource that no input is interested in
-			log.Warn("[%s] resource[%s] not declared yet", e.participantID, resource)
-			continue
+	/*
+		resourceMap := make(map[string][]string) // inputName:resources
+		for _, encodedResource := range resources {
+			inputName, resource := e.decodeResources(encodedResource)
+			inputName, ok := e.roi[resource]
+			if !ok {
+				// i,e. zk might found a resource that no input is interested in
+				log.Warn("[%s] resource[%s] not declared yet", e.participant, resource)
+				continue
+			}
+
+			if _, present := resourceMap[inputName]; !present {
+				resourceMap[inputName] = []string{resource}
+			} else {
+				resourceMap[inputName] = append(resourceMap[inputName], resource)
+			}
 		}
 
-		if _, present := resourceMap[inputName]; !present {
-			resourceMap[inputName] = []string{resource}
-		} else {
-			resourceMap[inputName] = append(resourceMap[inputName], resource)
-		}
-	}
-	e.roiMu.RUnlock()
+		// now got the new resource<->input mapping
+		for inputName, resources := range resourceMap {
+			ir, ok := e.InputRunners[inputName]
+			if !ok {
+				// should never happen
+				log.Critical("%s not found", inputName)
+				continue
+			}
 
-	// now got the new resource<->input mapping
-	for inputName, resources := range resourceMap {
-		ir, ok := e.InputRunners[inputName]
-		if !ok {
-			// should never happen
-			log.Critical("%s not found", inputName)
-			continue
+			ir.feedResources(resources)
+			ir.rebalance()
 		}
-
-		ir.feedResources(resources)
-		ir.rebalance()
-	}
+	*/
 
 }

@@ -10,9 +10,12 @@ type Manager interface {
 	Close()
 
 	// RegisterResource register a resource for an input plugin.
-	RegisterResource(input string, resource string) error
+	RegisterResource(resource Resource) error
 
 	// RegisteredResources returns all the registered resource in the cluster.
 	// The return map is in the form of {input: []resource}
-	RegisteredResources() (map[string][]string, error)
+	RegisteredResources() ([]Resource, error)
+
+	// LiveParticipants returns currently online participants.
+	LiveParticipants() ([]Participant, error)
 }

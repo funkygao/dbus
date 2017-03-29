@@ -1,8 +1,9 @@
 package zk
 
 import (
-	"sort"
+	//"sort"
 
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
 )
 
@@ -11,55 +12,39 @@ import (
 // 2. resources change
 // 3. becoming leader
 func (c *controller) doRebalance() {
-	if !c.zc.IsConnected() {
-		log.Trace("[%s] controller disconnected", c.participantID)
-		return
-	}
-
-	participants, err := c.zc.Children(c.kb.participants())
+	participants, err := c.LiveParticipants()
 	if err != nil {
 		// TODO
-		log.Error("[%s] %s", c.participantID, err)
+		log.Critical("[%s] %s", c.participant, err)
 		return
 	}
 	if len(participants) == 0 {
-		log.Warn("[%s] no alive participants found", c.participantID)
+		log.Critical("[%s] no alive participants found", c.participant)
 		return
 	}
 
-	encodedResources, err := c.zc.Children(c.kb.resources())
+	resources, err := c.RegisteredResources()
 	if err != nil {
-		log.Error("[%s] %s", c.participantID, err)
+		// TODO
+		log.Critical("[%s] %s", c.participant, err)
 		return
-	}
-	if len(encodedResources) == 0 {
-		log.Warn("[%s] no resources found", c.participantID)
-		return
-	}
-
-	resources := make([]string, len(encodedResources))
-	for i, encodedResource := range encodedResources {
-		resources[i], err = c.kb.decodeResource(encodedResource)
-		if err != nil {
-			// should never happen
-			log.Critical("%s: %v", encodedResource, err)
-			continue
-		}
 	}
 
 	c.onRebalance(assignResourcesToParticipants(participants, resources))
 }
 
-func assignResourcesToParticipants(participants []string, resources []string) (decision map[string][]string) {
-	decision = make(map[string][]string)
+func assignResourcesToParticipants(participants []cluster.Participant, resources []cluster.Resource) (decision cluster.Decision) {
+	decision = cluster.MakeDecision()
 
 	rLen, pLen := len(resources), len(participants)
 	if pLen == 0 || rLen == 0 {
+		// FIXME if pLen>0 && rLen==0, should not return
 		return
 	}
 
-	sort.Strings(participants)
-	sort.Strings(resources)
+	/*
+		sort.Strings(participants)
+		sort.Strings(resources)*/
 
 	nResourcesPerParticipant, nparticipantsWithExtraResource := rLen/pLen, rLen%pLen
 
@@ -73,7 +58,7 @@ func assignResourcesToParticipants(participants []string, resources []string) (d
 		startResourceIdx := nResourcesPerParticipant*pid + min(pid, nparticipantsWithExtraResource)
 		for j := startResourceIdx; j < startResourceIdx+nResources; j++ {
 			if _, present := decision[participants[pid]]; !present {
-				decision[participants[pid]] = make([]string, 0)
+				decision[participants[pid]] = make([]cluster.Resource, 0)
 			}
 			decision[participants[pid]] = append(decision[participants[pid]], resources[j])
 		}
