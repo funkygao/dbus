@@ -1,5 +1,4 @@
 {
-    apisvr_addr: "127.0.0.1:9876"
     influx_addr: "http://localhost:8086"
 
     plugins: [

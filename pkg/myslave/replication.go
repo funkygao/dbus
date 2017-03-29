@@ -81,7 +81,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	}
 
 	close(ready)
-	log.Trace("[%s] ready to receive binlog stream", m.name)
+	log.Trace("[%s] ready to receive mysql binlog stream %s", m.name, m.masterAddr)
 
 	timeout := time.Second
 	maxTimeout := time.Minute

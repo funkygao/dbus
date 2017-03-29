@@ -45,13 +45,6 @@ func init() {
 			}, nil
 		},
 
-		"clusters": func() (cli.Command, error) {
-			return &command.Clusters{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
 		"resources": func() (cli.Command, error) {
 			return &command.Resources{
 				Ui:  ui,

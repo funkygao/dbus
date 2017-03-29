@@ -11,12 +11,14 @@ type Plugin interface {
 	Init(config *conf.Conf)
 }
 
-// If a Plugin implements Restarter, it will be called on restart.
+// Restarter is used for Filter or Output plugin for callback
+// when the plugin restarts.
 // Return value determines whether restart it or run once.
 type Restarter interface {
 	CleanupForRestart() bool
 }
 
+// Pauser is used for Input plugin.
 // If a Plugin implements Pauser, it can pause/resume.
 type Pauser interface {
 	Pause(InputRunner) error

@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
 )
 
@@ -28,45 +28,25 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var resources []string
-	if err = json.Unmarshal(buf, &resources); err != nil {
-		log.Error("%v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	resources := cluster.RPCResources(buf)
+	log.Trace("got resource: %v", resources)
 
+	// merge resources by input plugin name
 	resourceMap := make(map[string][]string) // inputName:resources
-	e.roiMu.RLock()
-	for _, encodedResource := range resources {
-		resource, err := e.controller.DecodeResource(encodedResource)
-		if err != nil {
-			// FIXME
-			log.Error("[%s] {%s}: %v", e.participantID, encodedResource, err)
-			continue
-		}
-
-		inputName, ok := e.roi[resource]
-		if !ok {
-			// i,e. zk might found a resource that no input is interested in
-			log.Warn("[%s] resource[%s] not declared yet", e.participantID, resource)
-			continue
-		}
-
-		if _, present := resourceMap[inputName]; !present {
-			resourceMap[inputName] = []string{resource}
+	for _, res := range resources {
+		if _, present := resourceMap[res.InputPlugin]; !present {
+			resourceMap[res.InputPlugin] = []string{res.Name}
 		} else {
-			resourceMap[inputName] = append(resourceMap[inputName], resource)
+			resourceMap[res.InputPlugin] = append(resourceMap[res.InputPlugin], res.Name)
 		}
 	}
-	e.roiMu.RUnlock()
 
-	// now got the new resource<->input mapping
+	// dispatch decision to input plugins
 	for inputName, resources := range resourceMap {
 		ir, ok := e.InputRunners[inputName]
 		if !ok {
 			// should never happen
-			log.Critical("%s not found", inputName)
-			continue
+			panic(inputName + " not found")
 		}
 
 		ir.feedResources(resources)

@@ -18,7 +18,12 @@ func newResourceChangeListener(ctx *controller) *resourceChangeListener {
 }
 
 func (r *resourceChangeListener) HandleChildChange(parentPath string, lastChilds []string) error {
-	log.Trace("[%s] resources changed, trigger rebalance", r.ctx.participantID)
-	r.ctx.rebalance()
+	if !r.ctx.amLeader() {
+		log.Warn("[%s] was leader but resigned now", r.ctx.participant)
+		return nil
+	}
+
+	log.Trace("[%s] resources changed, trigger rebalance", r.ctx.participant)
+	r.ctx.doRebalance()
 	return nil
 }

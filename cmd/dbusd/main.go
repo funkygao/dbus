@@ -39,6 +39,8 @@ func main() {
 
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
+	globals.RPCPort = options.rpcPort
+	globals.APIPort = options.apiPort
 	globals.RouterTrack = options.routerTrack
 	globals.InputRecyclePoolSize = options.inputPoolSize
 	globals.FilterRecyclePoolSize = options.filterPoolSize

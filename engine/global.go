@@ -26,6 +26,7 @@ var (
 	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
+	// Globals return the global params of dbus.
 	Globals func() *GlobalConfig
 )
 
@@ -38,6 +39,9 @@ type GlobalConfig struct {
 	Debug          bool
 	ClusterEnabled bool
 	RouterTrack    bool
+
+	RPCPort int
+	APIPort int
 
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
@@ -53,47 +57,49 @@ type GlobalConfig struct {
 	sigChan chan os.Signal
 }
 
-func (this *GlobalConfig) Shutdown() {
-	this.Kill(syscall.SIGINT)
+func (g *GlobalConfig) Shutdown() {
+	g.Kill(syscall.SIGINT)
 }
 
-func (this *GlobalConfig) Kill(sig os.Signal) {
-	this.sigChan <- sig
+func (g *GlobalConfig) Kill(sig os.Signal) {
+	g.sigChan <- sig
 }
 
-func (this *GlobalConfig) Register(k string, v interface{}) {
-	this.regMu.Lock()
-	defer this.regMu.Unlock()
+func (g *GlobalConfig) Register(k string, v interface{}) {
+	g.regMu.Lock()
+	defer g.regMu.Unlock()
 
-	if _, present := this.registry[k]; present {
+	if _, present := g.registry[k]; present {
 		panic(fmt.Sprintf("dup register: %s", k))
 	}
 
-	this.registry[k] = v
+	g.registry[k] = v
 }
 
-func (this *GlobalConfig) Registered(k string) interface{} {
-	this.regMu.RLock()
-	defer this.regMu.RUnlock()
+func (g *GlobalConfig) Registered(k string) interface{} {
+	g.regMu.RLock()
+	defer g.regMu.RUnlock()
 
-	return this.registry[k]
+	return g.registry[k]
 }
 
-func (this *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
-	this.regMu.Lock()
-	defer this.regMu.Unlock()
+func (g *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
+	g.regMu.Lock()
+	defer g.regMu.Unlock()
 
 	key := fmt.Sprintf("zkzone.%s", zone)
-	if _, present := this.registry[key]; !present {
+	if _, present := g.registry[key]; !present {
 		zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-		this.registry[key] = zkzone
+		g.registry[key] = zkzone
 	}
 
-	return this.registry[key].(*zk.ZkZone)
+	return g.registry[key].(*zk.ZkZone)
 }
 
 func DefaultGlobals() *GlobalConfig {
 	return &GlobalConfig{
+		APIPort:               9876,
+		RPCPort:               9877,
 		Debug:                 false,
 		ClusterEnabled:        true,
 		InputRecyclePoolSize:  100,

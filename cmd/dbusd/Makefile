@@ -1,38 +1,42 @@
-mock:
-	@go build
+mock:build
 	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
-batcher:
-	@go build
+batcher:build
 	./dbusd -conf ../../etc/batcher.cf -routerstat=false
 
 v2:buildv2
 	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
-inputs:
-	@go build
+inputs:build
 	./dbusd -conf ../../etc/inputs.cf -routerstat=false
 
-fanout:build
+fanout:buildrace
 	./dbusd -conf ../../etc/fanout.cf
 
-dispatch:build
+dispatch:buildrace
 	./dbusd -conf ../../etc/dispatch.cf
 
-complex:build
+complex:buildrace
 	./dbusd -conf ../../etc/complex.cf
 
-canal:
-	@go build
+canal:build
 	@cat ../../etc/canal.cf | zk set -p /dbus/conf
 	./dbusd -cluster
 
-dump:build
+c1:build
+	./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897
+
+c2:build
+	./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
+
+dump:buildrace
 	./dbusd -conf ../../etc/complex.cf -dump canal.png
 
 build:
+	@go build
+
+buildrace:
 	@go build -race
-	@mkdir -p var
 
 buildv2:
 	go build -tags v2

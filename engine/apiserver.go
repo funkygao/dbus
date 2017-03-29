@@ -20,72 +20,72 @@ import (
 
 type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error)
 
-func (this *Engine) launchAPIServer() {
-	this.apiRouter = mux.NewRouter()
-	this.apiServer = &http.Server{
-		Addr:         this.String("apisvr_addr", "127.0.0.1:9876"),
-		Handler:      this.apiRouter,
+func (e *Engine) launchAPIServer() {
+	e.apiRouter = mux.NewRouter()
+	e.apiServer = &http.Server{
+		Addr:         fmt.Sprintf("127.0.0.1:%d", Globals().APIPort),
+		Handler:      e.apiRouter,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}
 
-	this.setupAPIRoutings()
+	e.setupAPIRoutings()
 
 	var err error
-	if this.apiListener, err = net.Listen("tcp", this.apiServer.Addr); err != nil {
+	if e.apiListener, err = net.Listen("tcp", e.apiServer.Addr); err != nil {
 		panic(err)
 	}
 
-	go this.apiServer.Serve(this.apiListener)
-	log.Info("API server ready on http://%s", this.apiServer.Addr)
+	go e.apiServer.Serve(e.apiListener)
+	log.Info("API server ready on http://%s", e.apiServer.Addr)
 }
 
-func (this *Engine) stopAPIServer() {
-	if this.apiListener != nil {
-		this.apiListener.Close()
+func (e *Engine) stopAPIServer() {
+	if e.apiListener != nil {
+		e.apiListener.Close()
 		log.Info("API server stopped")
 	}
 }
 
-func (this *Engine) setupAPIRoutings() {
+func (e *Engine) setupAPIRoutings() {
 	// admin
-	this.RegisterAPI("/stat", this.handleAPIStat).Methods("GET")
-	this.RegisterAPI("/plugins", this.handleAPIPlugins).Methods("GET")
-	this.RegisterAPI("/metrics", this.handleAPIMetrics).Methods("GET")
-	this.RegisterAPI("/dag", this.handleAPIDag).Methods("GET")
+	e.RegisterAPI("/stat", e.handleAPIStat).Methods("GET")
+	e.RegisterAPI("/plugins", e.handleAPIPlugins).Methods("GET")
+	e.RegisterAPI("/metrics", e.handleAPIMetrics).Methods("GET")
+	e.RegisterAPI("/dag", e.handleAPIDag).Methods("GET")
 
 	// API
-	this.RegisterAPI("/api/v1/pause/{input}", this.handleAPIPause).Methods("PUT")
-	this.RegisterAPI("/api/v1/resume/{input}", this.handleAPIResume).Methods("PUT")
+	e.RegisterAPI("/api/v1/pause/{input}", e.handleAPIPause).Methods("PUT")
+	e.RegisterAPI("/api/v1/resume/{input}", e.handleAPIResume).Methods("PUT")
 }
 
-func (this *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	d := dag.New()
 
 	// vertex
-	for in := range this.InputRunners {
-		if _, present := this.router.metrics.m[in]; present {
-			d.AddVertex(in, int(this.router.metrics.m[in].Rate1()))
+	for in := range e.InputRunners {
+		if _, present := e.router.metrics.m[in]; present {
+			d.AddVertex(in, int(e.router.metrics.m[in].Rate1()))
 		}
 	}
-	for _, m := range this.router.filterMatchers {
-		if _, present := this.router.metrics.m[m.runner.Name()]; present {
-			d.AddVertex(m.runner.Name(), int(this.router.metrics.m[m.runner.Name()].Rate1()))
+	for _, m := range e.router.filterMatchers {
+		if _, present := e.router.metrics.m[m.runner.Name()]; present {
+			d.AddVertex(m.runner.Name(), int(e.router.metrics.m[m.runner.Name()].Rate1()))
 		}
 	}
-	for _, m := range this.router.outputMatchers {
-		if _, present := this.router.metrics.m[m.runner.Name()]; present {
-			d.AddVertex(m.runner.Name(), int(this.router.metrics.m[m.runner.Name()].Rate1()))
+	for _, m := range e.router.outputMatchers {
+		if _, present := e.router.metrics.m[m.runner.Name()]; present {
+			d.AddVertex(m.runner.Name(), int(e.router.metrics.m[m.runner.Name()].Rate1()))
 		}
 	}
 
 	// edge
-	for _, m := range this.router.filterMatchers {
+	for _, m := range e.router.filterMatchers {
 		for source := range m.matches {
 			d.AddEdge(source, m.runner.Name())
 		}
 	}
-	for _, m := range this.router.outputMatchers {
+	for _, m := range e.router.outputMatchers {
 		for source := range m.matches {
 			log.Info("%s,%s %+v", source, m.runner.Name(), d)
 			d.AddEdge(source, m.runner.Name())
@@ -110,9 +110,9 @@ func (this *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params 
 	return nil, nil
 }
 
-func (this *Engine) handleAPIMetrics(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIMetrics(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	output := make(map[string]map[string]interface{})
-	for ident, m := range this.router.metrics.m {
+	for ident, m := range e.router.metrics.m {
 		output[ident] = map[string]interface{}{
 			"tps": int(m.Rate1()),
 			"cum": m.Count(),
@@ -122,23 +122,23 @@ func (this *Engine) handleAPIMetrics(w http.ResponseWriter, r *http.Request, par
 	return output, nil
 }
 
-func (this *Engine) handleAPIPlugins(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIPlugins(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	plugins := make(map[string][]string)
-	for _, r := range this.InputRunners {
+	for _, r := range e.InputRunners {
 		if _, present := plugins[r.Class()]; !present {
 			plugins[r.Class()] = []string{r.Name()}
 		} else {
 			plugins[r.Class()] = append(plugins[r.Class()], r.Name())
 		}
 	}
-	for _, r := range this.FilterRunners {
+	for _, r := range e.FilterRunners {
 		if _, present := plugins[r.Class()]; !present {
 			plugins[r.Class()] = []string{r.Name()}
 		} else {
 			plugins[r.Class()] = append(plugins[r.Class()], r.Name())
 		}
 	}
-	for _, r := range this.OutputRunners {
+	for _, r := range e.OutputRunners {
 		if _, present := plugins[r.Class()]; !present {
 			plugins[r.Class()] = []string{r.Name()}
 		} else {
@@ -149,32 +149,32 @@ func (this *Engine) handleAPIPlugins(w http.ResponseWriter, r *http.Request, par
 	return plugins, nil
 }
 
-func (this *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	var output = make(map[string]interface{})
 	output["ver"] = dbus.Version
 	output["started"] = Globals().StartedAt
 	output["elapsed"] = time.Since(Globals().StartedAt).String()
-	output["pid"] = this.pid
-	output["hostname"] = this.hostname
+	output["pid"] = e.pid
+	output["hostname"] = e.hostname
 	output["revision"] = dbus.Revision
 	return output, nil
 }
 
-func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
-	for _, p := range this.httpPaths {
+func (e *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
+	for _, p := range e.httpPaths {
 		if p == path {
 			panic(path + " already registered")
 		}
 	}
-	this.httpPaths = append(this.httpPaths, path)
+	e.httpPaths = append(e.httpPaths, path)
 
-	return this.apiRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	return e.apiRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ret interface{}
 			t1  = time.Now()
 		)
 
-		params, err := this.decodeHttpParams(w, r)
+		params, err := e.decodeHTTPParams(w, r)
 		if err == nil {
 			ret, err = handlerFunc(w, r, params)
 		}
@@ -212,7 +212,7 @@ func (this *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route 
 	})
 }
 
-func (this *Engine) decodeHttpParams(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+func (e *Engine) decodeHTTPParams(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
