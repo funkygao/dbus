@@ -3,6 +3,9 @@
 // It rebalances resources to participants and watch for cluster changes.
 package cluster
 
+// RebalanceCallback connects cluster with its caller when leader decides to rebalance.
+type RebalanceCallback func(Decision)
+
 // Controller is the contral brain of dbus cluster, which assigns resource tickets
 // to participants.
 //
@@ -15,12 +18,6 @@ type Controller interface {
 	// Start startup the controller and start election across the cluster.
 	Start() error
 
-	// Close closes the controller underlying connection and do all the related cleanup.
-	Close() error
-
-	// IsLeader returns whether current participant is leader of the cluster.
-	IsLeader() bool
-
-	// RegisterResources notifies the controller all configured resources.
-	RegisterResources([]string) error
+	// Stop closes the controller underlying connection and do all the related cleanup.
+	Stop() error
 }

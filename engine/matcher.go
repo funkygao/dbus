@@ -9,19 +9,19 @@ type matcher struct {
 }
 
 func newMatcher(matches []string, r FilterOutputRunner) *matcher {
-	this := new(matcher)
-	this.matches = make(map[string]bool)
-	for _, m := range matches {
-		this.matches[m] = true
+	m := new(matcher)
+	m.matches = make(map[string]bool)
+	for _, match := range matches {
+		m.matches[match] = true
 	}
-	this.runner = r
-	return this
+	m.runner = r
+	return m
 }
 
-func (this *matcher) InChan() chan *Packet {
-	return this.runner.InChan()
+func (m *matcher) InChan() chan *Packet {
+	return m.runner.InChan()
 }
 
-func (this *matcher) Match(pack *Packet) bool {
-	return this.matches[pack.Ident]
+func (m *matcher) Match(pack *Packet) bool {
+	return m.matches[pack.Ident]
 }

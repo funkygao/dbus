@@ -28,7 +28,7 @@ Usage: %s status [options]
 
 Options:
 
-    -z zone   
+    -z zone
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

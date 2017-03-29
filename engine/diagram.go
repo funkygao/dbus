@@ -7,11 +7,11 @@ import (
 )
 
 // ExportDiagram exports the pipeline dependencies to a diagram.
-func (this *Engine) ExportDiagram(outfile string) {
-	this.exportPipeline(outfile, "png", "dot", "72", "-Gsize=10,5 -Gdpi=200")
+func (e *Engine) ExportDiagram(outfile string) {
+	e.exportPipeline(outfile, "png", "dot", "72", "-Gsize=10,5 -Gdpi=200")
 }
 
-func (this *Engine) exportPipeline(outfile string, format string, layout string, scale string, more string) {
+func (e *Engine) exportPipeline(outfile string, format string, layout string, scale string, more string) {
 	dot := `digraph dbus {
     rankdir=LR
     node[width=1 fixedsize=true shape=circle style=filled fillcolor="darkorchid1" ]
@@ -21,12 +21,12 @@ func (this *Engine) exportPipeline(outfile string, format string, layout string,
 	lonelyInputs := make(map[string]struct{})
 	lonelyFilters := make(map[string]struct{})
 
-	for in := range this.InputRunners {
+	for in := range e.InputRunners {
 		lonelyInputs[in] = struct{}{}
 	}
 
 	// filter matchers
-	for _, m := range this.router.filterMatchers {
+	for _, m := range e.router.filterMatchers {
 		lonelyFilters[m.runner.Name()] = struct{}{}
 
 		for source := range m.matches {
@@ -38,7 +38,7 @@ func (this *Engine) exportPipeline(outfile string, format string, layout string,
 	}
 
 	// output matchers
-	for _, m := range this.router.outputMatchers {
+	for _, m := range e.router.outputMatchers {
 		for source := range m.matches {
 			link := fmt.Sprintf(`%s -> %s [label="Output"]`, source, m.runner.Name())
 			dot += "\r\n" + link

@@ -2,50 +2,58 @@ package zk
 
 import (
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
 )
 
 var (
-	_ zkclient.ZkStateListener = &controller{}
 	_ cluster.Controller       = &controller{}
+	_ cluster.Manager          = &controller{}
+	_ zkclient.ZkStateListener = &controller{}
 )
 
 type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
 
-	participantID string // in the form of host:port
-	weight        int
+	participant cluster.Participant
+	leaderID    string
 
-	leaderID string
+	hc      *healthCheck
+	elector *leaderElector
 
-	pcl zkclient.ZkChildListener
-	rcl zkclient.ZkChildListener
-	lcl zkclient.ZkDataListener
+	pcl zkclient.ZkChildListener // leader watches alive participants
+	rcl zkclient.ZkChildListener // leader watches resources
 
 	// only when participant is leader will this callback be triggered.
-	onRebalance func(decision map[string][]string)
+	onRebalance cluster.RebalanceCallback
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func New(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
+func NewController(zkSvr string, participant cluster.Participant, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
 	if len(zkSvr) == 0 {
 		panic("invalid zkSvr")
 	}
-	if err := validateParticipantID(participantID); err != nil {
-		panic(err)
+	if !participant.Valid() {
+		panic("invalid participant")
 	}
 
 	return &controller{
-		kb:            newKeyBuilder(),
-		participantID: participantID,
-		weight:        weight,
-		onRebalance:   onRebalance,
-		zc:            zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+		kb:          newKeyBuilder(),
+		participant: participant,
+		onRebalance: onRebalance,
+		zc:          zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+	}
+}
+
+// NewManager creates a manager that will manages the cluster.
+func NewManager(zkSvr string) cluster.Manager {
+	return &controller{
+		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
 }
 
@@ -67,27 +75,9 @@ func (c *controller) connectToZookeeper() (err error) {
 	return
 }
 
-func (c *controller) RegisterResources(resources []string) error {
-	for _, resource := range resources {
-		if err := c.zc.CreateEmptyPersistentIfNotPresent(c.kb.resource(resource)); err != nil {
-			return err
-		}
-	}
-
-	if c.IsLeader() {
-		log.Trace("[%s] trigger reblance: new resources registered", c.participantID)
-		c.rebalance()
-	}
-
-	return nil
-}
-
 func (c *controller) Start() (err error) {
-	c.lcl = newLeaderChangeListener(c)
 	c.pcl = newParticipantChangeListener(c)
 	c.rcl = newResourceChangeListener(c)
-
-	c.zc.SubscribeStateChanges(c)
 
 	if err = c.connectToZookeeper(); err != nil {
 		return
@@ -99,17 +89,40 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
+	c.hc = newHealthCheck(c.participant, c.zc, c.kb)
+	c.hc.startup()
+
+	c.zc.SubscribeStateChanges(c)
+
+	c.elector = newLeaderElector(c, c.onBecomingLeader, c.onResigningAsLeader)
+	c.elector.startup()
+
 	return
 }
 
-func (c *controller) Close() (err error) {
-	c.zc.Delete(c.kb.participant(c.participantID))
+func (c *controller) Stop() (err error) {
+	// will delete all ephemeral znodes:
+	// participant, controller if leader
 	c.zc.Disconnect()
-	log.Trace("[%s] controller stopped", c.participantID)
+
+	c.elector.close()
+	c.hc.close()
+
+	log.Trace("[%s] controller stopped", c.participant)
 	return
 }
 
-func (c *controller) IsLeader() bool {
-	// TODO refresh leader id?
-	return c.leaderID == c.participantID
+func (c *controller) amLeader() bool {
+	return c.elector.amLeader()
+}
+
+func (c *controller) HandleNewSession() (err error) {
+	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participant)
+	c.onResigningAsLeader()
+	c.elector.elect()
+	return
+}
+
+func (c *controller) HandleStateChanged(state zk.State) (err error) {
+	return
 }

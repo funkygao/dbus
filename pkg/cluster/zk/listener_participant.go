@@ -18,7 +18,12 @@ func newParticipantChangeListener(ctx *controller) *participantChangeListener {
 }
 
 func (p *participantChangeListener) HandleChildChange(parentPath string, lastChilds []string) error {
-	log.Trace("[%s] participants changed, trigger rebalance", p.ctx.participantID)
-	p.ctx.rebalance()
+	if !p.ctx.amLeader() {
+		log.Warn("[%s] was leader but resigned now", p.ctx.participant)
+		return nil
+	}
+
+	log.Trace("[%s] participants changed, trigger rebalance", p.ctx.participant)
+	p.ctx.doRebalance()
 	return nil
 }

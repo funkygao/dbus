@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	slaveRoot = "/dbus/myslave"
+	slaveRoot = "/dbus/pkg/myslave"
 )
 
 func posPath(masterAddr string) string {

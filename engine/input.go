@@ -39,9 +39,6 @@ type InputRunner interface {
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
 
-	// DeclareResource declares the current Input plugin is interested in the specified resource.
-	DeclareResource(resources ...string) error
-
 	// RebalanceChannel returns a channel that notifies client every reblance event.
 	RebalanceChannel() chan struct{}
 
@@ -83,14 +80,6 @@ func (ir *iRunner) InChan() chan *Packet {
 
 func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
-}
-
-func (ir *iRunner) DeclareResource(resources ...string) error {
-	if !Globals().ClusterEnabled {
-		return ErrClusterDisabled
-	}
-
-	return ir.engine.DeclareResource(ir.Name(), resources)
 }
 
 func (ir *iRunner) LeadingResources() []string {
