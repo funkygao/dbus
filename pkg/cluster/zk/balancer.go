@@ -1,7 +1,7 @@
 package zk
 
 import (
-	//"sort"
+	"sort"
 
 	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
@@ -34,20 +34,15 @@ func (c *controller) doRebalance() {
 }
 
 func assignResourcesToParticipants(participants []cluster.Participant, resources []cluster.Resource) (decision cluster.Decision) {
-	decision = cluster.MakeDecision()
+	sortedParticipants := cluster.Participants(participants)
+	sortedResources := cluster.Resources(resources)
+	sort.Sort(sortedParticipants)
+	sort.Sort(sortedResources)
 
 	rLen, pLen := len(resources), len(participants)
-	if pLen == 0 || rLen == 0 {
-		// FIXME if pLen>0 && rLen==0, should not return
-		return
-	}
-
-	/*
-		sort.Strings(participants)
-		sort.Strings(resources)*/
-
 	nResourcesPerParticipant, nparticipantsWithExtraResource := rLen/pLen, rLen%pLen
 
+	decision = cluster.MakeDecision()
 	for pid := 0; pid < pLen; pid++ {
 		extraN := 1
 		if pid+1 > nparticipantsWithExtraResource {
@@ -57,12 +52,13 @@ func assignResourcesToParticipants(participants []cluster.Participant, resources
 		nResources := nResourcesPerParticipant + extraN
 		startResourceIdx := nResourcesPerParticipant*pid + min(pid, nparticipantsWithExtraResource)
 		for j := startResourceIdx; j < startResourceIdx+nResources; j++ {
-			if _, present := decision[participants[pid]]; !present {
-				decision[participants[pid]] = make([]cluster.Resource, 0)
+			if _, present := decision[sortedParticipants[pid]]; !present {
+				decision[sortedParticipants[pid]] = make([]cluster.Resource, 0)
 			}
-			decision[participants[pid]] = append(decision[participants[pid]], resources[j])
+			decision[sortedParticipants[pid]] = append(decision[sortedParticipants[pid]], sortedResources[j])
 		}
 	}
+
 	return
 }
 
