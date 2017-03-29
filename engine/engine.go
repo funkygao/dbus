@@ -167,7 +167,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	Globals().Conf = cf
 
 	if Globals().ClusterEnabled {
-		e.controller = czk.New(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
+		e.controller = czk.NewController(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
 	}
 
 	// 'plugins' section
@@ -421,7 +421,7 @@ func (e *Engine) ServeForever() (ret error) {
 	if globals.ClusterEnabled {
 		e.stopRPCServer()
 
-		if err = e.controller.Close(); err != nil {
+		if err = e.controller.Stop(); err != nil {
 			log.Error("%v", err)
 		}
 	}
