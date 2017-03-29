@@ -52,6 +52,13 @@ func init() {
 			}, nil
 		},
 
+		"participants": func() (cli.Command, error) {
+			return &command.Participants{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"binlog": func() (cli.Command, error) {
 			return &command.Binlog{
 				Ui:  ui,
