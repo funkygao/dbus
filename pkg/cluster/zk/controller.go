@@ -2,12 +2,14 @@ package zk
 
 import (
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
 )
 
 var (
-	_ cluster.Controller = &controller{}
+	_ cluster.Controller       = &controller{}
+	_ zkclient.ZkStateListener = &controller{}
 )
 
 type controller struct {
@@ -19,11 +21,11 @@ type controller struct {
 
 	leaderID string
 
-	hc *healthCheck
+	hc      *healthCheck
+	elector *leaderElector
 
-	pcl zkclient.ZkChildListener
-	rcl zkclient.ZkChildListener
-	lcl zkclient.ZkDataListener
+	pcl zkclient.ZkChildListener // leader watches alive participants
+	rcl zkclient.ZkChildListener // leader watches resources
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance func(decision map[string][]string)
@@ -79,7 +81,6 @@ func (c *controller) RegisterResources(resources []string) error {
 }
 
 func (c *controller) Start() (err error) {
-	c.lcl = newLeaderChangeListener(c)
 	c.pcl = newParticipantChangeListener(c)
 	c.rcl = newResourceChangeListener(c)
 
@@ -93,20 +94,36 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
-	c.hc = newHealthCheck(c)
+	c.hc = newHealthCheck(c.participantID, c.zc, c.kb)
 	c.hc.startup()
+
+	c.zc.SubscribeStateChanges(c)
+
+	c.elector = newLeaderElector(c, c.onBecomingLeader, c.onResigningAsLeader)
+	c.elector.startup()
 
 	return
 }
 
 func (c *controller) Close() (err error) {
-	c.zc.Delete(c.kb.participant(c.participantID))
+	// will delete all ephemeral znodes:
+	// participant, controller if leader
 	c.zc.Disconnect()
+
+	c.elector.close()
+	c.hc.close()
+
 	log.Trace("[%s] controller stopped", c.participantID)
 	return
 }
 
-func (c *controller) IsLeader() bool {
-	// TODO refresh leader id?
-	return c.leaderID == c.participantID
+func (c *controller) HandleNewSession() (err error) {
+	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participantID)
+	c.onResigningAsLeader()
+	c.elector.elect()
+	return
+}
+
+func (c *controller) HandleStateChanged(state zk.State) (err error) {
+	return
 }

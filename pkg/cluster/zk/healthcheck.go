@@ -29,13 +29,15 @@ func (h *healthCheck) startup() {
 	h.register()
 }
 
+func (h *healthCheck) close() {}
+
 func (h *healthCheck) register() {
 	if err := h.CreateLiveNode(h.participant(h.participantID), nil, 2); err != nil {
 		// 2 same participant running?
 		panic(err)
 	}
 
-	log.Trace("[%s] alive", h.participantID)
+	log.Trace("[%s] come alive!", h.participantID)
 }
 
 func (h *healthCheck) HandleNewSession() (err error) {
