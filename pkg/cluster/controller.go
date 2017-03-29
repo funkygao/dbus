@@ -3,6 +3,9 @@
 // It rebalances resources to participants and watch for cluster changes.
 package cluster
 
+// RebalanceCallback connects cluster with its caller when leader decides to rebalance.
+type RebalanceCallback func(Decision)
+
 // Controller is the contral brain of dbus cluster, which assigns resource tickets
 // to participants.
 //

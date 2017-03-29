@@ -17,10 +17,8 @@ type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
 
-	participantID string // in the form of host:port
-	weight        int
-
-	leaderID string
+	participant cluster.Participant
+	leaderID    string
 
 	hc      *healthCheck
 	elector *leaderElector
@@ -29,27 +27,26 @@ type controller struct {
 	rcl zkclient.ZkChildListener // leader watches resources
 
 	// only when participant is leader will this callback be triggered.
-	onRebalance func(decision map[string][]string)
+	onRebalance cluster.RebalanceCallback
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func NewController(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
+func NewController(zkSvr string, participant cluster.Participant, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
 	if len(zkSvr) == 0 {
 		panic("invalid zkSvr")
 	}
-	if err := validateParticipantID(participantID); err != nil {
-		panic(err)
+	if !participant.Valid() {
+		panic("invalid participant")
 	}
 
 	return &controller{
-		kb:            newKeyBuilder(),
-		participantID: participantID,
-		weight:        weight,
-		onRebalance:   onRebalance,
-		zc:            zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+		kb:          newKeyBuilder(),
+		participant: participant,
+		onRebalance: onRebalance,
+		zc:          zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
 }
 
@@ -92,7 +89,7 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
-	c.hc = newHealthCheck(c.participantID, c.zc, c.kb)
+	c.hc = newHealthCheck(c.participant, c.zc, c.kb)
 	c.hc.startup()
 
 	c.zc.SubscribeStateChanges(c)
@@ -111,7 +108,7 @@ func (c *controller) Stop() (err error) {
 	c.elector.close()
 	c.hc.close()
 
-	log.Trace("[%s] controller stopped", c.participantID)
+	log.Trace("[%s] controller stopped", c.participant)
 	return
 }
 
@@ -120,7 +117,7 @@ func (c *controller) amLeader() bool {
 }
 
 func (c *controller) HandleNewSession() (err error) {
-	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participantID)
+	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participant)
 	c.onResigningAsLeader()
 	c.elector.elect()
 	return

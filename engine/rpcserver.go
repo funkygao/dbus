@@ -12,7 +12,7 @@ import (
 func (e *Engine) launchRPCServer() {
 	e.rpcRouter = mux.NewRouter()
 	e.rpcServer = &http.Server{
-		Addr:         e.participantID,
+		Addr:         e.participant.Endpoint,
 		Handler:      e.rpcRouter,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,

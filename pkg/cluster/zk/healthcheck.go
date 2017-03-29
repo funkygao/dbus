@@ -1,6 +1,7 @@
 package zk
 
 import (
+	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
@@ -15,13 +16,13 @@ var (
 // Right now our definition of health is fairly naive. If we register in zk we are healthy, otherwise
 // we are dead.
 type healthCheck struct {
-	participantID string
+	p cluster.Participant
 	*zkclient.Client
 	*keyBuilder
 }
 
-func newHealthCheck(participantID string, zc *zkclient.Client, kb *keyBuilder) *healthCheck {
-	return &healthCheck{Client: zc, keyBuilder: kb, participantID: participantID}
+func newHealthCheck(p cluster.Participant, zc *zkclient.Client, kb *keyBuilder) *healthCheck {
+	return &healthCheck{Client: zc, keyBuilder: kb, p: p}
 }
 
 func (h *healthCheck) startup() {
@@ -32,12 +33,12 @@ func (h *healthCheck) startup() {
 func (h *healthCheck) close() {}
 
 func (h *healthCheck) register() {
-	if err := h.CreateLiveNode(h.participant(h.participantID), nil, 2); err != nil {
+	if err := h.CreateLiveNode(h.participant(h.p.Endpoint), h.p.Marshal(), 2); err != nil {
 		// 2 same participant running?
 		panic(err)
 	}
 
-	log.Trace("[%s] come alive!", h.participantID)
+	log.Trace("[%s] come alive!", h.p)
 }
 
 func (h *healthCheck) HandleNewSession() (err error) {
@@ -46,6 +47,6 @@ func (h *healthCheck) HandleNewSession() (err error) {
 }
 
 func (h *healthCheck) HandleStateChanged(state zk.State) (err error) {
-	log.Trace("[%s] %s", h.participantID, state)
+	log.Trace("[%s] %s", h.p, state)
 	return
 }

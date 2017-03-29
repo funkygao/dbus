@@ -37,10 +37,8 @@ type Engine struct {
 	// Engine will load json config file
 	*conf.Conf
 
-	participantID string
-	roi           map[string]string // resource of interest resource:input
-	roiMu         sync.RWMutex
-	controller    cluster.Controller
+	participant cluster.Participant
+	controller  cluster.Controller
 
 	// API Server
 	apiListener net.Listener
@@ -85,11 +83,11 @@ func New(globals *GlobalConfig) *Engine {
 		panic(err)
 	}
 
-	ip, err := ctx.LocalIP()
+	// make the participant
+	localIP, err := ctx.LocalIP()
 	if err != nil {
 		panic(err)
 	}
-	participantID := fmt.Sprintf("%s:%d", ip.String(), globals.RPCPort)
 
 	return &Engine{
 		InputRunners:   make(map[string]*iRunner),
@@ -106,11 +104,13 @@ func New(globals *GlobalConfig) *Engine {
 
 		httpPaths: make([]string, 0, 6),
 
-		pid:           os.Getpid(),
-		hostname:      hostname,
-		stopper:       make(chan struct{}),
-		participantID: participantID,
-		roi:           make(map[string]string),
+		pid:      os.Getpid(),
+		hostname: hostname,
+		stopper:  make(chan struct{}),
+		participant: cluster.Participant{
+			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
+			Weight:   runtime.NumCPU() * 100,
+		},
 	}
 }
 
@@ -118,10 +118,6 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Lock()
 	e.InputRunners[name] = nil
 	e.Unlock()
-}
-
-func (e *Engine) participantWeight() int {
-	return runtime.NumCPU() * 100
 }
 
 // Leader returns the cluster leader RPC address.
@@ -167,7 +163,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	Globals().Conf = cf
 
 	if Globals().ClusterEnabled {
-		e.controller = czk.NewController(zkSvr, e.participantID, e.participantWeight(), e.onControllerRebalance)
+		e.controller = czk.NewController(zkSvr, e.participant, e.onControllerRebalance)
 	}
 
 	// 'plugins' section
@@ -283,7 +279,7 @@ func (e *Engine) ServeForever() (ret error) {
 		if err = e.controller.Start(); err != nil {
 			panic(err)
 		}
-		log.Info("[%s] controller started", e.participantID)
+		log.Info("[%s] controller started", e.participant)
 	}
 
 	if telemetry.Default != nil {

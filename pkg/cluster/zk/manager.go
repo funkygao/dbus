@@ -1,28 +1,8 @@
 package zk
 
-func (c *controller) RegisterResource(input string, resource string) error {
-	return c.zc.CreatePersistent(c.kb.resource(resource), []byte(input))
-}
-
-func (c *controller) RegisteredResources() (map[string][]string, error) {
-	resources, inputs, err := c.zc.ChildrenValues(c.kb.resources())
-	if err != nil {
-		return nil, err
-	}
-
-	r := make(map[string][]string)
-	for i, encodedResource := range resources {
-		res, _ := c.kb.decodeResource(encodedResource)
-		input := string(inputs[i])
-		if _, present := r[input]; !present {
-			r[input] = []string{res}
-		} else {
-			r[input] = append(r[input], res)
-		}
-	}
-
-	return r, nil
-}
+import (
+	"github.com/funkygao/dbus/pkg/cluster"
+)
 
 func (c *controller) Open() error {
 	return c.connectToZookeeper()
@@ -30,4 +10,45 @@ func (c *controller) Open() error {
 
 func (c *controller) Close() {
 	c.zc.Disconnect()
+}
+
+func (c *controller) RegisterResource(resource cluster.Resource) error {
+	return c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal())
+}
+
+func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
+	resources, marshalled, err := c.zc.ChildrenValues(c.kb.resources())
+	if err != nil {
+		return nil, err
+	}
+
+	r := make([]cluster.Resource, 0)
+	for i, encodedResource := range resources {
+		model := cluster.Resource{}
+		model.From(marshalled[i])
+		res, _ := c.kb.decodeResource(encodedResource)
+		model.Name = res
+
+		r = append(r, model)
+	}
+
+	return r, nil
+}
+
+func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
+	participants, marshalled, err := c.zc.ChildrenValues(c.kb.participants())
+	if err != nil {
+		return nil, err
+	}
+
+	r := make([]cluster.Participant, 0)
+	for i, participant := range participants {
+		model := cluster.Participant{}
+		model.From(marshalled[i])
+		model.Endpoint = participant
+
+		r = append(r, model)
+	}
+
+	return r, nil
 }

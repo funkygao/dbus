@@ -42,29 +42,29 @@ func (l *leaderElector) fetchLeaderID() string {
 }
 
 func (l *leaderElector) elect() (win bool) {
-	log.Trace("[%s] elect...", l.participantID)
+	log.Trace("[%s] elect...", l.participant)
 
 	// we can get here during the initial startup and the HandleDataDeleted callback.
 	// because of the potential race condition, it's possible that the leader has already
 	// been elected when we get here.
 	l.leaderID = l.fetchLeaderID()
 	if l.leaderID != "" {
-		log.Trace("[%s] found leader: %s", l.participantID, l.leaderID)
+		log.Trace("[%s] found leader: %s", l.participant, l.leaderID)
 		return
 	}
 
-	if err := l.zc.CreateLiveNode(l.kb.controller(), []byte(l.participantID), 2); err == nil {
-		log.Trace("[%s] elect win!", l.participantID)
+	if err := l.zc.CreateLiveNode(l.kb.controller(), l.participant.Marshal(), 2); err == nil {
+		log.Trace("[%s] elect win!", l.participant)
 
 		win = true
-		l.leaderID = l.participantID
+		l.leaderID = l.participant.Endpoint
 		l.onBecomingLeader()
 	} else {
-		log.Trace("[%s] lose win :-)", l.participantID)
+		log.Trace("[%s] lose win :-)", l.participant)
 
 		l.leaderID = l.fetchLeaderID() // refresh
 		if l.leaderID == "" {
-			log.Warn("[%s] a leader has been elected but just resigned, this will lead to another round of election", l.participantID)
+			log.Warn("[%s] a leader has been elected but just resigned, this will lead to another round of election", l.participant)
 		}
 	}
 
@@ -78,12 +78,12 @@ func (l *leaderElector) close() {
 }
 
 func (l *leaderElector) amLeader() bool {
-	return l.leaderID == l.participantID
+	return l.leaderID == l.participant.Endpoint
 }
 
 func (l *leaderElector) HandleDataChange(dataPath string, lastData []byte) error {
 	l.leaderID = l.fetchLeaderID()
-	log.Trace("[%s] new leader is %s", l.participantID, l.leaderID)
+	log.Trace("[%s] new leader is %s", l.participant, l.leaderID)
 	return nil
 }
 
