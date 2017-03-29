@@ -27,6 +27,7 @@ type MySlave struct {
 	Predicate func(schema, table string) bool
 	GTID      bool // global tx id
 
+	dsn          string
 	masterAddr   string
 	host         string
 	port         uint16
@@ -41,8 +42,9 @@ type MySlave struct {
 }
 
 // New creates a MySlave instance.
-func New() *MySlave {
+func New(dsn string) *MySlave {
 	return &MySlave{
+		dsn:        dsn,
 		dbExcluded: map[string]struct{}{},
 		dbAllowed:  map[string]struct{}{},
 	}
@@ -55,7 +57,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	var err error
 	var dbs []string
 	var zone string
-	zone, m.host, m.port, m.user, m.passwd, dbs, err = ParseDSN(m.c.String("dsn", ""))
+	zone, m.host, m.port, m.user, m.passwd, dbs, err = ParseDSN(m.dsn)
 	if m.user == "" || zone == "" || m.host == "" || m.port == 0 || err != nil {
 		panic("invalid dsn")
 	}

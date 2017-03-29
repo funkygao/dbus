@@ -1,6 +1,9 @@
 // Package cluster provides helix-alike leader/standby model.
 //
 // It rebalances resources to participants and watch for cluster changes.
+//
+// The cluster changes might be:
+// participants come and go, resource added and deleted, leader change.
 package cluster
 
 // RebalanceCallback connects cluster with its caller when leader decides to rebalance.

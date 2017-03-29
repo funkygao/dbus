@@ -17,17 +17,13 @@ type MysqlbinlogInput struct {
 	stopChan       chan struct{}
 
 	slave *myslave.MySlave
-	dsn   string
+	cf    *conf.Conf
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
-	this.dsn = config.String("dsn", "")
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
+	this.cf = config
 	this.stopChan = make(chan struct{})
-	this.slave = myslave.New().LoadConfig(config)
-	if err := this.slave.AssertValidRowFormat(); err != nil {
-		panic(err)
-	}
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
@@ -60,7 +56,13 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	for {
 	RESTART_REPLICATION:
 
-		log.Trace("[%s] starting replication %+v...", name, r.LeadingResources()[0])
+		dsn := r.LeadingResources()[0].DSN()
+		log.Trace("[%s] starting replication %+v...", name, dsn)
+		this.slave = myslave.New(dsn).LoadConfig(this.cf)
+		if err := this.slave.AssertValidRowFormat(); err != nil {
+			panic(err)
+		}
+
 		if img, err := this.slave.BinlogRowImage(); err != nil {
 			log.Error("[%s] %v", name, err)
 		} else {

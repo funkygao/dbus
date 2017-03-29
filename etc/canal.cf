@@ -5,7 +5,6 @@
         {
             name: "in.binlog"
             class: "MysqlbinlogInput"
-            dsn: "local://root:@localhost:3306"
             db_excluded: ["bar", ]
         }            
 

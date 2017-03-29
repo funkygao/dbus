@@ -1,3 +1,4 @@
+// dbusd is the dbus daemon.
 package main
 
 import (
