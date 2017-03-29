@@ -29,7 +29,11 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	controller := czk.NewStandalone(ctx.ZoneZkAddrs(this.zone))
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
+	if err := mgr.Open(); err != nil {
+		panic(err)
+	}
+	defer mgr.Close()
 
 	if len(this.addResource) != 0 {
 		tuples := strings.SplitN(this.addResource, "-", 2)
@@ -38,12 +42,12 @@ func (this *Resources) Run(args []string) (exitCode int) {
 			return 2
 		}
 
-		this.doAddResource(controller, tuples[0], tuples[1])
+		this.doAddResource(mgr, tuples[0], tuples[1])
 		return
 	}
 
 	// list all resources
-	m, err := controller.RegisteredResources()
+	m, err := mgr.RegisteredResources()
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
@@ -60,8 +64,8 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	return
 }
 
-func (this *Resources) doAddResource(controller cluster.Controller, input, resource string) {
-	if err := controller.RegisterResource(input, resource); err != nil {
+func (this *Resources) doAddResource(mgr cluster.Manager, input, resource string) {
+	if err := mgr.RegisterResource(input, resource); err != nil {
 		this.Ui.Error(err.Error())
 	} else {
 		this.Ui.Info("ok")

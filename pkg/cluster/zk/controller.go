@@ -9,6 +9,7 @@ import (
 
 var (
 	_ cluster.Controller       = &controller{}
+	_ cluster.Manager          = &controller{}
 	_ zkclient.ZkStateListener = &controller{}
 )
 
@@ -32,7 +33,7 @@ type controller struct {
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func New(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
+func NewController(zkSvr string, participantID string, weight int, onRebalance func(decision map[string][]string)) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
@@ -52,14 +53,11 @@ func New(zkSvr string, participantID string, weight int, onRebalance func(decisi
 	}
 }
 
-// NewStandalone creates a controller that will not participate in the cluster election.
-// Used for resources definiation.
-func NewStandalone(zkSvr string) cluster.Controller {
-	c := &controller{
+// NewManager creates a manager that will manages the cluster.
+func NewManager(zkSvr string) cluster.Manager {
+	return &controller{
 		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
-	c.connectToZookeeper()
-	return c
 }
 
 func (c *controller) connectToZookeeper() (err error) {
@@ -78,30 +76,6 @@ func (c *controller) connectToZookeeper() (err error) {
 	}
 
 	return
-}
-
-func (c *controller) RegisterResource(input string, resource string) error {
-	return c.zc.CreatePersistent(c.kb.resource(resource), []byte(input))
-}
-
-func (c *controller) RegisteredResources() (map[string][]string, error) {
-	resources, inputs, err := c.zc.ChildrenValues(c.kb.resources())
-	if err != nil {
-		return nil, err
-	}
-
-	r := make(map[string][]string)
-	for i, encodedResource := range resources {
-		res, _ := c.kb.decodeResource(encodedResource)
-		input := string(inputs[i])
-		if _, present := r[input]; !present {
-			r[input] = []string{res}
-		} else {
-			r[input] = append(r[input], res)
-		}
-	}
-
-	return r, nil
 }
 
 func (c *controller) Start() (err error) {
@@ -129,7 +103,7 @@ func (c *controller) Start() (err error) {
 	return
 }
 
-func (c *controller) Close() (err error) {
+func (c *controller) Stop() (err error) {
 	// will delete all ephemeral znodes:
 	// participant, controller if leader
 	c.zc.Disconnect()
