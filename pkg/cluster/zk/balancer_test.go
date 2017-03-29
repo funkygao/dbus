@@ -9,11 +9,11 @@ import (
 
 func TestAssignResourcesToParticipants_Normal(t *testing.T) {
 	resources := []cluster.Resource{
-		cluster.Resource{Name: "a"},
-		cluster.Resource{Name: "b"},
-		cluster.Resource{Name: "c"},
-		cluster.Resource{Name: "d"},
-		cluster.Resource{Name: "e"},
+		{Name: "a"},
+		{Name: "b"},
+		{Name: "c"},
+		{Name: "d"},
+		{Name: "e"},
 	}
 	p1 := cluster.Participant{Endpoint: "1"}
 	p2 := cluster.Participant{Endpoint: "2"}

@@ -25,9 +25,9 @@ func TestParticipant(t *testing.T) {
 
 func TestParticipantsSort(t *testing.T) {
 	ps := []Participant{
-		Participant{Endpoint: "2"},
-		Participant{Endpoint: "1"},
-		Participant{Endpoint: "3"},
+		{Endpoint: "2"},
+		{Endpoint: "1"},
+		{Endpoint: "3"},
 	}
 	sorted := Participants(ps)
 	sort.Sort(sorted)
