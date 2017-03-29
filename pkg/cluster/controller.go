@@ -18,6 +18,10 @@ type Controller interface {
 	// Close closes the controller underlying connection and do all the related cleanup.
 	Close() error
 
-	// RegisterResources notifies the controller all configured resources.
-	RegisterResources([]string) error
+	// RegisterResource register a resource for an input plugin.
+	RegisterResource(input string, resource string) error
+
+	// RegisteredResources returns all the registered resource in the cluster.
+	// The return map is in the form of {input: []resource}
+	RegisteredResources() (map[string][]string, error)
 }

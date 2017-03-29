@@ -49,10 +49,6 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	name := r.Name()
 	backoff := time.Second * 5
 
-	if err := r.DeclareResource(this.dsn); err != nil {
-		return err
-	}
-
 	clusterRebalance := r.RebalanceChannel()
 	select {
 	case <-this.stopChan:

@@ -52,6 +52,16 @@ func New(zkSvr string, participantID string, weight int, onRebalance func(decisi
 	}
 }
 
+// NewStandalone creates a controller that will not participate in the cluster election.
+// Used for resources definiation.
+func NewStandalone(zkSvr string) cluster.Controller {
+	c := &controller{
+		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+	}
+	c.connectToZookeeper()
+	return c
+}
+
 func (c *controller) connectToZookeeper() (err error) {
 	log.Debug("connecting to zookeeper...")
 	if err = c.zc.Connect(); err != nil {
@@ -70,14 +80,28 @@ func (c *controller) connectToZookeeper() (err error) {
 	return
 }
 
-func (c *controller) RegisterResources(resources []string) error {
-	for _, resource := range resources {
-		if err := c.zc.CreateEmptyPersistentIfNotPresent(c.kb.resource(resource)); err != nil {
-			return err
+func (c *controller) RegisterResource(input string, resource string) error {
+	return c.zc.CreatePersistent(c.kb.resource(resource), []byte(input))
+}
+
+func (c *controller) RegisteredResources() (map[string][]string, error) {
+	resources, inputs, err := c.zc.ChildrenValues(c.kb.resources())
+	if err != nil {
+		return nil, err
+	}
+
+	r := make(map[string][]string)
+	for i, encodedResource := range resources {
+		res, _ := c.kb.decodeResource(encodedResource)
+		input := string(inputs[i])
+		if _, present := r[input]; !present {
+			r[input] = []string{res}
+		} else {
+			r[input] = append(r[input], res)
 		}
 	}
 
-	return nil
+	return r, nil
 }
 
 func (c *controller) Start() (err error) {
