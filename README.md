@@ -47,8 +47,9 @@ system mediation logic.
 - Systemic Quality
   - hot reload
   - dryrun throughput 1.9M packets/s
-- Cluster
+- Cluster Support
   - models of helix+kafka controller
+  - currently only leader/standby with sharding, without replica
   - easy to write a distributed plugin
 
 ### Getting Started
