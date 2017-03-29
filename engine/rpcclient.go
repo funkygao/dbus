@@ -20,5 +20,6 @@ func (e *Engine) callRPC(endpoint string, resources []cluster.Resource) int {
 	if err != nil {
 		return http.StatusBadRequest
 	}
+
 	return resp.StatusCode
 }

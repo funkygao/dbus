@@ -10,6 +10,13 @@ type Resource struct {
 	Name        string `json:"name,omitempty"`
 }
 
+// RPCResources unmarshals RPC reblance body into list of resource.
+func RPCResources(data []byte) []Resource {
+	r := make([]Resource, 0)
+	json.Unmarshal(data, &r)
+	return r
+}
+
 func (r *Resource) Marshal() []byte {
 	b, _ := json.Marshal(r)
 	return b

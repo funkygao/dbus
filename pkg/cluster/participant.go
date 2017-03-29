@@ -21,7 +21,7 @@ func (p *Participant) From(data []byte) {
 	json.Unmarshal(data, p)
 }
 
-func (p *Participant) String() string {
+func (p Participant) String() string {
 	return p.Endpoint
 }
 

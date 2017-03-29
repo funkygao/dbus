@@ -27,3 +27,9 @@ func TestResourcesSort(t *testing.T) {
 	assert.Equal(t, "2", sorted[1].Name)
 	assert.Equal(t, "3", sorted[2].Name)
 }
+
+func TestRPCResources(t *testing.T) {
+	rs := RPCResources([]byte(`[{"input_plugin":"in.binlog","name":"local://root:@localhost:3306"}]`))
+	assert.Equal(t, "local://root:@localhost:3306", rs[0].Name)
+	assert.Equal(t, "in.binlog", rs[0].InputPlugin)
+}

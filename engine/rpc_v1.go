@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
 )
 
@@ -28,43 +28,29 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var resources []string
-	if err = json.Unmarshal(buf, &resources); err != nil {
-		log.Error("%v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
+	resources := cluster.RPCResources(buf)
+	log.Trace("got resource: %v", resources)
+
+	// merge resources by input plugin name
+	resourceMap := make(map[string][]string) // inputName:resources
+	for _, res := range resources {
+		if _, present := resourceMap[res.InputPlugin]; !present {
+			resourceMap[res.InputPlugin] = []string{res.Name}
+		} else {
+			resourceMap[res.InputPlugin] = append(resourceMap[res.InputPlugin], res.Name)
+		}
 	}
 
-	/*
-		resourceMap := make(map[string][]string) // inputName:resources
-		for _, encodedResource := range resources {
-			inputName, resource := e.decodeResources(encodedResource)
-			inputName, ok := e.roi[resource]
-			if !ok {
-				// i,e. zk might found a resource that no input is interested in
-				log.Warn("[%s] resource[%s] not declared yet", e.participant, resource)
-				continue
-			}
-
-			if _, present := resourceMap[inputName]; !present {
-				resourceMap[inputName] = []string{resource}
-			} else {
-				resourceMap[inputName] = append(resourceMap[inputName], resource)
-			}
+	// dispatch decision to input plugins
+	for inputName, resources := range resourceMap {
+		ir, ok := e.InputRunners[inputName]
+		if !ok {
+			// should never happen
+			panic(inputName + " not found")
 		}
 
-		// now got the new resource<->input mapping
-		for inputName, resources := range resourceMap {
-			ir, ok := e.InputRunners[inputName]
-			if !ok {
-				// should never happen
-				log.Critical("%s not found", inputName)
-				continue
-			}
-
-			ir.feedResources(resources)
-			ir.rebalance()
-		}
-	*/
+		ir.feedResources(resources)
+		ir.rebalance()
+	}
 
 }

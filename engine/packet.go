@@ -18,6 +18,8 @@ type Payloader interface {
 }
 
 // Packet is the pipeline data structure that is transferred between plugins.
+//
+// TODO hide it to private.
 type Packet struct {
 	_padding0   [sys.CacheLineSize / 8]uint64 // avoid false sharing
 	recycleChan chan *Packet
