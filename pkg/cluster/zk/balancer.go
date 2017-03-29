@@ -30,7 +30,12 @@ func (c *controller) doRebalance() {
 		return
 	}
 
-	c.onRebalance(assignResourcesToParticipants(participants, resources))
+	newDecision := assignResourcesToParticipants(participants, resources)
+	if !newDecision.Equals(c.lastDecision) {
+		c.lastDecision = newDecision
+
+		c.onRebalance(newDecision)
+	}
 }
 
 func assignResourcesToParticipants(participants []cluster.Participant, resources []cluster.Resource) (decision cluster.Decision) {

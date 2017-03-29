@@ -20,6 +20,8 @@ type controller struct {
 	participant cluster.Participant
 	leaderID    string
 
+	lastDecision cluster.Decision
+
 	hc      *healthCheck
 	elector *leaderElector
 
