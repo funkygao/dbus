@@ -17,6 +17,10 @@ func RPCResources(data []byte) []Resource {
 	return r
 }
 
+func (r *Resource) DSN() string {
+	return r.Name
+}
+
 func (r *Resource) Marshal() []byte {
 	b, _ := json.Marshal(r)
 	return b
@@ -27,6 +31,11 @@ func (r *Resource) From(data []byte) {
 }
 
 type Resources []Resource
+
+func (rs Resources) Marshal() []byte {
+	b, _ := json.Marshal(rs)
+	return b
+}
 
 func (rs Resources) Len() int {
 	return len(rs)
