@@ -41,3 +41,17 @@ func (p *Participant) Valid() bool {
 
 	return true
 }
+
+type Participants []Participant
+
+func (ps Participants) Len() int {
+	return len(ps)
+}
+
+func (ps Participants) Less(i, j int) bool {
+	return ps[i].Endpoint < ps[j].Endpoint
+}
+
+func (ps Participants) Swap(i, j int) {
+	ps[i], ps[j] = ps[j], ps[i]
+}
