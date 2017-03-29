@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/gorequest"
 	log "github.com/funkygao/log4go"
@@ -27,7 +28,7 @@ func (e *Engine) onControllerRebalance(decision cluster.Decision) {
 func (e *Engine) callRPC(endpoint string, resources []cluster.Resource) int {
 	resp, _, err := gorequest.New().
 		Post(fmt.Sprintf("http://%s/v1/rebalance", endpoint)).
-		Set("User-Agent", "dbus").
+		Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).
 		SendString(string(cluster.Resources(resources).Marshal())).
 		End()
 	if err != nil {
