@@ -10,7 +10,8 @@ type Resource struct {
 	Name        string `json:"name,omitempty"`
 }
 
-// RPCResources unmarshals RPC reblance body into list of resource.
+// RPCResources is used by a participant that unmarshals RPC reblance body into list of resource.
+// It will get all the resources that the participant will lead.
 func RPCResources(data []byte) []Resource {
 	r := make([]Resource, 0)
 	json.Unmarshal(data, &r)
