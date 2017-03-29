@@ -20,6 +20,8 @@ type controller struct {
 	participant cluster.Participant
 	leaderID    string
 
+	lastDecision cluster.Decision
+
 	hc      *healthCheck
 	elector *leaderElector
 
@@ -28,10 +30,12 @@ type controller struct {
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance cluster.RebalanceCallback
+
+	strategyFunc cluster.StrategyFunc
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func NewController(zkSvr string, participant cluster.Participant, onRebalance cluster.RebalanceCallback) cluster.Controller {
+func NewController(zkSvr string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
@@ -41,12 +45,17 @@ func NewController(zkSvr string, participant cluster.Participant, onRebalance cl
 	if !participant.Valid() {
 		panic("invalid participant")
 	}
+	strategyFunc := cluster.GetStrategyFunc(strategy)
+	if strategyFunc == nil {
+		panic("strategy not implemented")
+	}
 
 	return &controller{
-		kb:          newKeyBuilder(),
-		participant: participant,
-		onRebalance: onRebalance,
-		zc:          zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+		kb:           newKeyBuilder(),
+		participant:  participant,
+		onRebalance:  onRebalance,
+		strategyFunc: strategyFunc,
+		zc:           zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}
 }
 

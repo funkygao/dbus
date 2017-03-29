@@ -11,6 +11,8 @@
                                                               
 yet another databus that transfer/transform pipeline data between plugins.
 
+You can think of dbus as logstash + flume + nifi + canal, with builtin cluster support and delivery guarantee.
+
 dbus is not yet a 1.0.
 We're writing more tests, fixing bugs, working on TODOs.
 
@@ -45,8 +47,9 @@ system mediation logic.
 - Systemic Quality
   - hot reload
   - dryrun throughput 1.9M packets/s
-- Cluster
+- Cluster Support
   - models of helix+kafka controller
+  - currently only leader/standby with sharding, without replica
   - easy to write a distributed plugin
 
 ### Getting Started
@@ -145,6 +148,7 @@ dbus uses zookeeper for sharding/balance/election.
   - [ ] engine shutdown, controller still send rpc
   - [ ] what if a participant encounters brain split
   - [ ] owner of resource
+  - [ ] epoch
 - [ ] batcher only retries after full batch ack'ed, add timer?
 - [ ] sharding binlog across the dbusd cluster
   - [ ] integration with helix

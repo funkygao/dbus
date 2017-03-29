@@ -28,6 +28,17 @@ func TestResourcesSort(t *testing.T) {
 	assert.Equal(t, "3", sorted[2].Name)
 }
 
+func TestResourcesMarshal(t *testing.T) {
+	rs := []Resource{
+		{Name: "2", InputPlugin: "input2"},
+		{Name: "1", InputPlugin: "input1"},
+		{Name: "3", InputPlugin: "input3"},
+	}
+	resources := Resources(rs)
+	assert.Equal(t, `[{"input_plugin":"input2","name":"2"},{"input_plugin":"input1","name":"1"},{"input_plugin":"input3","name":"3"}]`,
+		string(resources.Marshal()))
+}
+
 func TestRPCResources(t *testing.T) {
 	rs := RPCResources([]byte(`[{"input_plugin":"in.binlog","name":"local://root:@localhost:3306"}]`))
 	assert.Equal(t, "local://root:@localhost:3306", rs[0].Name)

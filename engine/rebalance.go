@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/gorequest"
 	log "github.com/funkygao/log4go"
 )
 
@@ -19,6 +22,18 @@ func (e *Engine) onControllerRebalance(decision cluster.Decision) {
 		} else {
 			log.Trace("[%s] rpc call ok [%s]", e.participant, participant.Endpoint)
 		}
-
 	}
+}
+
+func (e *Engine) callRPC(endpoint string, resources []cluster.Resource) int {
+	resp, _, err := gorequest.New().
+		Post(fmt.Sprintf("http://%s/v1/rebalance", endpoint)).
+		Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).
+		SendString(string(cluster.Resources(resources).Marshal())).
+		End()
+	if err != nil {
+		return http.StatusBadRequest
+	}
+
+	return resp.StatusCode
 }
