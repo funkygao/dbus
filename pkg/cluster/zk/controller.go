@@ -115,6 +115,10 @@ func (c *controller) Stop() (err error) {
 	return
 }
 
+func (c *controller) amLeader() bool {
+	return c.elector.amLeader()
+}
+
 func (c *controller) HandleNewSession() (err error) {
 	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participantID)
 	c.onResigningAsLeader()
