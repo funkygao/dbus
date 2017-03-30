@@ -12,7 +12,7 @@ type RebalanceCallback func(Decision)
 // Controller is the contral brain of the cluster, which assigns resource tickets
 // to participants.
 //
-// Controller works by assigning resources to participants if neccessary.
+// Controller works by assigning resources to participants if necessary.
 //
 // For dbus cluster to work, all dbus instances must share the same configuration,
 // using zookeeper as configuration repo is highly suggetsted.
