@@ -11,7 +11,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 	table := string(e.Table.Table)
 	if !m.Predicate(schema, table) {
 		log.Debug("[%s] ignored[%s.%s]: %+v %+v", m.masterAddr, schema, table, h, e)
-		m.p.MarkAsProcessed(f, h.LogPos) // FIXME batcher partial failure?
+		m.commitPosition(f, h.LogPos) // FIXME batcher partial failure?
 		return
 	}
 

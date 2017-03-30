@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/funkygao/dbus/pkg/checkpoint"
 	"github.com/funkygao/dbus/pkg/model"
 	log "github.com/funkygao/log4go"
 	uuid "github.com/satori/go.uuid"
@@ -22,7 +23,7 @@ func (m *MySlave) StopReplication() {
 
 	m.r.Close()
 
-	if err := m.p.Flush(); err != nil {
+	if err := m.p.Shutdown(); err != nil {
 		log.Error("[%s] flush: %s", m.name, err)
 	}
 
@@ -49,12 +50,14 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	})
 
 	// resume replication position from the checkpoint
-	file, offset, err := m.p.Committed()
-	if err != nil {
+	err := m.p.LastPersistedState(m.state)
+	if err != nil && err != checkpoint.ErrStateNotFound {
 		close(ready)
 		m.emitFatalError(err)
 		return
 	}
+
+	file, offset := m.state.File, m.state.Offset
 
 	var syncer *replication.BinlogStreamer
 	if m.GTID {
