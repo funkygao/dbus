@@ -9,6 +9,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
+// @deprecated
 func (m *MySlave) leaveCluster() {
 	path := myNodePath(m.masterAddr)
 	if err := m.z.Conn().Delete(path, -1); err != nil {
@@ -33,7 +34,7 @@ func (m *MySlave) leaveCluster() {
 	}
 }
 
-// TODO session expire
+// @deprecated
 func (m *MySlave) joinClusterAndBecomeMaster() {
 	// become present
 	backoff := time.Second

@@ -9,3 +9,5 @@ var (
 	ErrNotAllowed = errors.New("not allowed")
 	ErrStopping   = errors.New("stopping")
 )
+
+var InvalidPartitionID = int32(-1)

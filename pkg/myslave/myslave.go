@@ -2,9 +2,13 @@ package myslave
 
 import (
 	"fmt"
+	"path"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/pkg/checkpoint"
+	"github.com/funkygao/dbus/pkg/checkpoint/state/binlog"
+	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
@@ -15,12 +19,13 @@ import (
 
 // MySlave is a mimic mysql slave that replicates binlog from mysql master using IO thread.
 type MySlave struct {
-	c    *conf.Conf
-	r    *replication.BinlogSyncer
-	p    positioner
-	m    *slaveMetrics
-	z    *zk.ZkZone
-	conn *client.Conn
+	c     *conf.Conf
+	r     *replication.BinlogSyncer
+	p     checkpoint.Checkpoint
+	m     *slaveMetrics
+	z     *zk.ZkZone
+	conn  *client.Conn
+	state *binlog.BinlogState
 
 	name string
 
@@ -36,7 +41,7 @@ type MySlave struct {
 	dbAllowed  map[string]struct{}
 	dbExcluded map[string]struct{}
 
-	isMaster  sync2.AtomicBool
+	started   sync2.AtomicBool
 	errors    chan error
 	rowsEvent chan *model.RowsEvent
 }
@@ -47,6 +52,7 @@ func New(dsn string) *MySlave {
 		dsn:        dsn,
 		dbExcluded: map[string]struct{}{},
 		dbAllowed:  map[string]struct{}{},
+		state:      binlog.New(),
 	}
 }
 
@@ -82,7 +88,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 
 	m.m = newMetrics(m.host, m.port)
 	m.z = engine.Globals().GetOrRegisterZkzone(zone)
-	m.p = newPositionerZk(m.name, m.z, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+	m.p = czk.New(m.z, path.Join("myslave", m.masterAddr), m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }
@@ -120,7 +126,13 @@ func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
 		return nil
 	}
 
-	return m.p.MarkAsProcessed(r.Log, r.Position)
+	return m.commitPosition(r.Log, r.Position)
+}
+
+func (m *MySlave) commitPosition(file string, offset uint32) error {
+	m.state.File = file
+	m.state.Offset = offset
+	return m.p.Commit(m.state)
 }
 
 // Events returns the iterator of mysql binlog rows event.

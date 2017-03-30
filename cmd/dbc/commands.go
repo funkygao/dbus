@@ -38,6 +38,13 @@ func init() {
 			}, nil
 		},
 
+		"checkpoint": func() (cli.Command, error) {
+			return &command.Checkpoint{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"migrate": func() (cli.Command, error) {
 			return &command.Migrate{
 				Ui:  ui,

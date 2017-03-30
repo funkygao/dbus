@@ -25,7 +25,7 @@ type KafkaOutput struct {
 // Default kafka delivery: async WaitForAll.
 func (this *KafkaOutput) Init(config *conf.Conf) {
 	var err error
-	this.zone, this.cluster, this.topic, err = kafka.ParseDSN(config.String("dsn", ""))
+	this.zone, this.cluster, this.topic, _, err = kafka.ParseDSN(config.String("dsn", ""))
 	if err != nil || this.cluster == "" || this.zone == "" || this.topic == "" {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
@@ -89,7 +89,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	defer func() {
-		log.Trace("[%s.%s.%s] start draining...", this.zone, this.cluster, this.topic)
+		log.Trace("[%s.%s.%s] draining...", this.zone, this.cluster, this.topic)
 
 		if err := producer.Close(); err != nil {
 			log.Error("[%s.%s.%s] drain: %s", this.zone, this.cluster, this.topic, err)
