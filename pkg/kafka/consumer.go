@@ -8,7 +8,7 @@ import (
 // Consumer is a kafka low level consumer.
 type Consumer struct {
 	c sarama.Consumer
-	p sarama.PartitionConsumer
+	sarama.PartitionConsumer
 
 	topic       string
 	partitionID int32
@@ -38,15 +38,11 @@ func (c *Consumer) Start() error {
 		return err
 	}
 
-	c.p = p
+	c.PartitionConsumer = p
 	return nil
 }
 
 func (c *Consumer) Stop() error {
-	c.p.Close()
+	c.PartitionConsumer.Close()
 	return c.c.Close()
-}
-
-func (c *Consumer) Messages() <-chan *sarama.ConsumerMessage {
-	return c.p.Messages()
 }

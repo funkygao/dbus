@@ -56,6 +56,10 @@ func DefaultConfig() *Config {
 	cf.Producer.Flush.MaxMessages = 0 // unlimited
 	//cf.Producer.Flush.Bytes = 64 << 10
 
+	// consumer related
+	cf.Consumer.Return.Errors = true
+	cf.Consumer.MaxProcessingTime = time.Second * 2
+
 	return &Config{
 		Sarama: cf,
 		async:  true,
