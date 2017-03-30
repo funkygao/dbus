@@ -23,6 +23,11 @@ type checkpointZK struct {
 }
 
 func New(zkzone *zk.ZkZone, zpath string, interval time.Duration) checkpoint.Checkpoint {
+	if zpath[0] == '/' {
+		panic("absolute zpath not allowed")
+	}
+
+	zpath = realPath(zpath)
 	if err := zkzone.EnsurePathExists(path.Dir(zpath)); err != nil {
 		panic(err)
 	}
