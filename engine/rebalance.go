@@ -14,7 +14,7 @@ func (e *Engine) onControllerRebalance(decision cluster.Decision) {
 	log.Info("decision: %+v", decision)
 
 	for participant, resources := range decision {
-		log.Trace("[%s] rpc-> %s: %+v", e.participant, participant.Endpoint, resources)
+		log.Trace("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
 
 		if statusCode := e.callRPC(participant.Endpoint, resources); statusCode != http.StatusOK {
 			log.Error("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)

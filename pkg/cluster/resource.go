@@ -11,9 +11,9 @@ type Resource struct {
 	Cost        int    `json:"cost,omitempty"`
 }
 
-// RPCResources is used by a participant that unmarshals RPC reblance request body into list of resources.
+// UnmarshalRPCResources is used by a participant to unmarshal RPC reblance request body into list of resources.
 // It will get all the resources that the participant will lead.
-func RPCResources(data []byte) []Resource {
+func UnmarshalRPCResources(data []byte) []Resource {
 	r := make([]Resource, 0)
 	json.Unmarshal(data, &r)
 	return r
