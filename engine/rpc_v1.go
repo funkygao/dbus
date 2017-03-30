@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -46,7 +47,7 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		ir, ok := e.InputRunners[inputName]
 		if !ok {
 			// should never happen
-			panic(inputName + " not found")
+			panic(fmt.Sprintf("Input[%s] not found", inputName))
 		}
 
 		ir.feedResources(rs)

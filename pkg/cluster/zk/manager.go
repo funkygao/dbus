@@ -23,7 +23,7 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 	}
 
 	r := make([]cluster.Resource, 0)
-	for i, _ := range resources {
+	for i := range resources {
 		model := cluster.Resource{}
 		model.From(marshalled[i])
 
@@ -51,7 +51,7 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 	}
 
 	r := make([]cluster.Participant, 0)
-	for i, _ := range participants {
+	for i := range participants {
 		model := cluster.Participant{}
 		model.From(marshalled[i])
 
