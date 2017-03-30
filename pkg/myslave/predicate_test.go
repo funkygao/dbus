@@ -7,7 +7,7 @@ import (
 )
 
 func TestPredicate(t *testing.T) {
-	m := New()
+	m := New("")
 	m.setupPredicate()
 	assert.Equal(t, true, m.Predicate("db1", ""))
 
@@ -26,7 +26,7 @@ func TestPredicate(t *testing.T) {
 }
 
 func BenchmarkPredicateAllow(b *testing.B) {
-	m := New()
+	m := New("")
 	m.dbAllowed = map[string]struct{}{
 		"db2": {},
 	}
@@ -38,7 +38,7 @@ func BenchmarkPredicateAllow(b *testing.B) {
 }
 
 func BenchmarkPredicateDisallow(b *testing.B) {
-	m := New()
+	m := New("")
 	m.dbAllowed = map[string]struct{}{
 		"db1": {},
 	}
