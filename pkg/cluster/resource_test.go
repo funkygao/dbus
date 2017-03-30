@@ -39,8 +39,8 @@ func TestResourcesMarshal(t *testing.T) {
 		string(resources.Marshal()))
 }
 
-func TestRPCResources(t *testing.T) {
-	rs := RPCResources([]byte(`[{"input_plugin":"in.binlog","name":"local://root:@localhost:3306"}]`))
+func TestUnmarshalRPCResources(t *testing.T) {
+	rs := UnmarshalRPCResources([]byte(`[{"input_plugin":"in.binlog","name":"local://root:@localhost:3306"}]`))
 	assert.Equal(t, "local://root:@localhost:3306", rs[0].Name)
 	assert.Equal(t, "in.binlog", rs[0].InputPlugin)
 }

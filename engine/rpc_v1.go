@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -19,8 +20,8 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := make([]byte, r.ContentLength)
-	_, err := io.ReadFull(r.Body, buf)
+	body := make([]byte, r.ContentLength)
+	_, err := io.ReadFull(r.Body, body)
 	if err != nil {
 		log.Error("%v", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -28,7 +29,7 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resources := cluster.RPCResources(buf)
+	resources := cluster.UnmarshalRPCResources(body)
 	log.Trace("got %d resources: %v", len(resources), resources)
 
 	// merge resources by input plugin name
@@ -46,7 +47,7 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		ir, ok := e.InputRunners[inputName]
 		if !ok {
 			// should never happen
-			panic(inputName + " not found")
+			panic(fmt.Sprintf("Input[%s] not found", inputName))
 		}
 
 		ir.feedResources(rs)
