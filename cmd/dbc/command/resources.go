@@ -91,6 +91,9 @@ Options:
     -z zone
 
     -add input-resource
+      resource DSN
+      mysql zone://user:pass@host:port/db1,db2,...,dbn
+      kafka zone://cluster/topic#partition
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)
