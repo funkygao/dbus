@@ -65,7 +65,8 @@ format:
 	@find . -type f -name "*.go" -exec gofmt -s -w {} \;
 
 escape:
-	go build -gcflags '-m=1' ./...
+	go build -gcflags '-m=1' ./cmd/dbusd
+	@rm -f dbusd
 
 # Check if the source code has been formatted
 fmtcheck:
