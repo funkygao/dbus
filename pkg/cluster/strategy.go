@@ -13,6 +13,8 @@ const (
 
 	// StrategyWeightedRoundRobin is based upon StrategyRoundRobin while taking consideration of the weight.
 	StrategyWeightedRoundRobin Strategy = 2
+
+	StrategySticky = 3
 )
 
 var (
