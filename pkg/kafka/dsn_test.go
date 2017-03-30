@@ -39,6 +39,16 @@ func TestParseDSN(t *testing.T) {
 	assert.Equal(t, "orders", topic)
 	assert.Equal(t, int32(0), partitionID)
 
+	dsn = "prod://trade/orders#invalid"
+	zone, cluster, topic, partitionID, err = ParseDSN(dsn)
+	assert.Equal(t, InvalidPartitionID, partitionID)
+	assert.Equal(t, true, err != nil)
+
+	dsn = "prod://trade/orders#-9"
+	zone, cluster, topic, partitionID, err = ParseDSN(dsn)
+	assert.Equal(t, InvalidPartitionID, partitionID)
+	assert.Equal(t, true, err != nil)
+
 	// empty zone raises err
 	dsn = "trade/orders"
 	zone, cluster, topic, partitionID, err = ParseDSN(dsn)

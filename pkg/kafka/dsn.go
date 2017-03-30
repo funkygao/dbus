@@ -28,6 +28,10 @@ func ParseDSN(dsn string) (zone, cluster, topic string, partitionID int32, err e
 		if p, err = strconv.Atoi(u.Fragment); err != nil {
 			return
 		}
+		if p < 0 {
+			err = errors.New("partition id < 0")
+			return
+		}
 		partitionID = int32(p)
 	}
 
