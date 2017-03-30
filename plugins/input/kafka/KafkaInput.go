@@ -13,8 +13,6 @@ type KafkaInput struct {
 }
 
 func (this *KafkaInput) Init(config *conf.Conf) {
-	panic("Not implemented")
-
 	this.stopChan = make(chan struct{})
 }
 
