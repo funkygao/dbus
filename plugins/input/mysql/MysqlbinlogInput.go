@@ -57,7 +57,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	RESTART_REPLICATION:
 
 		dsn := r.LeadingResources()[0].DSN()
-		log.Trace("[%s] starting replication %+v...", name, dsn)
+		log.Trace("[%s] starting replication from %+v...", name, dsn)
 		this.slave = myslave.New(dsn).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {
 			panic(err)
@@ -122,6 +122,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					goto RESTART_REPLICATION
 
 				case <-clusterRebalance:
+					log.Trace("[%s] cluster rebalanced", name)
 					this.slave.StopReplication()
 					goto RESTART_REPLICATION
 

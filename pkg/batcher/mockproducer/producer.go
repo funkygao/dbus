@@ -55,7 +55,7 @@ func newProducer() *producer {
 }
 
 func (p *producer) Send(i int) {
-	p.batcher.Write(i)
+	p.batcher.Put(i)
 }
 
 func (p *producer) batcherWorker() {
@@ -63,7 +63,7 @@ func (p *producer) batcherWorker() {
 
 	history := make(map[int]struct{})
 	for {
-		msg, err := p.batcher.ReadOne()
+		msg, err := p.batcher.Get()
 		if err == batcher.ErrStopping {
 			close(p.kafkaOut)
 			break
