@@ -31,6 +31,12 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	}
 	defer mgr.Close()
 
+	controller, err := mgr.Controller()
+	if err != nil {
+		this.Ui.Error(err.Error())
+		return
+	}
+
 	// list all resources
 	ps, err := mgr.LiveParticipants()
 	if err != nil {
@@ -39,7 +45,11 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	}
 
 	for _, p := range ps {
-		this.Ui.Info(p.Endpoint)
+		if p.Equals(controller) {
+			this.Ui.Warn(p.Endpoint)
+		} else {
+			this.Ui.Info(p.Endpoint)
+		}
 	}
 
 	return

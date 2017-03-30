@@ -1,5 +1,9 @@
 // Package cluster provides helix-alike leader/standby model.
 //
+// A cluster is composed of 1) participants 2) predefined resources(shard-able), one
+// of the participant is the controller participant which assigns resources to
+// participants by RPC.
+//
 // It rebalances resources to participants and watch for cluster changes.
 //
 // The cluster changes might be:
@@ -9,10 +13,10 @@ package cluster
 // RebalanceCallback connects cluster with its caller when leader decides to rebalance.
 type RebalanceCallback func(Decision)
 
-// Controller is the contral brain of dbus cluster, which assigns resource tickets
+// Controller is the contral brain of the cluster, which assigns resource tickets
 // to participants.
 //
-// Controller works by assigning resources to participants according to the registry.
+// Controller works by assigning resources to participants if necessary.
 //
 // For dbus cluster to work, all dbus instances must share the same configuration,
 // using zookeeper as configuration repo is highly suggetsted.

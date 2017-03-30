@@ -35,6 +35,17 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 	return r, nil
 }
 
+func (c *controller) Controller() (cluster.Participant, error) {
+	var p cluster.Participant
+	data, err := c.zc.Get(c.kb.controller())
+	if err != nil {
+		return p, err
+	}
+
+	p.From(data)
+	return p, nil
+}
+
 func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 	participants, marshalled, err := c.zc.ChildrenValues(c.kb.participants())
 	if err != nil {

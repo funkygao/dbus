@@ -88,6 +88,8 @@ func (l *leaderElector) HandleDataChange(dataPath string, lastData []byte) error
 }
 
 func (l *leaderElector) HandleDataDeleted(dataPath string) error {
+	log.Trace("[%s] leader[%s] gone!", l.participant, l.leaderID)
+
 	if l.amLeader() {
 		l.onResigningAsLeader()
 	}

@@ -25,10 +25,7 @@ func assignRoundRobin(participants []Participant, resources []Resource) (decisio
 		nResources := nResourcesPerParticipant + extraN
 		startResourceIdx := nResourcesPerParticipant*pid + math.MinInt(pid, nparticipantsWithExtraResource)
 		for j := startResourceIdx; j < startResourceIdx+nResources; j++ {
-			if _, present := decision[sortedParticipants[pid]]; !present {
-				decision[sortedParticipants[pid]] = make([]Resource, 0)
-			}
-			decision[sortedParticipants[pid]] = append(decision[sortedParticipants[pid]], sortedResources[j])
+			decision.Assign(sortedParticipants[pid], sortedResources[j])
 		}
 	}
 
