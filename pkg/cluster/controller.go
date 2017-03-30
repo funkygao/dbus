@@ -1,5 +1,9 @@
 // Package cluster provides helix-alike leader/standby model.
 //
+// A cluster is composed of 1) participants 2) predefined resources(shard-able), one
+// of the participant is the controller participant which assigns resources to
+// participants by RPC.
+//
 // It rebalances resources to participants and watch for cluster changes.
 //
 // The cluster changes might be:

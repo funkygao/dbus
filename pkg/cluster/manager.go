@@ -18,4 +18,7 @@ type Manager interface {
 
 	// LiveParticipants returns currently online participants.
 	LiveParticipants() ([]Participant, error)
+
+	// Controller returns the controller participant.
+	Controller() (Participant, error)
 }

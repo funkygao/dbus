@@ -25,6 +25,10 @@ func (p Participant) String() string {
 	return p.Endpoint
 }
 
+func (p Participant) Equals(that Participant) bool {
+	return p.Endpoint == that.Endpoint
+}
+
 func (p *Participant) Valid() bool {
 	if strings.Contains(p.Endpoint, "/") {
 		return false

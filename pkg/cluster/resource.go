@@ -27,6 +27,10 @@ func (r *Resource) Marshal() []byte {
 	return b
 }
 
+func (r Resource) Equals(that Resource) bool {
+	return r.InputPlugin == that.InputPlugin && r.Name == that.Name
+}
+
 func (r *Resource) From(data []byte) {
 	json.Unmarshal(data, r)
 }
