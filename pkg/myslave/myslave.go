@@ -36,7 +36,7 @@ type MySlave struct {
 	dbAllowed  map[string]struct{}
 	dbExcluded map[string]struct{}
 
-	isMaster  sync2.AtomicBool
+	started   sync2.AtomicBool
 	errors    chan error
 	rowsEvent chan *model.RowsEvent
 }
