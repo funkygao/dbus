@@ -7,28 +7,28 @@ import (
 )
 
 var (
-	_ checkpoint.State = &state{}
+	_ checkpoint.State = &BinlogState{}
 )
 
-type state struct {
+type BinlogState struct {
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 }
 
-func New() *state {
-	return &state{}
+func New() *BinlogState {
+	return &BinlogState{}
 }
 
-func (s *state) Marshal() []byte {
+func (s *BinlogState) Marshal() []byte {
 	b, _ := json.Marshal(s)
 	return b
 }
 
-func (s *state) Unmarshal(data []byte) {
+func (s *BinlogState) Unmarshal(data []byte) {
 	json.Unmarshal(data, s)
 }
 
-func (s *state) Reset() {
+func (s *BinlogState) Reset() {
 	s.File = ""
 	s.Offset = 0
 }
