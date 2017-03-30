@@ -30,7 +30,9 @@ func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 	log.Trace("[%s] stopping...", r.Name())
 
 	close(this.stopChan)
-	this.slave.StopReplication()
+	if this.slave != nil {
+		this.slave.StopReplication()
+	}
 }
 
 func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
