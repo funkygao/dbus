@@ -23,11 +23,9 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 	}
 
 	r := make([]cluster.Resource, 0)
-	for i, encodedResource := range resources {
+	for i, _ := range resources {
 		model := cluster.Resource{}
 		model.From(marshalled[i])
-		res, _ := c.kb.decodeResource(encodedResource)
-		model.Name = res
 
 		r = append(r, model)
 	}
@@ -53,10 +51,9 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 	}
 
 	r := make([]cluster.Participant, 0)
-	for i, participant := range participants {
+	for i, _ := range participants {
 		model := cluster.Participant{}
 		model.From(marshalled[i])
-		model.Endpoint = participant
 
 		r = append(r, model)
 	}
