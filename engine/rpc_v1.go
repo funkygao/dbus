@@ -42,6 +42,22 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	e.irmMu.Lock()
+	defer e.irmMu.Unlock()
+
+	// find the 'to be idle' input plugins
+	for inputName := range e.irm {
+		if _, present := inputResourcesMap[inputName]; !present {
+			// will close this input
+			if ir, ok := e.InputRunners[inputName]; ok {
+				log.Trace("closing Input[%s]", inputName)
+				ir.feedResources(nil)
+			}
+		}
+	}
+
+	e.irm = inputResourcesMap
+
 	// dispatch decision to input plugins
 	for inputName, rs := range inputResourcesMap {
 		ir, ok := e.InputRunners[inputName]
