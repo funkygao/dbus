@@ -148,6 +148,7 @@ dbus uses zookeeper for sharding/balance/election.
 
 ### TODO
 
+- [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] engine shutdown, controller still send rpc
   - [ ] what if a participant encounters brain split

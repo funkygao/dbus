@@ -7,12 +7,12 @@ import (
 )
 
 func TestBinlogState(t *testing.T) {
-	s := New()
+	s := New("")
 	s.File = "f1"
 	s.Offset = 5
 	assert.Equal(t, `{"file":"f1","offset":5}`, string(s.Marshal()))
 
-	s.Reset()
+	s.reset()
 	assert.Equal(t, "", s.File)
 	assert.Equal(t, uint32(0), s.Offset)
 

@@ -39,6 +39,11 @@ func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
 	return this.slave
 }
 
+// used only for dbc: ugly design
+func (this *MysqlbinlogInput) ConnectMyslave(dsn string) {
+	this.slave = myslave.New(dsn).LoadConfig(this.cf)
+}
+
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
@@ -92,6 +97,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				// e,g.
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
+				// read initial handshake error, caused by Too many connections
 				log.Error("[%s] backoff %s: %v", name, backoff, err)
 				this.slave.StopReplication()
 

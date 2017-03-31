@@ -2,7 +2,6 @@ package myslave
 
 import (
 	"fmt"
-	"path"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -52,7 +51,7 @@ func New(dsn string) *MySlave {
 		dsn:        dsn,
 		dbExcluded: map[string]struct{}{},
 		dbAllowed:  map[string]struct{}{},
-		state:      binlog.New(),
+		state:      binlog.New(dsn),
 	}
 }
 
@@ -88,7 +87,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 
 	m.m = newMetrics(m.host, m.port)
 	m.z = engine.Globals().GetOrRegisterZkzone(zone)
-	m.p = czk.New(m.z, path.Join("myslave", m.masterAddr), m.c.Duration("pos_commit_interval", time.Second))
+	m.p = czk.New(m.z, m.state, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }

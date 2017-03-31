@@ -19,14 +19,16 @@ dispatch:buildrace
 complex:buildrace
 	./dbusd -conf ../../etc/complex.cf
 
-canal:build
+zkconf:
 	@cat ../../etc/canal.cf | zk set -p /dbus/conf
+
+canal:build zkconf
 	./dbusd -cluster
 
-c1:build
+c1:build zkconf
 	./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897
 
-c2:build
+c2:build zkconf
 	./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
 
 dump:buildrace

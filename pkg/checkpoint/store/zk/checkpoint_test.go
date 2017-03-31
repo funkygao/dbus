@@ -21,17 +21,18 @@ func init() {
 }
 
 func TestRealPath(t *testing.T) {
-	assert.Equal(t, "/dbus/checkpoint/myslave/12.12.1.2:3334", realPath("myslave/12.12.1.2:3334"))
+	s := binlog.New("")
+	assert.Equal(t, "/dbus/checkpoint/myslave/12.12.1.2:3334", realPath(s, "12.12.1.2:3334"))
 }
 
 func TestCheckpointZKBinlog(t *testing.T) {
 	zone := ctx.DefaultZone()
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-	zpath := "myslave/12.12.1.2:3334"
-	z := New(zkzone, zpath, time.Minute)
-	defer zkzone.DeleteRecursive(realPath(zpath))
+	s := binlog.New("")
+	zpath := "12.12.1.2:3334"
+	z := New(zkzone, s, zpath, time.Minute)
+	defer zkzone.DeleteRecursive(realPath(s, zpath))
 
-	s := binlog.New()
 	assert.Equal(t, checkpoint.ErrStateNotFound, z.LastPersistedState(s))
 
 	s.File = "f1"
@@ -39,7 +40,7 @@ func TestCheckpointZKBinlog(t *testing.T) {
 	assert.Equal(t, nil, z.Commit(s))
 	assert.Equal(t, nil, z.Shutdown())
 
-	s.Reset()
+	s = binlog.New("")
 	assert.Equal(t, nil, z.LastPersistedState(s))
 	assert.Equal(t, "f1", s.File)
 	assert.Equal(t, uint32(5), s.Offset)
