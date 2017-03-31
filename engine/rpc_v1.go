@@ -30,7 +30,7 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	resources := cluster.UnmarshalRPCResources(body)
-	log.Trace("got %d resources: %v", len(resources), resources)
+	log.Trace("local dispatching %d resources: %v", len(resources), resources)
 
 	// merge resources by input plugin name
 	inputResourcesMap := make(map[string][]cluster.Resource) // inputName:resources

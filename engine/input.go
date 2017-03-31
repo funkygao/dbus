@@ -40,11 +40,9 @@ type InputRunner interface {
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
 
-	// RebalanceChannel returns a channel that notifies client every reblance event.
-	RebalanceChannel() chan struct{}
-
-	// LeadingResources returns all the resources this InputRunner is leading.
-	LeadingResources() []cluster.Resource
+	// Resources returns a channel that notifies Input plugin of the newly assigned resources.
+	// The newly assigned resource might be empty, which means the Input plugin should stop consuming the resource.
+	Resources() <-chan []cluster.Resource
 }
 
 type iRunner struct {
@@ -52,8 +50,7 @@ type iRunner struct {
 
 	inChan chan *Packet
 
-	leadingResources []cluster.Resource
-	rebalanceCh      chan struct{}
+	resourcesCh chan []cluster.Resource
 }
 
 func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
@@ -62,7 +59,7 @@ func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
-		rebalanceCh: make(chan struct{}, 1),
+		resourcesCh: make(chan []cluster.Resource, 2),
 	}
 }
 
@@ -83,17 +80,12 @@ func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
 }
 
-func (ir *iRunner) LeadingResources() []cluster.Resource {
-	return ir.leadingResources
-}
-
 func (ir *iRunner) feedResources(resources []cluster.Resource) {
-	ir.leadingResources = resources
-	ir.rebalanceCh <- struct{}{}
+	ir.resourcesCh <- resources
 }
 
-func (ir *iRunner) RebalanceChannel() chan struct{} {
-	return ir.rebalanceCh
+func (ir *iRunner) Resources() <-chan []cluster.Resource {
+	return ir.resourcesCh
 }
 
 func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
@@ -110,6 +102,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			log.Critical("[%s] %v\n%s", ir.Name(), err, string(debug.Stack()))
 		}
 
+		close(ir.resourcesCh)
 		wg.Done()
 	}()
 
