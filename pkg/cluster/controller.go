@@ -8,6 +8,27 @@
 //
 // The cluster changes might be:
 // participants come and go, resource added and deleted, leader change.
+//
+// The resource dispatch is layered dispatch mechanism:
+//
+//
+//                    +------------+
+//                    | controller |
+//                    +------------+
+//                         | participant:[]resource
+//        +----------------------------------+
+//        | RPC            | RPC             | RPC
+//  +-------------+  +-------------+  +-------------+
+//  | participant |  | participant |  | participant |
+//  | RPC handler |  | RPC handler |  | RPC handler |
+//  +-------------+  +-------------+  +-------------+
+//                           |
+//                     +-------------------+
+//                     |                   | []resource
+//                   +-------------+  +-------------+
+//                   | InputPlugin |  | InputPlugin |
+//                   +-------------+  +-------------+
+//
 package cluster
 
 // RebalanceCallback connects cluster with its caller when leader decides to rebalance.
