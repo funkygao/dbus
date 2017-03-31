@@ -82,6 +82,8 @@ dbus uses zookeeper for sharding/balance/election.
 
 ### Plugins
 
+More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
+
 #### Input
 
 - MysqlbinlogInput

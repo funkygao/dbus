@@ -7,6 +7,9 @@ batcher:build
 v2:buildv2
 	./dbusd -conf ../../etc/mock.cf -routerstat=false
 
+stream:buildrace
+	./dbusd -conf ../../etc/stream.cf -routerstat=false
+
 inputs:build
 	./dbusd -conf ../../etc/inputs.cf -routerstat=false
 
