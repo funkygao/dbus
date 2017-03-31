@@ -6,5 +6,12 @@ type State interface {
 
 	Unmarshal([]byte)
 
+	// String returns the string form of the state position.
 	String() string
+
+	// DSN returns the data source of the state.
+	DSN() string
+
+	// Scheme returns the type of statte.
+	Scheme() string
 }

@@ -52,7 +52,7 @@ func New(dsn string) *MySlave {
 		dsn:        dsn,
 		dbExcluded: map[string]struct{}{},
 		dbAllowed:  map[string]struct{}{},
-		state:      binlog.New(),
+		state:      binlog.New(dsn),
 	}
 }
 

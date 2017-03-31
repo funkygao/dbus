@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/funkygao/columnize"
 	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
@@ -33,9 +34,15 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 		return 2
 	}
 
+	lines := []string{"Scheme|DSN|Position"}
 	for _, state := range states {
-		this.Ui.Output(state.String())
+		lines = append(lines, fmt.Sprintf("%s|%s|%s", state.Scheme(), state.DSN(), state.String()))
 	}
+
+	if len(lines) > 1 {
+		this.Ui.Output(columnize.SimpleFormat(lines))
+	}
+
 	return
 }
 
