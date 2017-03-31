@@ -85,10 +85,7 @@ lint:
 # Generate the coverage report
 coverage:
 	@mkdir -p .target/report
-	GOPATH=$(GOPATH) \
-	go test -covermode=count -coverprofile=.target/report/coverage.out -v ./... && \
-	GOPATH=$(GOPATH) \
-	go tool cover -html=.target/report/coverage.out -o .target/report/coverage.html
+	@GOPATH=$(GOPATH) go test -covermode=count ./... 
 
 # Report cyclomatic complexity
 cyclo:
