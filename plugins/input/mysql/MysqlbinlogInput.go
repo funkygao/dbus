@@ -39,6 +39,11 @@ func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
 	return this.slave
 }
 
+// used only for dbc: ugly design
+func (this *MysqlbinlogInput) ConnectMyslave(dsn string) {
+	this.slave = myslave.New(dsn).LoadConfig(this.cf)
+}
+
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }

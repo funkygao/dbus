@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/funkygao/dbus/engine"
+	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/dbus/plugins/input/mysql"
+	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 
 	// bootstrap plugins
@@ -20,6 +22,7 @@ type Binlog struct {
 	Ui  cli.Ui
 	Cmd string
 
+	zone        string
 	fn          string
 	plugin      string
 	binlogsMode bool
@@ -29,6 +32,7 @@ type Binlog struct {
 func (this *Binlog) Run(args []string) (exitCode int) {
 	cmdFlags := flag.NewFlagSet("binlog", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
+	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
 	cmdFlags.StringVar(&this.fn, "c", "", "")
 	cmdFlags.StringVar(&this.plugin, "id", "", "")
 	cmdFlags.BoolVar(&this.binlogsMode, "logs", false, "")
@@ -38,6 +42,16 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 	}
 
 	e := engine.New(nil).LoadConfig(this.fn)
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
+	if err := mgr.Open(); err != nil {
+		panic(err)
+	}
+	defer mgr.Close()
+
+	resources, err := mgr.RegisteredResources()
+	if err != nil {
+		panic(err)
+	}
 
 	switch {
 	case this.binlogPos != "":
@@ -47,15 +61,21 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 			return 2
 		}
 
-		parts := strings.SplitN(this.binlogPos, ":", 2)
-		if len(parts) != 2 {
+		tuples := strings.SplitN(this.binlogPos, "-", 2)
+		if len(tuples) != 2 {
 			this.Ui.Output(this.Help())
 			return 2
 		}
-		pos, _ := strconv.Atoi(parts[1])
+		pos, _ := strconv.Atoi(tuples[1])
 
 		my := ir.Plugin().(*mysql.MysqlbinlogInput)
-		res, err := my.MySlave().BinlogByPos(parts[0], pos)
+		for _, res := range resources {
+			if res.InputPlugin == this.plugin {
+				my.ConnectMyslave(res.DSN())
+				break
+			}
+		}
+		res, err := my.MySlave().BinlogByPos(tuples[0], pos)
 		if err != nil {
 			panic(err)
 		}
@@ -81,6 +101,12 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 		}
 
 		my := ir.Plugin().(*mysql.MysqlbinlogInput)
+		for _, res := range resources {
+			if res.InputPlugin == this.plugin {
+				my.ConnectMyslave(res.DSN())
+				break
+			}
+		}
 		logs, err := my.MySlave().MasterBinlogs()
 		if err != nil {
 			panic(err)
@@ -119,13 +145,18 @@ Usage: %s binlog -c filename [options]
 
 Options:
 
+    -c config file
+      If empty, load from zookeeper
+
     -id input plugin name
 
     -logs
       Display a master binlog status
 
-    -pos file:offset
+    -pos file-offset
       Print a single mysql binlog event content
+      Hint:
+        you can use 'dbc checkpoint' to locate position
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

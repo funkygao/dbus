@@ -148,7 +148,6 @@ dbus uses zookeeper for sharding/balance/election.
 
 ### TODO
 
-- [ ] dbc binlog, the myslave is nil, it does not accept dsn, only resources feed
 - [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] engine shutdown, controller still send rpc
