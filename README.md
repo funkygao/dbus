@@ -152,14 +152,15 @@ dbus uses zookeeper for sharding/balance/election.
 - [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] engine shutdown, controller still send rpc
-  - [ ] what if a participant encounters brain split
   - [ ] owner of resource
   - [ ] epoch
+  - test cases
+    - [ ] brain split
+    - [X] kill -9 participant/leader, and reschedule
+    - [X] cluster chaos monkey
 - [ ] batcher only retries after full batch ack'ed, add timer?
-- [ ] sharding binlog across the dbusd cluster
-  - [ ] integration with helix
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
-- [ ] router finding matcher is slow
+- [X] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
 - [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
@@ -204,8 +205,8 @@ dbus uses zookeeper for sharding/balance/election.
 - [X] play with binlog_row_image
 - [ ] project feature for multi-tenant
 - [ ] bug fix
-  - [ ] kill dbusd, dbusd-slave did not leave cluster
-  - [ ] next log position leads to failure after resume
+  - [X] kill dbusd, dbusd-slave did not leave cluster
+  - [X] next log position leads to failure after resume
   - [ ] KafkaOutput only support 1 partition topic for MysqlbinlogInput
   - [X] table id issue
   - [X] what if invalid position
