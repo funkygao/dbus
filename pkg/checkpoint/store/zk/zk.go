@@ -10,7 +10,9 @@ import (
 	zklib "github.com/samuel/go-zookeeper/zk"
 )
 
-var _ checkpoint.Checkpoint = &checkpointZK{}
+var (
+	_ checkpoint.Checkpoint = &checkpointZK{}
+)
 
 type checkpointZK struct {
 	path     string

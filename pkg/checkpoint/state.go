@@ -6,5 +6,5 @@ type State interface {
 
 	Unmarshal([]byte)
 
-	Reset()
+	String() string
 }

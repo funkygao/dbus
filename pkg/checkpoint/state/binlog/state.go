@@ -2,6 +2,7 @@ package binlog
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
 )
@@ -28,7 +29,11 @@ func (s *BinlogState) Unmarshal(data []byte) {
 	json.Unmarshal(data, s)
 }
 
-func (s *BinlogState) Reset() {
+func (s *BinlogState) reset() {
 	s.File = ""
 	s.Offset = 0
+}
+
+func (s *BinlogState) String() string {
+	return fmt.Sprintf("mybinlog: %s-%d", s.File, s.Offset)
 }

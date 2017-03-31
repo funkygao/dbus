@@ -39,7 +39,7 @@ func TestCheckpointZKBinlog(t *testing.T) {
 	assert.Equal(t, nil, z.Commit(s))
 	assert.Equal(t, nil, z.Shutdown())
 
-	s.Reset()
+	s = binlog.New()
 	assert.Equal(t, nil, z.LastPersistedState(s))
 	assert.Equal(t, "f1", s.File)
 	assert.Equal(t, uint32(5), s.Offset)
