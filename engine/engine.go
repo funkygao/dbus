@@ -51,6 +51,10 @@ type Engine struct {
 	rpcServer   *http.Server
 	rpcRouter   *mux.Router
 
+	// input plugin resources map
+	irm   map[string][]cluster.Resource
+	irmMu sync.Mutex
+
 	InputRunners  map[string]*iRunner
 	inputWrappers map[string]*pluginWrapper
 

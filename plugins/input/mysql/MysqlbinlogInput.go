@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
@@ -52,18 +53,30 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 	name := r.Name()
 	backoff := time.Second * 5
 
-	clusterRebalance := r.RebalanceChannel()
-	select {
-	case <-this.stopChan:
-		log.Trace("[%s] yes sir!", name)
-		return nil
-	case <-clusterRebalance:
-	}
+	var myResources []cluster.Resource
+	resourcesCh := r.Resources()
 
 	for {
 	RESTART_REPLICATION:
 
-		dsn := r.LeadingResources()[0].DSN()
+		// wait till got some resource
+		for {
+			if len(myResources) != 0 {
+				log.Trace("[%s] bingo! %d: %+v", name, len(myResources), myResources)
+				break
+			}
+
+			log.Trace("[%s] awaiting resources", name)
+
+			select {
+			case <-this.stopChan:
+				log.Trace("[%s] yes sir!", name)
+				return nil
+			case myResources = <-resourcesCh:
+			}
+		}
+
+		dsn := myResources[0].DSN() // MysqlbinlogInput only consumes 1 resource
 		log.Trace("[%s] starting replication from %+v...", name, dsn)
 		this.slave = myslave.New(dsn).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {
@@ -129,7 +142,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					}
 					goto RESTART_REPLICATION
 
-				case <-clusterRebalance:
+				case myResources = <-resourcesCh:
 					log.Trace("[%s] cluster rebalanced", name)
 					this.slave.StopReplication()
 					goto RESTART_REPLICATION
