@@ -155,9 +155,11 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - [ ] controller
   - [ ] engine shutdown, controller still send rpc
   - [ ] owner of resource
-  - [ ] epoch
+  - [ ] leader RPC has epoch info
+  - [ ] only leader subscribe SessionExpiredListener
   - test cases
     - [ ] brain split
+    - [ ] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule
     - [X] cluster chaos monkey
 - [ ] batcher only retries after full batch ack'ed, add timer?
