@@ -29,5 +29,11 @@ func assignRoundRobin(participants []Participant, resources []Resource) (decisio
 		}
 	}
 
+	for _, p := range participants {
+		if !decision.IsAssigned(p) {
+			decision.Close(p)
+		}
+	}
+
 	return
 }

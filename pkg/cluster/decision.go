@@ -22,6 +22,15 @@ func (d Decision) Get(p Participant) []Resource {
 	return d[p]
 }
 
+func (d Decision) IsAssigned(p Participant) bool {
+	_, present := d[p]
+	return present
+}
+
+func (d Decision) Close(p Participant) {
+	d[p] = nil
+}
+
 // Equals compares 2 decision, return true if they are the same.
 func (d Decision) Equals(that Decision) bool {
 	if len(d) != len(that) {

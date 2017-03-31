@@ -33,6 +33,6 @@ func (c *controller) doRebalance() {
 
 		c.onRebalance(newDecision)
 	} else {
-		log.Trace("[%s] decision not changed", c.participant)
+		log.Trace("[%s] decision stays unchanged, quit rebalance", c.participant)
 	}
 }
