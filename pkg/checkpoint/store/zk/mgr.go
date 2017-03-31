@@ -1,7 +1,10 @@
 package zk
 
 import (
+	"path"
+
 	"github.com/funkygao/dbus/pkg/checkpoint"
+	"github.com/funkygao/dbus/pkg/checkpoint/state/binlog"
 	"github.com/funkygao/gafka/zk"
 )
 
@@ -16,5 +19,35 @@ func NewManager(zkzone *zk.ZkZone) checkpoint.Manager {
 }
 
 func (m *manager) AllStates() ([]checkpoint.State, error) {
-	return nil, nil
+	schemes, _, err := m.zkzone.Conn().Children(root)
+	if err != nil {
+		return nil, err
+	}
+
+	r := make([]checkpoint.State, 0)
+	for _, scheme := range schemes {
+		dsns, _, err := m.zkzone.Conn().Children(path.Join(root, scheme))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, dsn := range dsns {
+			data, _, err := m.zkzone.Conn().Get(path.Join(root, scheme, dsn))
+			if err != nil {
+				return nil, err
+			}
+
+			// FIXME ugly design
+			switch scheme {
+			case "myslave":
+				s := binlog.New(dsn)
+				s.Unmarshal(data)
+				r = append(r, s)
+			default:
+				panic("unknown scheme: " + scheme)
+			}
+		}
+	}
+
+	return r, nil
 }

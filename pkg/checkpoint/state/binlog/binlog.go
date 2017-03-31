@@ -37,7 +37,7 @@ func (s *BinlogState) reset() {
 }
 
 func (s *BinlogState) String() string {
-	return fmt.Sprintf("mybinlog: %s-%d", s.File, s.Offset)
+	return fmt.Sprintf("%s-%d", s.File, s.Offset)
 }
 
 func (s *BinlogState) DSN() string {
@@ -45,5 +45,5 @@ func (s *BinlogState) DSN() string {
 }
 
 func (s *BinlogState) Scheme() string {
-	return "binlog"
+	return "myslave"
 }
