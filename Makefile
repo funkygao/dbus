@@ -85,7 +85,7 @@ lint:
 # Generate the coverage report
 coverage:
 	@mkdir -p .target/report
-	@GOPATH=$(GOPATH) go test -covermode=count ./... 
+	@GOPATH=$(GOPATH) go test -covermode=count ./... | grep -v "no test files" | column -t
 
 # Report cyclomatic complexity
 cyclo:
