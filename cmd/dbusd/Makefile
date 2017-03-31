@@ -31,6 +31,9 @@ c1:build zkconf
 c2:build zkconf
 	./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
 
+c3:build zkconf
+	./dbusd -cluster -pprof :10122 -rpc 9879 -api 9899
+
 dump:buildrace
 	./dbusd -conf ../../etc/complex.cf -dump canal.png
 

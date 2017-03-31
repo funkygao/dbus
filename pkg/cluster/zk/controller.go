@@ -59,13 +59,6 @@ func NewController(zkSvr string, participant cluster.Participant, strategy clust
 	}
 }
 
-// NewManager creates a manager that will manages the cluster.
-func NewManager(zkSvr string) cluster.Manager {
-	return &controller{
-		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
-	}
-}
-
 func (c *controller) connectToZookeeper() (err error) {
 	log.Debug("connecting to zookeeper...")
 	if err = c.zc.Connect(); err != nil {

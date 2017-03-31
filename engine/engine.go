@@ -51,6 +51,10 @@ type Engine struct {
 	rpcServer   *http.Server
 	rpcRouter   *mux.Router
 
+	// input plugin resources map
+	irm   map[string][]cluster.Resource
+	irmMu sync.Mutex
+
 	InputRunners  map[string]*iRunner
 	inputWrappers map[string]*pluginWrapper
 
@@ -342,7 +346,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	cfChanged := make(chan *conf.Conf)
-	go e.Conf.Watch(time.Second, e.stopper, cfChanged)
+	go e.Conf.Watch(time.Second*10, e.stopper, cfChanged)
 
 	for !globals.Stopping {
 		select {

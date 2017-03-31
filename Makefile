@@ -1,7 +1,7 @@
 # List special make targets that are not associated with files
 .PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
-VERSION=0.2.2-release
+VERSION=0.3.1-rc
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
@@ -85,10 +85,7 @@ lint:
 # Generate the coverage report
 coverage:
 	@mkdir -p .target/report
-	GOPATH=$(GOPATH) \
-	go test -covermode=count -coverprofile=.target/report/coverage.out -v ./... && \
-	GOPATH=$(GOPATH) \
-	go tool cover -html=.target/report/coverage.out -o .target/report/coverage.html
+	@GOPATH=$(GOPATH) go test -covermode=count ./... 
 
 # Report cyclomatic complexity
 cyclo:

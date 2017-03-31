@@ -148,6 +148,7 @@ dbus uses zookeeper for sharding/balance/election.
 
 ### TODO
 
+- [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] engine shutdown, controller still send rpc
