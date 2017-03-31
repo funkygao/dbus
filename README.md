@@ -157,6 +157,8 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
   - [ ] owner of resource
   - [ ] leader RPC has epoch info
   - [ ] only leader subscribe SessionExpiredListener
+  - [ ] when leader make decision, it persists to zk before RPC for leader failover
+    - each participant on startup gets its decision
   - test cases
     - [ ] brain split
     - [ ] zk dies or kill -9, use cache to continue work
