@@ -2,7 +2,15 @@ package zk
 
 import (
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/zkclient"
 )
+
+// NewManager creates a manager that will manages the cluster.
+func NewManager(zkSvr string) cluster.Manager {
+	return &controller{
+		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
+	}
+}
 
 func (c *controller) Open() error {
 	return c.connectToZookeeper()

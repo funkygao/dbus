@@ -4,7 +4,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-/// rebalance happens when:
+/// rebalance happens on controller leader when:
 // 1. participants change
 // 2. resources change
 // 3. becoming leader

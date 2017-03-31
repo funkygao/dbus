@@ -7,6 +7,8 @@ import (
 func (c *controller) onResigningAsLeader() {
 	c.zc.UnsubscribeChildChanges(c.kb.participants(), c.pcl)
 	c.zc.UnsubscribeChildChanges(c.kb.resources(), c.rcl)
+	c.lastDecision = nil
+	c.leaderID = ""
 }
 
 func (c *controller) onBecomingLeader() {

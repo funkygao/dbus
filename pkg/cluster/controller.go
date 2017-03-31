@@ -1,15 +1,17 @@
-// Package cluster provides helix-alike leader/standby model.
+// Package cluster provides helix-alike leader/standby model and layered resource scheduler.
 //
-// A cluster is composed of 1) participants 2) predefined resources(shard-able), one
-// of the participant is the controller participant which assigns resources to
-// participants by RPC.
+// A cluster is composed of 1) participants 2) predefined resources(shard-able),
+//
+// One of the participant is the controller participant which schedules resources to
+// participants by RPC, whence each participant schedules their own resources to
+// local Input plugins.
 //
 // It rebalances resources to participants and watch for cluster changes.
 //
 // The cluster changes might be:
 // participants come and go, resource added and deleted, leader change.
 //
-// The resource dispatch is layered dispatch mechanism:
+// The resource scheduler is layered dispatch mechanism:
 //
 //
 //                    +------------+
@@ -22,9 +24,9 @@
 //  | participant |  | participant |  | participant |
 //  | RPC handler |  | RPC handler |  | RPC handler |
 //  +-------------+  +-------------+  +-------------+
-//                           |
+//                             |
 //                     +-------------------+
-//                     |                   | []resource
+//                     | []resource        | []resource
 //                   +-------------+  +-------------+
 //                   | InputPlugin |  | InputPlugin |
 //                   +-------------+  +-------------+
