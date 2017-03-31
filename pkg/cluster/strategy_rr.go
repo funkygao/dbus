@@ -29,6 +29,7 @@ func assignRoundRobin(participants []Participant, resources []Resource) (decisio
 		}
 	}
 
+	// notify the idle participants
 	for _, p := range participants {
 		if !decision.IsAssigned(p) {
 			decision.Close(p)

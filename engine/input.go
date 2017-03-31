@@ -89,9 +89,6 @@ func (ir *iRunner) LeadingResources() []cluster.Resource {
 
 func (ir *iRunner) feedResources(resources []cluster.Resource) {
 	ir.leadingResources = resources
-}
-
-func (ir *iRunner) rebalance() {
 	ir.rebalanceCh <- struct{}{}
 }
 

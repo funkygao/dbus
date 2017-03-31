@@ -33,25 +33,25 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	log.Trace("got %d resources: %v", len(resources), resources)
 
 	// merge resources by input plugin name
-	resourceMap := make(map[string][]cluster.Resource) // inputName:resources
+	inputResourcesMap := make(map[string][]cluster.Resource) // inputName:resources
 	for _, res := range resources {
-		if _, present := resourceMap[res.InputPlugin]; !present {
-			resourceMap[res.InputPlugin] = []cluster.Resource{res}
+		if _, present := inputResourcesMap[res.InputPlugin]; !present {
+			inputResourcesMap[res.InputPlugin] = []cluster.Resource{res}
 		} else {
-			resourceMap[res.InputPlugin] = append(resourceMap[res.InputPlugin], res)
+			inputResourcesMap[res.InputPlugin] = append(inputResourcesMap[res.InputPlugin], res)
 		}
 	}
 
 	// dispatch decision to input plugins
-	for inputName, rs := range resourceMap {
+	for inputName, rs := range inputResourcesMap {
 		ir, ok := e.InputRunners[inputName]
 		if !ok {
 			// should never happen
+			// if it happens, must be human operation fault
 			panic(fmt.Sprintf("Input[%s] not found", inputName))
 		}
 
 		ir.feedResources(rs)
-		ir.rebalance()
 	}
 
 }
