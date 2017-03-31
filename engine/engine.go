@@ -342,7 +342,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	cfChanged := make(chan *conf.Conf)
-	go e.Conf.Watch(time.Second, e.stopper, cfChanged)
+	go e.Conf.Watch(time.Second*10, e.stopper, cfChanged)
 
 	for !globals.Stopping {
 		select {
