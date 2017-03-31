@@ -2,6 +2,7 @@ package zk
 
 import (
 	"path"
+	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
@@ -10,7 +11,9 @@ import (
 	zklib "github.com/samuel/go-zookeeper/zk"
 )
 
-var _ checkpoint.Checkpoint = &checkpointZK{}
+var (
+	_ checkpoint.Checkpoint = &checkpointZK{}
+)
 
 type checkpointZK struct {
 	path     string
@@ -22,12 +25,12 @@ type checkpointZK struct {
 	lastCommitted time.Time
 }
 
-func New(zkzone *zk.ZkZone, zpath string, interval time.Duration) checkpoint.Checkpoint {
-	if zpath[0] == '/' {
-		panic("absolute zpath not allowed")
+func New(zkzone *zk.ZkZone, state checkpoint.State, zpath string, interval time.Duration) checkpoint.Checkpoint {
+	if strings.Contains(zpath, "/") {
+		panic("zpath illegal")
 	}
 
-	zpath = realPath(zpath)
+	zpath = realPath(state, zpath)
 	if err := zkzone.EnsurePathExists(path.Dir(zpath)); err != nil {
 		panic(err)
 	}

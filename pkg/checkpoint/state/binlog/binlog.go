@@ -2,6 +2,7 @@ package binlog
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
 )
@@ -11,12 +12,14 @@ var (
 )
 
 type BinlogState struct {
+	dsn string
+
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 }
 
-func New() *BinlogState {
-	return &BinlogState{}
+func New(dsn string) *BinlogState {
+	return &BinlogState{dsn: dsn}
 }
 
 func (s *BinlogState) Marshal() []byte {
@@ -28,7 +31,19 @@ func (s *BinlogState) Unmarshal(data []byte) {
 	json.Unmarshal(data, s)
 }
 
-func (s *BinlogState) Reset() {
+func (s *BinlogState) reset() {
 	s.File = ""
 	s.Offset = 0
+}
+
+func (s *BinlogState) String() string {
+	return fmt.Sprintf("%s-%d", s.File, s.Offset)
+}
+
+func (s *BinlogState) DSN() string {
+	return s.dsn
+}
+
+func (s *BinlogState) Scheme() string {
+	return "myslave"
 }

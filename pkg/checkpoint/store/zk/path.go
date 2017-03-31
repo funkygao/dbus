@@ -2,8 +2,12 @@ package zk
 
 import (
 	"path"
+
+	"github.com/funkygao/dbus/pkg/checkpoint"
 )
 
-func realPath(zpath string) string {
-	return path.Join("/dbus/checkpoint", zpath)
+const root = "/dbus/checkpoint"
+
+func realPath(state checkpoint.State, zpath string) string {
+	return path.Join(root, state.Scheme(), zpath)
 }
