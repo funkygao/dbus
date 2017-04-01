@@ -38,7 +38,6 @@ type Engine struct {
 	httpListener net.Listener
 	httpServer   *http.Server
 	httpRouter   *mux.Router
-	httpPaths    []string
 
 	InputRunners  map[string]InputRunner
 	inputWrappers map[string]*pluginWrapper
@@ -85,8 +84,6 @@ func New(globals *GlobalConfig) *Engine {
 
 		top:    newTopology(),
 		router: newRouter(),
-
-		httpPaths: make([]string, 0, 6),
 
 		pid:      os.Getpid(),
 		hostname: hostname,

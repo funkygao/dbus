@@ -40,7 +40,7 @@ type InputRunner interface {
 	// to all Filter and Output plugins with corresponding matcher.
 	Inject(pack *Packet)
 
-	// Resources returns a channel that notifies Input plugin of the newly assigned resources.
+	// Resources returns a channel that notifies Input plugin of the newly assigned resources in a cluster.
 	// The newly assigned resource might be empty, which means the Input plugin should stop consuming the resource.
 	Resources() <-chan []cluster.Resource
 }
@@ -59,7 +59,7 @@ func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
-		resourcesCh: make(chan []cluster.Resource, 2),
+		resourcesCh: make(chan []cluster.Resource), // FIXME how to close it
 	}
 }
 
@@ -102,7 +102,6 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			log.Critical("[%s] shutdown completely for: %v\n%s", ir.Name(), err, string(debug.Stack()))
 		}
 
-		close(ir.resourcesCh) // FIXME if Input panic, reblance will lead to 'send on closed channel'
 		wg.Done()
 	}()
 
@@ -136,5 +135,4 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 		iw := e.inputWrappers[ir.Name()]
 		ir.plugin = iw.Create()
 	}
-
 }

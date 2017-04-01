@@ -56,9 +56,8 @@ func (pw *pluginWrapper) Create() (plugin Plugin) {
 
 // pluginCommons is the common config directives for all plugins.
 type pluginCommons struct {
-	name     string
-	class    string
-	disabled bool
+	name  string
+	class string
 }
 
 func (pc *pluginCommons) loadConfig(section *conf.Conf) {
@@ -69,5 +68,4 @@ func (pc *pluginCommons) loadConfig(section *conf.Conf) {
 	if pc.class = section.String("class", ""); pc.class == "" {
 		pc.class = pc.name
 	}
-	pc.disabled = section.Bool("disabled", false)
 }
