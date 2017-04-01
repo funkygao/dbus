@@ -43,7 +43,7 @@ type Packet struct {
 	_padding5 [sys.CacheLineSize / 8]uint64
 	Payload   Payloader
 
-	//	buf     []byte TODO
+	//	buf     []byte TODO reuse memory
 }
 
 func newPacket(recycleChan chan *Packet) *Packet {

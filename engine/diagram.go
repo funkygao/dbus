@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ExportDiagram exports the pipeline dependencies to a diagram.
+// ExportDiagram exports the pipeline dataflow to a diagram.
 func (e *Engine) ExportDiagram(outfile string) {
 	e.exportPipeline(outfile, "png", "dot", "72", "-Gsize=10,5 -Gdpi=200")
 }

@@ -55,8 +55,8 @@ func (e *Engine) setupAPIRoutings() {
 	e.RegisterAPI("/dag", e.handleAPIDag).Methods("GET")
 
 	// API
-	e.RegisterAPI("/api/v1/pause/{input}", e.handleAPIPause).Methods("PUT")
-	e.RegisterAPI("/api/v1/resume/{input}", e.handleAPIResume).Methods("PUT")
+	e.RegisterAPI("/api/v1/pause/{input}", e.handleAPIPauseV1).Methods("PUT")
+	e.RegisterAPI("/api/v1/resume/{input}", e.handleAPIResumeV1).Methods("PUT")
 }
 
 func (e *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
@@ -161,13 +161,6 @@ func (e *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params ma
 }
 
 func (e *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
-	for _, p := range e.httpPaths {
-		if p == path {
-			panic(path + " already registered")
-		}
-	}
-	e.httpPaths = append(e.httpPaths, path)
-
 	return e.apiRouter.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		var (
 			ret interface{}

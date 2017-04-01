@@ -38,6 +38,6 @@ func (e *Engine) stopRPCServer() {
 
 func (e *Engine) setupRPCRoutings() {
 	e.rpcRouter.Handle("/v1/rebalance",
-		recoverWrap(http.HandlerFunc(e.doLocalRebalance))).
+		accessLogWrap(recoverWrap(http.HandlerFunc(e.doLocalRebalanceV1)))).
 		Methods("POST")
 }

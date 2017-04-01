@@ -13,6 +13,8 @@ var (
 	_ zkclient.ZkStateListener = &controller{}
 )
 
+// controller is a participant in a cluster.
+// It might be a leader or a normal participant that accepts RPC from the leader.
 type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
