@@ -1,7 +1,7 @@
 # List special make targets that are not associated with files
 .PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
-VERSION=0.3.2-rc
+VERSION=0.3.2-release
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
