@@ -38,6 +38,20 @@ func init() {
 			}, nil
 		},
 
+		"rebalance": func() (cli.Command, error) {
+			return &command.Rebalance{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
+		"pause": func() (cli.Command, error) {
+			return &command.Pause{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"migrate": func() (cli.Command, error) {
 			return &command.Migrate{
 				Ui:  ui,

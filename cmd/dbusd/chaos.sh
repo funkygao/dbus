@@ -1,14 +1,14 @@
 #!/bin/sh
-#==========================================================
-# bring chaos to dbusd cluster to test controller stability
-#==========================================================
+#=================================================================
+# bring chaos monkey to dbusd cluster to test controller stability
+#=================================================================
 #
 #------------
 # how to use?
 #------------
 # open 2 terminals:
 # term1$ make c2
-# term2$ sh chaos
+# term2$ sh chaos.sh
 
 for i in `seq 1000`; do
     ./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897 &

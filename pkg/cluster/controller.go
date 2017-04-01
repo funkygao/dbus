@@ -34,7 +34,7 @@
 package cluster
 
 // RebalanceCallback connects cluster with its caller when leader decides to rebalance.
-type RebalanceCallback func(Decision)
+type RebalanceCallback func(epoch int, decision Decision)
 
 // Controller is the contral brain of the cluster, which assigns resource tickets
 // to participants.

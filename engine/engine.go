@@ -72,6 +72,7 @@ type Engine struct {
 	hostname string
 	pid      int
 	stopper  chan struct{}
+	epoch    int
 }
 
 func New(globals *GlobalConfig) *Engine {

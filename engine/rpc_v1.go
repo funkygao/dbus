@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
@@ -13,6 +14,7 @@ const (
 	maxRPCBodyLen = 128 << 10
 )
 
+// POST /v1/rebalance?epoch={controller_epoch}
 func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 	if r.ContentLength > maxRPCBodyLen {
 		log.Warn("too large RPC request body: %d", r.ContentLength)
@@ -28,6 +30,16 @@ func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+
+	epoch, _ := strconv.Atoi(r.FormValue("epoch"))
+	e.Lock()
+	if epoch < e.epoch {
+		e.Unlock()
+		http.Error(w, "leader moved", http.StatusNotAcceptable)
+		return
+	}
+	e.epoch = epoch // remember the leader epoch
+	e.Unlock()
 
 	resources := cluster.UnmarshalRPCResources(body)
 	log.Trace("local dispatching %d resources: %v", len(resources), resources)
