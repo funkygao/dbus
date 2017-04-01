@@ -60,7 +60,7 @@ func (l *leaderElector) elect() (win bool) {
 		l.leaderID = l.participant.Endpoint
 		l.onBecomingLeader()
 	} else {
-		log.Trace("[%s] lose win :-)", l.participant)
+		log.Trace("[%s] elect lose :-)", l.participant)
 
 		l.leaderID = l.fetchLeaderID() // refresh
 		if l.leaderID == "" {

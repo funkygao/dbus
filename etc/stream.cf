@@ -1,0 +1,15 @@
+{
+    plugins: [
+        {
+            name: "StreamInput"
+            cmd: ["cat", "/var/log/mail.log"]
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: false
+            match:  ["StreamInput", ]
+        }
+    ]
+
+}

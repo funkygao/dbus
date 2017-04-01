@@ -5,5 +5,7 @@ import (
 	_ "github.com/funkygao/dbus/plugins/input/kafka"
 	_ "github.com/funkygao/dbus/plugins/input/mysql"
 	_ "github.com/funkygao/dbus/plugins/input/redis"
-	_ "github.com/funkygao/dbus/plugins/input/stream"
+
+	// external plugins
+	_ "github.com/dbus-plugin/stream-input"
 )

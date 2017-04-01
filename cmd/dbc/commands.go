@@ -31,13 +31,6 @@ func init() {
 			}, nil
 		},
 
-		"zones": func() (cli.Command, error) {
-			return &command.Zones{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
 		"checkpoint": func() (cli.Command, error) {
 			return &command.Checkpoint{
 				Ui:  ui,
