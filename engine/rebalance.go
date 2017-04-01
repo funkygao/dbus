@@ -16,6 +16,9 @@ func (e *Engine) onControllerRebalance(decision cluster.Decision) {
 	for participant, resources := range decision {
 		log.Trace("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
 
+		// edge case:
+		// participant might die
+		// leader might die
 		if statusCode := e.callRPC(participant.Endpoint, resources); statusCode != http.StatusOK {
 			log.Error("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)
 			// TODO

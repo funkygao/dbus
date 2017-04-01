@@ -99,7 +99,7 @@ func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v\n%s", ir.Name(), err, string(debug.Stack()))
+			log.Critical("[%s] shutdown completely for: %v\n%s", ir.Name(), err, string(debug.Stack()))
 		}
 
 		close(ir.resourcesCh)
