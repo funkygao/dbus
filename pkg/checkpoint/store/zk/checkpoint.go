@@ -43,7 +43,7 @@ func New(zkzone *zk.ZkZone, state checkpoint.State, zpath string, interval time.
 }
 
 func (z *checkpointZK) Shutdown() error {
-	return z.flush()
+	return z.persist()
 }
 
 func (z *checkpointZK) Commit(state checkpoint.State) error {
@@ -52,7 +52,7 @@ func (z *checkpointZK) Commit(state checkpoint.State) error {
 
 	now := time.Now()
 	if now.Sub(z.lastCommitted) > z.interval {
-		return z.flush()
+		return z.persist()
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func (z *checkpointZK) LastPersistedState(state checkpoint.State) (err error) {
 	return
 }
 
-func (z *checkpointZK) flush() (err error) {
+func (z *checkpointZK) persist() (err error) {
 	if !z.birthCry.Get() {
 		return
 	}
