@@ -27,7 +27,7 @@ func (l *leader) onResigningAsLeader() {
 	l.ctx.zc.UnsubscribeChildChanges(l.ctx.kb.participants(), l.pcl)
 	l.ctx.zc.UnsubscribeChildChanges(l.ctx.kb.resources(), l.rcl)
 	l.lastDecision = nil
-	l.ctx.leaderID = ""
+	l.ctx.elector.leaderID = ""
 }
 
 func (l *leader) onBecomingLeader() {

@@ -17,8 +17,8 @@ type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
 
-	participant cluster.Participant
-	leaderID    string // TODO discard it
+	strategyFunc cluster.StrategyFunc
+	participant  cluster.Participant
 
 	leader  *leader
 	hc      *healthCheck
@@ -26,8 +26,6 @@ type controller struct {
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance cluster.RebalanceCallback
-
-	strategyFunc cluster.StrategyFunc
 }
 
 // New creates a Controller with zookeeper as underlying storage.
@@ -90,6 +88,7 @@ func (c *controller) Start() (err error) {
 	c.zc.SubscribeStateChanges(c)
 
 	c.leader = newLeader(c)
+
 	c.elector = newLeaderElector(c, c.leader.onBecomingLeader, c.leader.onResigningAsLeader)
 	c.elector.startup()
 
