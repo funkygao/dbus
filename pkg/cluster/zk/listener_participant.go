@@ -24,6 +24,6 @@ func (p *participantChangeListener) HandleChildChange(parentPath string, lastChi
 	}
 
 	log.Trace("[%s] participants changed, trigger rebalance", p.ctx.participant)
-	p.ctx.doRebalance()
+	p.ctx.leader.doRebalance()
 	return nil
 }

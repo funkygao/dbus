@@ -110,7 +110,7 @@ func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
 func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Critical("[%s] %v\n%s", fo.Name(), err, string(debug.Stack()))
+			log.Critical("[%s] shutdown completely for: %v\n%s", fo.Name(), err, string(debug.Stack()))
 		}
 
 		wg.Done()

@@ -80,6 +80,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		log.Trace("[%s] starting replication from %+v...", name, dsn)
 		this.slave = myslave.New(dsn).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {
+			// err might be: read initial handshake error
 			panic(err)
 		}
 
@@ -98,6 +99,8 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			return nil
 		}
 
+		// TODO declare the real ownership of the resource
+
 		rows := this.slave.Events()
 		errors := this.slave.Errors()
 		for {
@@ -113,6 +116,8 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				// read initial handshake error, caused by Too many connections
 				log.Error("[%s] backoff %s: %v", name, backoff, err)
 				this.slave.StopReplication()
+
+				// myResources not changed, so next round still consume the same resources
 
 				select {
 				case <-time.After(backoff):
