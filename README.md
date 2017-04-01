@@ -148,6 +148,17 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - logstash has better ecosystem
 - dbus is cluster aware, provides delivery guarantee, data provenance
 
+#### can there be 1 leader at the same time?
+
+Yes.
+
+For example, 3 participants with 1 being the leader. Then 1 is network partitioned and
+zk session expires, [2, 3] found this event and re-elect 2 as new leader.
+Before 1 regain new zk session, [1] and [2] are leaders both.
+If [1] and [2] both found resources changes, they will both rebalance the cluster.
+
+dbus uses epoch to solve this issue.
+
 #### what if
 
 - zookeeper crash
