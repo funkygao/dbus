@@ -26,6 +26,10 @@ func (kb *keyBuilder) controller() string {
 	return path.Join(rootPath, "controller")
 }
 
+func (kb *keyBuilder) controllerEpoch() string {
+	return path.Join(rootPath, "controller_epoch")
+}
+
 func (kb *keyBuilder) resources() string {
 	return path.Join(rootPath, "resources")
 }

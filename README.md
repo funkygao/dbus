@@ -175,6 +175,7 @@ dbus uses epoch to solve this issue.
   - [ ] owner of resource
   - [ ] leader RPC has epoch info
   - [ ] only leader subscribe SessionExpiredListener
+  - [ ] mv rpc server into cluster pkg?
   - [ ] when leader make decision, it persists to zk before RPC for leader failover
     - each participant on startup gets its decision
   - [ ] if Ack fails(zk crash), resort to local disk(load on startup)
