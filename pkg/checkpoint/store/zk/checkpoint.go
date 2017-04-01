@@ -83,6 +83,10 @@ func (z *checkpointZK) persist() (err error) {
 		_, err = z.zkzone.Conn().Create(z.path, data, 0, zklib.WorldACL(zklib.PermAll))
 	}
 
+	if err != nil {
+		// TODO resort to local disk
+	}
+
 	z.lastCommitted = time.Now()
 	return
 }

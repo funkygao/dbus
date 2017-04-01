@@ -148,20 +148,28 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - logstash has better ecosystem
 - dbus is cluster aware, provides delivery guarantee, data provenance
 
+#### what if
+
+- zookeeper crash
+
+  dbus continues to work, but Ack will not be able to persist
+
 ### TODO
 
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
 - [ ] controller
+  - [ ] 2 phase rebalance: close participants then notify new resources
   - [ ] engine shutdown, controller still send rpc
   - [ ] owner of resource
   - [ ] leader RPC has epoch info
   - [ ] only leader subscribe SessionExpiredListener
   - [ ] when leader make decision, it persists to zk before RPC for leader failover
     - each participant on startup gets its decision
+  - [ ] if Ack fails(zk crash), resort to local disk(load on startup)
   - test cases
     - [ ] brain split
-    - [ ] zk dies or kill -9, use cache to continue work
+    - [X] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule
     - [X] cluster chaos monkey
 - [ ] batcher only retries after full batch ack'ed, add timer?

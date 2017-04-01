@@ -99,6 +99,8 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 			return nil
 		}
 
+		// TODO declare the real ownership of the resource
+
 		rows := this.slave.Events()
 		errors := this.slave.Errors()
 		for {

@@ -102,7 +102,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			log.Critical("[%s] shutdown completely for: %v\n%s", ir.Name(), err, string(debug.Stack()))
 		}
 
-		close(ir.resourcesCh)
+		close(ir.resourcesCh) // FIXME if Input panic, reblance will lead to 'send on closed channel'
 		wg.Done()
 	}()
 

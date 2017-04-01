@@ -18,6 +18,7 @@ func (e *Engine) onControllerRebalance(decision cluster.Decision) {
 
 		// edge case:
 		// participant might die
+		// participant not die, but its Input plugin panic
 		// leader might die
 		if statusCode := e.callRPC(participant.Endpoint, resources); statusCode != http.StatusOK {
 			log.Error("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)

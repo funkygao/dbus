@@ -24,7 +24,7 @@ func (m *MySlave) StopReplication() {
 	m.r.Close()
 
 	if err := m.p.Shutdown(); err != nil {
-		log.Error("[%s] flush: %s", m.name, err)
+		log.Error("[%s] %s", m.name, err)
 	}
 
 	m.started.Set(false)
