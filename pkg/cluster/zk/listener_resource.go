@@ -24,6 +24,6 @@ func (r *resourceChangeListener) HandleChildChange(parentPath string, lastChilds
 	}
 
 	log.Trace("[%s] resources changed, trigger rebalance", r.ctx.participant)
-	r.ctx.doRebalance()
+	r.ctx.leader.doRebalance()
 	return nil
 }

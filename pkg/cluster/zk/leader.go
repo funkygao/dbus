@@ -1,20 +1,72 @@
 package zk
 
 import (
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
+	"github.com/funkygao/zkclient"
 )
 
-func (c *controller) onResigningAsLeader() {
-	c.zc.UnsubscribeChildChanges(c.kb.participants(), c.pcl)
-	c.zc.UnsubscribeChildChanges(c.kb.resources(), c.rcl)
-	c.lastDecision = nil
-	c.leaderID = ""
+type leader struct {
+	ctx *controller
+
+	lastDecision cluster.Decision
+
+	pcl zkclient.ZkChildListener // leader watches live participants
+	rcl zkclient.ZkChildListener // leader watches resources
 }
 
-func (c *controller) onBecomingLeader() {
-	c.zc.SubscribeChildChanges(c.kb.participants(), c.pcl)
-	c.zc.SubscribeChildChanges(c.kb.resources(), c.rcl)
+func newLeader(ctx *controller) *leader {
+	return &leader{
+		ctx: ctx,
+		pcl: newParticipantChangeListener(ctx),
+		rcl: newResourceChangeListener(ctx),
+	}
+}
+
+func (l *leader) onResigningAsLeader() {
+	l.ctx.zc.UnsubscribeChildChanges(l.ctx.kb.participants(), l.pcl)
+	l.ctx.zc.UnsubscribeChildChanges(l.ctx.kb.resources(), l.rcl)
+	l.lastDecision = nil
+	l.ctx.elector.leaderID = ""
+}
+
+func (l *leader) onBecomingLeader() {
+	l.ctx.zc.SubscribeChildChanges(l.ctx.kb.participants(), l.pcl)
+	l.ctx.zc.SubscribeChildChanges(l.ctx.kb.resources(), l.rcl)
 
 	log.Trace("become controller leader and trigger rebalance!")
-	c.doRebalance()
+	l.doRebalance()
+}
+
+/// rebalance happens on controller leader when:
+// 1. participants change
+// 2. resources change
+// 3. becoming leader
+func (l *leader) doRebalance() {
+	participants, err := l.ctx.LiveParticipants()
+	if err != nil {
+		// TODO
+		log.Critical("[%s] %s", l.ctx.participant, err)
+		return
+	}
+	if len(participants) == 0 {
+		log.Critical("[%s] no alive participants found", l.ctx.participant)
+		return
+	}
+
+	resources, err := l.ctx.RegisteredResources()
+	if err != nil {
+		// TODO
+		log.Critical("[%s] %s", l.ctx.participant, err)
+		return
+	}
+
+	newDecision := l.ctx.strategyFunc(participants, resources)
+	if !newDecision.Equals(l.lastDecision) {
+		l.lastDecision = newDecision
+
+		l.ctx.onRebalance(newDecision)
+	} else {
+		log.Trace("[%s] decision stay unchanged, quit rebalance", l.ctx.participant)
+	}
 }

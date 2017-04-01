@@ -17,21 +17,15 @@ type controller struct {
 	kb *keyBuilder
 	zc *zkclient.Client
 
-	participant cluster.Participant
-	leaderID    string
+	strategyFunc cluster.StrategyFunc
+	participant  cluster.Participant
 
-	lastDecision cluster.Decision
-
+	leader  *leader
 	hc      *healthCheck
 	elector *leaderElector
 
-	pcl zkclient.ZkChildListener // leader watches alive participants
-	rcl zkclient.ZkChildListener // leader watches resources
-
 	// only when participant is leader will this callback be triggered.
 	onRebalance cluster.RebalanceCallback
-
-	strategyFunc cluster.StrategyFunc
 }
 
 // New creates a Controller with zookeeper as underlying storage.
@@ -78,9 +72,6 @@ func (c *controller) connectToZookeeper() (err error) {
 }
 
 func (c *controller) Start() (err error) {
-	c.pcl = newParticipantChangeListener(c)
-	c.rcl = newResourceChangeListener(c)
-
 	if err = c.connectToZookeeper(); err != nil {
 		return
 	}
@@ -96,7 +87,9 @@ func (c *controller) Start() (err error) {
 
 	c.zc.SubscribeStateChanges(c)
 
-	c.elector = newLeaderElector(c, c.onBecomingLeader, c.onResigningAsLeader)
+	c.leader = newLeader(c)
+
+	c.elector = newLeaderElector(c, c.leader.onBecomingLeader, c.leader.onResigningAsLeader)
 	c.elector.startup()
 
 	return
@@ -120,7 +113,7 @@ func (c *controller) amLeader() bool {
 
 func (c *controller) HandleNewSession() (err error) {
 	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participant)
-	c.onResigningAsLeader()
+	c.leader.onResigningAsLeader()
 	c.elector.elect()
 	return
 }
