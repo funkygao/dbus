@@ -98,6 +98,21 @@ func (c *controller) Start() (err error) {
 	c.upgrader = newUpgrader(c)
 	c.upgrader.startup()
 
+	go func() {
+		for {
+			select {
+			case err, ok := <-c.zc.LisenterErrors():
+				if !ok {
+					return
+				}
+
+				// for now, just log the err
+				// TODO how to handle it?
+				log.Error("[%s] %v", c.participant, err)
+			}
+		}
+	}()
+
 	return
 }
 
