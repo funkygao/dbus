@@ -11,7 +11,7 @@ import (
 )
 
 func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
-	log.Info("decision: %+v", decision)
+	log.Info("[%s] decision: %+v", e.participant, decision)
 
 	for participant, resources := range decision {
 		log.Trace("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)

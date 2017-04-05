@@ -264,14 +264,6 @@ func (e *Engine) ServeForever() (ret error) {
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	e.launchAPIServer()
-	if globals.ClusterEnabled {
-		e.launchRPCServer()
-
-		if err = e.controller.Start(); err != nil {
-			panic(err)
-		}
-		log.Info("[%s] controller started", e.participant)
-	}
 
 	if telemetry.Default != nil {
 		go func() {
@@ -324,6 +316,16 @@ func (e *Engine) ServeForever() (ret error) {
 			inputsWg.Done()
 			panic(err)
 		}
+	}
+
+	if globals.ClusterEnabled {
+		e.launchRPCServer()
+
+		log.Trace("[%s] participant starting...", e.participant)
+		if err = e.controller.Start(); err != nil {
+			panic(err)
+		}
+		log.Info("[%s] participant started", e.participant)
 	}
 
 	configChanged := make(chan *conf.Conf)

@@ -91,6 +91,8 @@ func (l *leader) onResigningAsLeader() {
 	l.ctx.elector.leaderID = ""
 	l.epoch = 0
 	l.epochZkVersion = 0
+
+	log.Trace("[%s] resigned as leader", l.ctx.participant)
 }
 
 func (l *leader) onBecomingLeader() {
@@ -102,7 +104,7 @@ func (l *leader) onBecomingLeader() {
 		return
 	}
 
-	log.Trace("become controller leader and trigger rebalance!")
+	log.Trace("[%s] become controller leader and trigger rebalance!", l.ctx.participant)
 	l.doRebalance()
 }
 

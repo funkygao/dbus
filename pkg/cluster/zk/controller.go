@@ -56,18 +56,18 @@ func NewController(zkSvr string, participant cluster.Participant, strategy clust
 }
 
 func (c *controller) connectToZookeeper() (err error) {
-	log.Debug("connecting to zookeeper...")
+	log.Debug("[%s] connecting to zookeeper...", c.participant)
 	if err = c.zc.Connect(); err != nil {
 		return
 	}
 
 	for retries := 0; retries < 3; retries++ {
 		if err = c.zc.WaitUntilConnected(c.zc.SessionTimeout()); err == nil {
-			log.Trace("connected to zookeeper")
+			log.Trace("[%s] connected to zookeeper", c.participant)
 			break
 		}
 
-		log.Warn("retry=%d %v", retries, err)
+		log.Warn("[%s] retry=%d %v", c.participant, retries, err)
 	}
 
 	return

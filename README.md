@@ -92,8 +92,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - MockInput
 - StreamInput
   
-  for polyglot
-
 #### Filter
 
 - MysqlbinlogFilter
@@ -105,8 +103,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - ESOutput
 - MockOutput
 - StreamOutput
-
-  for polyglot
 
 ### Configuration
 
@@ -148,7 +144,7 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - logstash has better ecosystem
 - dbus is cluster aware, provides delivery guarantee, data provenance
 
-#### can there be 1 leader at the same time?
+#### can there be more than 1 leaders at the same time?
 
 Yes.
 
