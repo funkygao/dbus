@@ -14,6 +14,10 @@ func newKeyBuilder() *keyBuilder {
 	return &keyBuilder{}
 }
 
+func (kb *keyBuilder) upgrade() string {
+	return path.Join(rootPath, "upgrade")
+}
+
 func (kb *keyBuilder) participants() string {
 	return path.Join(rootPath, "participants")
 }

@@ -10,6 +10,8 @@ import (
 func TestKeyBuilder(t *testing.T) {
 	kb := newKeyBuilder()
 
+	assert.Equal(t, "/dbus/cluster/upgrade", kb.upgrade())
+
 	// participant related
 	assert.Equal(t, "/dbus/cluster/participants", kb.participants())
 	assert.Equal(t, "/dbus/cluster/participants/12.11.11.11-9876", kb.participant("12.11.11.11-9876"))
