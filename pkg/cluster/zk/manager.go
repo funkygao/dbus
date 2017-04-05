@@ -68,3 +68,7 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 
 	return r, nil
 }
+
+func (c *controller) Rebalance() error {
+	return c.zc.Delete(c.kb.controller())
+}

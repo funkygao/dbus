@@ -21,4 +21,7 @@ type Manager interface {
 
 	// Controller returns the controller participant.
 	Controller() (Participant, error)
+
+	// Rebalance triggers a new leader election across the cluster.
+	Rebalance() error
 }

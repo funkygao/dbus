@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
 
@@ -17,9 +18,18 @@ func (this *Rebalance) Run(args []string) (exitCode int) {
 	var zone string
 	cmdFlags := flag.NewFlagSet("rebalance", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
-	cmdFlags.StringVar(&zone, "z", "", "")
+	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
+	}
+
+	mgr := openClusterManager(zone)
+	defer mgr.Close()
+
+	if err := mgr.Rebalance(); err != nil {
+		this.Ui.Error(err.Error())
+	} else {
+		this.Ui.Info("rebalanced")
 	}
 
 	return
