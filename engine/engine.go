@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
@@ -112,6 +113,7 @@ func New(globals *GlobalConfig) *Engine {
 		participant: cluster.Participant{
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
+			Revision: dbus.Revision,
 		},
 	}
 }

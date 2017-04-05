@@ -12,8 +12,11 @@ func TestParticipant(t *testing.T) {
 	assert.Equal(t, `{"weight":5}`, string(p.Marshal()))
 	p.From([]byte(`{"weight":12}`))
 	assert.Equal(t, 12, p.Weight)
+	p.Revision = "109faeb"
+	assert.Equal(t, `{"weight":12,"revision":"109faeb"}`, string(p.Marshal()))
 
 	p.Endpoint = ""
+	p.Revision = ""
 	assert.Equal(t, false, p.Valid())
 	p.Endpoint = "http://a.com"
 	assert.Equal(t, false, p.Valid())
@@ -21,6 +24,12 @@ func TestParticipant(t *testing.T) {
 	assert.Equal(t, false, p.Valid())
 	p.Endpoint = "12.1.1.1:1222"
 	assert.Equal(t, true, p.Valid())
+
+	p = &Participant{}
+	p.From([]byte(`{"weight":12,"revision":"109faeb","endpoint":"12.12.12.12:1888"}`))
+	assert.Equal(t, 12, p.Weight)
+	assert.Equal(t, "109faeb", p.Revision)
+	assert.Equal(t, "12.12.12.12:1888", p.Endpoint)
 }
 
 func TestParticipantsSort(t *testing.T) {

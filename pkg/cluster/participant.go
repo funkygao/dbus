@@ -10,6 +10,7 @@ import (
 type Participant struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	Weight   int    `json:"weight"`
+	Revision string `json:"revision,omitempty"`
 }
 
 func (p *Participant) Marshal() []byte {
