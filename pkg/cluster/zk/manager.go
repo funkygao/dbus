@@ -41,9 +41,9 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 	return r, nil
 }
 
-func (c *controller) Controller() (cluster.Participant, error) {
+func (c *controller) Leader() (cluster.Participant, error) {
 	var p cluster.Participant
-	data, err := c.zc.Get(c.kb.controller())
+	data, err := c.zc.Get(c.kb.leader())
 	if err != nil {
 		return p, err
 	}
@@ -70,5 +70,5 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 }
 
 func (c *controller) Rebalance() error {
-	return c.zc.Delete(c.kb.controller())
+	return c.zc.Delete(c.kb.leader())
 }

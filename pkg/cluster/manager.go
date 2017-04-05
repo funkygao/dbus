@@ -19,8 +19,8 @@ type Manager interface {
 	// LiveParticipants returns currently online participants.
 	LiveParticipants() ([]Participant, error)
 
-	// Controller returns the controller participant.
-	Controller() (Participant, error)
+	// Leader returns the controller leader participant.
+	Leader() (Participant, error)
 
 	// Rebalance triggers a new leader election across the cluster.
 	Rebalance() error
