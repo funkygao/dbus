@@ -1,5 +1,5 @@
 // Package checkpoint persists event log state information so that
-// event log monitoring can resume from the last read event in the case of
+// event log consumer can resume from the last read event in the case of
 // a restart or unexpected interruption.
 package checkpoint
 

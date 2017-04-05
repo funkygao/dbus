@@ -33,18 +33,16 @@ var (
 // Engine is the pipeline engine of the data bus system which manages the core loop.
 type Engine struct {
 	sync.RWMutex
-
-	// Engine will load json config file
 	*conf.Conf
 
 	participant cluster.Participant
 	controller  cluster.Controller
+	epoch       int // cache of latest cluster leader epoch
 
 	// API Server
 	apiListener net.Listener
 	apiServer   *http.Server
 	apiRouter   *mux.Router
-	httpPaths   []string
 
 	// RPC Server
 	rpcListener net.Listener
@@ -55,6 +53,9 @@ type Engine struct {
 	irm   map[string][]cluster.Resource
 	irmMu sync.Mutex
 
+	// dataflow router
+	router *Router
+
 	InputRunners  map[string]*iRunner
 	inputWrappers map[string]*pluginWrapper
 
@@ -64,15 +65,12 @@ type Engine struct {
 	OutputRunners  map[string]OutputRunner
 	outputWrappers map[string]*pluginWrapper
 
-	router *Router
-
 	inputRecycleChans map[string]chan *Packet
 	filterRecycleChan chan *Packet
 
 	hostname string
 	pid      int
 	stopper  chan struct{}
-	epoch    int
 }
 
 func New(globals *GlobalConfig) *Engine {
@@ -95,6 +93,12 @@ func New(globals *GlobalConfig) *Engine {
 	}
 
 	return &Engine{
+		pid:      os.Getpid(),
+		hostname: hostname,
+		stopper:  make(chan struct{}),
+
+		router: newRouter(),
+
 		InputRunners:   make(map[string]*iRunner),
 		inputWrappers:  make(map[string]*pluginWrapper),
 		FilterRunners:  make(map[string]FilterRunner),
@@ -105,13 +109,6 @@ func New(globals *GlobalConfig) *Engine {
 		inputRecycleChans: make(map[string]chan *Packet),
 		filterRecycleChan: make(chan *Packet, globals.FilterRecyclePoolSize),
 
-		router: newRouter(),
-
-		httpPaths: make([]string, 0, 6),
-
-		pid:      os.Getpid(),
-		hostname: hostname,
-		stopper:  make(chan struct{}),
 		participant: cluster.Participant{
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
@@ -125,12 +122,7 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Unlock()
 }
 
-// Leader returns the cluster leader RPC address.
-func (e *Engine) Leader() string {
-	return ""
-}
-
-// ClonePacket is used for plugin Filter to generate new Packet.
+// ClonePacket is used for plugin Filter to generate new Packet: copy on write.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
 	pack := <-e.filterRecycleChan
@@ -139,13 +131,17 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 	return pack
 }
 
-func (e *Engine) LoadConfig(path string) *Engine {
-	if len(path) == 0 {
-		// if no path provided, use the default zk
-		path = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), DbusConfZnode)
+// LoadConfig load the configuration by location.
+// The location can be empty: use default zk zone /dbus/conf.
+// If config is stored on file, the loc arg is file path.
+// If config is stored on zookeeper, the loc arg is like localhost:2181/foo/bar.
+func (e *Engine) LoadConfig(loc string) *Engine {
+	if len(loc) == 0 {
+		// if no location provided, use the default zk
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), DbusConfZnode)
 	}
 
-	zkSvr, realPath := parseConfigPath(path)
+	zkSvr, realPath := parseConfigPath(loc)
 	var (
 		cf  *conf.Conf
 		err error
@@ -157,7 +153,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 		// from zookeeper
 		cf, err = conf.Load(realPath, conf.WithZkSvr(zkSvr))
 		if err != nil {
-			err = fmt.Errorf("%s %v", path, err)
+			err = fmt.Errorf("%s %v", loc, err)
 		}
 	}
 	if err != nil {
@@ -172,7 +168,7 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	}
 
 	// 'plugins' section
-	var names = make(map[string]struct{})
+	var pluginNames = make(map[string]struct{})
 	for i := 0; i < len(e.List("plugins", nil)); i++ {
 		section, err := e.Section(fmt.Sprintf("plugins[%d]", i))
 		if err != nil {
@@ -180,13 +176,14 @@ func (e *Engine) LoadConfig(path string) *Engine {
 		}
 
 		name := e.loadPluginSection(section)
-		if _, duplicated := names[name]; duplicated {
+		if _, duplicated := pluginNames[name]; duplicated {
 			// router.metrics will be bad with dup name
 			panic("duplicated plugin name: " + name)
 		}
-		names[name] = struct{}{}
+		pluginNames[name] = struct{}{}
 	}
 
+	// influxdb related section
 	if c, err := influxdb.NewConfig(cf.String("influx_addr", ""),
 		cf.String("influx_db", "dbus"), "", "",
 		cf.Duration("influx_tick", time.Minute)); err == nil {
@@ -196,15 +193,9 @@ func (e *Engine) LoadConfig(path string) *Engine {
 	return e
 }
 
-func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
+func (e *Engine) loadPluginSection(section *conf.Conf) string {
 	pluginCommons := new(pluginCommons)
 	pluginCommons.loadConfig(section)
-	name = pluginCommons.name
-	if pluginCommons.disabled {
-		log.Warn("%s disabled", pluginCommons.name)
-
-		return
-	}
 
 	wrapper := &pluginWrapper{
 		name:          pluginCommons.name,
@@ -227,7 +218,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
 		e.inputWrappers[wrapper.name] = wrapper
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
-		return
+		return pluginCommons.name
 	}
 
 	foRunner := newFORunner(plugin, pluginCommons)
@@ -251,7 +242,7 @@ func (e *Engine) loadPluginSection(section *conf.Conf) (name string) {
 		panic("unknown plugin: " + pluginCategory)
 	}
 
-	return
+	return pluginCommons.name
 }
 
 func (e *Engine) ServeForever() (ret error) {
@@ -265,17 +256,12 @@ func (e *Engine) ServeForever() (ret error) {
 		err     error
 	)
 
-	if telemetry.Default == nil {
-		log.Info("engine starting, with telemetry disabled...")
-	} else {
-		log.Info("engine starting...")
-	}
+	log.Info("engine starting...")
 
 	// setup signal handler first to avoid race condition
-	// if Input terminates very soon, global.Shutdown will
-	// not be able to trap it
+	// if Input terminates very fast, global.Shutdown will not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	e.launchAPIServer()
 	if globals.ClusterEnabled {
@@ -288,8 +274,6 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	if telemetry.Default != nil {
-		log.Info("launching telemetry dumper...")
-
 		go func() {
 			if err := telemetry.Default.Start(); err != nil {
 				log.Error("telemetry[%s]: %s", telemetry.Default.Name(), err)
@@ -316,21 +300,17 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	for inputName := range e.inputRecycleChans {
-		log.Info("building Input[%s] Packet pool with size=%d", inputName, globals.InputRecyclePoolSize)
-
 		for i := 0; i < globals.InputRecyclePoolSize; i++ {
 			inputPack := newPacket(e.inputRecycleChans[inputName])
 			e.inputRecycleChans[inputName] <- inputPack
 		}
 	}
 
-	log.Info("building Filter Packet pool with size=%d", globals.FilterRecyclePoolSize)
 	for i := 0; i < globals.FilterRecyclePoolSize; i++ {
 		filterPack := newPacket(e.filterRecycleChan)
 		e.filterRecycleChan <- filterPack
 	}
 
-	log.Info("launching Watchdog with ticker=%s", globals.WatchdogTick)
 	go e.runWatchdog(globals.WatchdogTick)
 
 	routerWg.Add(1)
@@ -346,20 +326,20 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	cfChanged := make(chan *conf.Conf)
-	go e.Conf.Watch(time.Second*10, e.stopper, cfChanged)
+	configChanged := make(chan *conf.Conf)
+	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
 	for !globals.Stopping {
 		select {
-		case <-cfChanged:
-			log.Info("%s updated, closing...", e.Conf.ConfPath())
+		case <-configChanged:
+			log.Info("%s changed, closing...", e.Conf.ConfPath())
 			globals.Stopping = true
 
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 
 			switch sig {
-			case syscall.SIGINT, syscall.SIGTERM:
+			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP:
 				log.Info("shutdown...")
 				globals.Stopping = true
 				ret = ErrQuitingSigal

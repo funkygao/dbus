@@ -15,7 +15,7 @@ const (
 )
 
 // POST /v1/rebalance?epoch={controller_epoch}
-func (e *Engine) doLocalRebalance(w http.ResponseWriter, r *http.Request) {
+func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 	if r.ContentLength > maxRPCBodyLen {
 		log.Warn("too large RPC request body: %d", r.ContentLength)
 		w.WriteHeader(http.StatusRequestEntityTooLarge)

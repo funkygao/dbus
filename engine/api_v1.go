@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (e *Engine) handleAPIPause(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIPauseV1(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	vars := mux.Vars(r)
 	inputPlugin := vars["input"]
 	if _, present := e.InputRunners[inputPlugin]; !present {
@@ -22,7 +22,7 @@ func (e *Engine) handleAPIPause(w http.ResponseWriter, r *http.Request, params m
 	return nil, ErrInvalidParam
 }
 
-func (e *Engine) handleAPIResume(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+func (e *Engine) handleAPIResumeV1(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	vars := mux.Vars(r)
 	inputPlugin := vars["input"]
 	if _, present := e.InputRunners[inputPlugin]; !present {

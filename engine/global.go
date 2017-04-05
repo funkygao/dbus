@@ -26,11 +26,11 @@ var (
 	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
-	// Globals return the global params of dbus.
+	// Globals returns the global configurations of dbus.
 	Globals func() *GlobalConfig
 )
 
-// GlobalConfig is the struct for holding global pipeline config values.
+// GlobalConfig is the struct for holding global config values.
 type GlobalConfig struct {
 	*conf.Conf
 
@@ -63,24 +63,6 @@ func (g *GlobalConfig) Shutdown() {
 
 func (g *GlobalConfig) Kill(sig os.Signal) {
 	g.sigChan <- sig
-}
-
-func (g *GlobalConfig) Register(k string, v interface{}) {
-	g.regMu.Lock()
-	defer g.regMu.Unlock()
-
-	if _, present := g.registry[k]; present {
-		panic(fmt.Sprintf("dup register: %s", k))
-	}
-
-	g.registry[k] = v
-}
-
-func (g *GlobalConfig) Registered(k string) interface{} {
-	g.regMu.RLock()
-	defer g.regMu.RUnlock()
-
-	return g.registry[k]
 }
 
 func (g *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {

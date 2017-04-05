@@ -5,7 +5,7 @@ import (
 	"github.com/funkygao/zkclient"
 )
 
-// NewManager creates a manager that will manages the cluster.
+// NewManager creates a Manager with zookeeper as underlying storage.
 func NewManager(zkSvr string) cluster.Manager {
 	return &controller{
 		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
