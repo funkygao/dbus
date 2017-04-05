@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/funkygao/columnize"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -39,12 +40,17 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return
 	}
 
+	lines := []string{"Endpoint|Weight|Revision"}
 	for _, p := range ps {
 		if p.Equals(leader) {
-			this.Ui.Warn(p.Endpoint)
+			lines = append(lines, fmt.Sprintf("%s*|%d|%s", p.Endpoint, p.Weight, p.Revision))
 		} else {
-			this.Ui.Info(p.Endpoint)
+			lines = append(lines, fmt.Sprintf("%s|%d|%s", p.Endpoint, p.Weight, p.Revision))
 		}
+	}
+
+	if len(lines) > 1 {
+		this.Ui.Output(columnize.SimpleFormat(lines))
 	}
 
 	return
