@@ -22,12 +22,12 @@ func (kb *keyBuilder) participant(id string) string {
 	return path.Join(kb.participants(), id)
 }
 
-func (kb *keyBuilder) controller() string {
-	return path.Join(rootPath, "controller")
+func (kb *keyBuilder) leader() string {
+	return path.Join(rootPath, "leader")
 }
 
-func (kb *keyBuilder) controllerEpoch() string {
-	return path.Join(rootPath, "controller_epoch")
+func (kb *keyBuilder) leaderEpoch() string {
+	return path.Join(rootPath, "leader_epoch")
 }
 
 func (kb *keyBuilder) resources() string {
@@ -36,6 +36,10 @@ func (kb *keyBuilder) resources() string {
 
 func (kb *keyBuilder) resource(resource string) string {
 	return path.Join(kb.resources(), kb.encodeResource(resource))
+}
+
+func (kb *keyBuilder) resourceState(resource string) string {
+	return path.Join(kb.resource(resource), "state")
 }
 
 func (kb *keyBuilder) encodeResource(resource string) string {

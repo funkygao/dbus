@@ -28,7 +28,6 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 		case http.StatusBadRequest:
 			// should never happen
 			log.Critical("[%s] rpc<- %s bad request", e.participant, participant.Endpoint)
-			panic("controller sending bad request")
 		case http.StatusNotAcceptable:
 			log.Error("[%s] rpc<- %s leader moved", e.participant, participant.Endpoint)
 		default:

@@ -9,6 +9,9 @@ type Resource struct {
 	InputPlugin string `json:"input_plugin,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Cost        int    `json:"cost,omitempty"`
+
+	// will not persist in json
+	State *ResourceState `json:"-"`
 }
 
 // UnmarshalRPCResources is used by a participant to unmarshal RPC reblance request body into list of resources.

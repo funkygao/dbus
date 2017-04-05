@@ -17,10 +17,11 @@ func TestKeyBuilder(t *testing.T) {
 
 	// resource related
 	assert.Equal(t, "/dbus/cluster/resources/bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg==", kb.resource("local://root:@localhost:3306"))
+	assert.Equal(t, "/dbus/cluster/resources/bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg==/state", kb.resourceState("local://root:@localhost:3306"))
 
 	// controller related
-	assert.Equal(t, "/dbus/cluster/controller", kb.controller())
-	assert.Equal(t, "/dbus/cluster/controller_epoch", kb.controllerEpoch())
+	assert.Equal(t, "/dbus/cluster/leader", kb.leader())
+	assert.Equal(t, "/dbus/cluster/leader_epoch", kb.leaderEpoch())
 }
 
 func TestKeyBuildEncodeDecodeResource(t *testing.T) {

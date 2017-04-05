@@ -167,8 +167,9 @@ dbus uses epoch to solve this issue.
 - [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] 2 phase rebalance: close participants then notify new resources
-  - [ ] when leader make decision, it persists to zk before RPC for leader failover
-    - each participant on startup gets its decision
+  - [ ] leader.onBecomingLeader is parallal: should be sequential
+  - [X] when leader make decision, it persists to zk before RPC for leader failover
+    - [ ] each participant on startup gets its decision
   - [ ] owner of resource
   - [ ] leader RPC has epoch info
   - [ ] rename Conroller to Participant

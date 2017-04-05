@@ -29,7 +29,7 @@ func newLeader(ctx *controller) *leader {
 }
 
 func (l *leader) fetchEpoch() {
-	data, stat, err := l.ctx.zc.GetWithStat(l.ctx.kb.controllerEpoch())
+	data, stat, err := l.ctx.zc.GetWithStat(l.ctx.kb.leaderEpoch())
 	if err != nil {
 		if !zkclient.IsErrNoNode(err) {
 			log.Error("%v", err)
@@ -46,14 +46,14 @@ func (l *leader) incrementEpoch() (ok bool) {
 	newEpoch := l.epoch + 1
 	data := []byte(strconv.Itoa(newEpoch))
 	// CAS
-	newStat, err := l.ctx.zc.SetWithVersion(l.ctx.kb.controllerEpoch(), data, l.epochZkVersion)
+	newStat, err := l.ctx.zc.SetWithVersion(l.ctx.kb.leaderEpoch(), data, l.epochZkVersion)
 	if err != nil {
 		switch {
 		case zkclient.IsErrNoNode(err):
 			// if path doesn't exist, this is the first controller whose epoch should be 1
 			// the following call can still fail if another controller gets elected between checking if the path exists and
 			// trying to create the controller epoch path
-			if err := l.ctx.zc.CreatePersistent(l.ctx.kb.controllerEpoch(), data); err != nil {
+			if err := l.ctx.zc.CreatePersistent(l.ctx.kb.leaderEpoch(), data); err != nil {
 				if zkclient.IsErrNodeExists(err) {
 					log.Warn("leader moved to another participant! abort rebalance")
 					return
@@ -134,6 +134,28 @@ func (l *leader) doRebalance() {
 	newDecision := l.ctx.strategyFunc(participants, resources)
 	if !newDecision.Equals(l.lastDecision) {
 		l.lastDecision = newDecision
+
+		// WAL
+		walFailure := false
+		for participant, resources := range newDecision {
+			for _, resource := range resources {
+				rs := cluster.NewResourceState()
+				rs.LeaderEpoch = l.epoch
+				rs.Owner = participant.Endpoint
+				// TODO add random sleep here to test race condition
+				if err := l.ctx.zc.Set(l.ctx.kb.resourceState(resource.Name), rs.Marshal()); err != nil {
+					// zk conn lost? timeout?
+					// TODO
+					log.Critical("[%s] %s %v", l.ctx.participant, resource.Name, err)
+					walFailure = true
+					break
+				}
+			}
+
+			if walFailure {
+				break
+			}
+		}
 
 		l.ctx.onRebalance(l.epoch, newDecision)
 	} else {

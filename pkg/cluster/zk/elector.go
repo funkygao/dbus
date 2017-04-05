@@ -28,12 +28,12 @@ func newLeaderElector(ctx *controller, onBecomingLeader func(), onResigningAsLea
 
 func (l *leaderElector) startup() {
 	// watch for leader changes
-	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.controller(), l)
+	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.leader(), l)
 	l.elect()
 }
 
 func (l *leaderElector) fetchLeaderID() string {
-	b, err := l.ctx.zc.Get(l.ctx.kb.controller())
+	b, err := l.ctx.zc.Get(l.ctx.kb.leader())
 	if err != nil {
 		return ""
 	}
@@ -53,7 +53,7 @@ func (l *leaderElector) elect() (win bool) {
 		return
 	}
 
-	if err := l.ctx.zc.CreateLiveNode(l.ctx.kb.controller(), l.ctx.participant.Marshal(), 2); err == nil {
+	if err := l.ctx.zc.CreateLiveNode(l.ctx.kb.leader(), l.ctx.participant.Marshal(), 2); err == nil {
 		log.Trace("[%s] elect win!", l.ctx.participant)
 
 		win = true
