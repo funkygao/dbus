@@ -27,4 +27,6 @@ type Manager interface {
 
 	// TriggerUpgrade will notify all participants of binary upgrade.
 	TriggerUpgrade() error
+
+	CurrentDecision() Decision
 }

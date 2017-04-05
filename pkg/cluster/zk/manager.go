@@ -31,6 +31,14 @@ func (c *controller) TriggerUpgrade() (err error) {
 	return
 }
 
+func (c *controller) CurrentDecision() cluster.Decision {
+	if !c.amLeader() {
+		return nil
+	}
+
+	return c.leader.lastDecision
+}
+
 func (c *controller) RegisterResource(resource cluster.Resource) (err error) {
 	if err = c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal()); err != nil {
 		return

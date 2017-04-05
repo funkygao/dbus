@@ -3,6 +3,7 @@ package engine
 import (
 	"net/http"
 
+	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
@@ -35,4 +36,14 @@ func (e *Engine) handleAPIResumeV1(w http.ResponseWriter, r *http.Request, param
 
 	log.Warn("plugin[%s] is not able to resume", inputPlugin)
 	return nil, ErrInvalidParam
+}
+
+func (e *Engine) handleAPIDecisionV1(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+	if e.controller == nil {
+		// cluster feature off
+		return nil, ErrInvalidParam
+	}
+
+	m := e.controller.(cluster.Manager)
+	return m.CurrentDecision(), nil
 }
