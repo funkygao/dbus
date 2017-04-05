@@ -30,7 +30,6 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	leader, err := mgr.Leader()
 	if err != nil {
 		this.Ui.Error(err.Error())
-		return
 	}
 
 	// list all resources
