@@ -26,16 +26,16 @@ zkconf:
 	@cat ../../etc/canal.cf | zk set -p /dbus/conf
 
 canal:build zkconf
-	./dbusd -cluster
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 c1:build zkconf
-	./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897
 
 c2:build zkconf
-	./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
 
 c3:build zkconf
-	./dbusd -cluster -pprof :10122 -rpc 9879 -api 9899
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10122 -rpc 9879 -api 9899
 
 dump:buildrace
 	./dbusd -conf ../../etc/complex.cf -dump canal.png

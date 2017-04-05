@@ -22,9 +22,10 @@ type controller struct {
 	strategyFunc cluster.StrategyFunc
 	participant  cluster.Participant
 
-	leader  *leader
-	hc      *healthCheck
-	elector *leaderElector
+	leader   *leader
+	hc       *healthCheck
+	elector  *leaderElector
+	upgrader *upgrader
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance cluster.RebalanceCallback
@@ -94,6 +95,9 @@ func (c *controller) Start() (err error) {
 	c.elector = newLeaderElector(c, c.leader.onBecomingLeader, c.leader.onResigningAsLeader)
 	c.elector.startup()
 
+	c.upgrader = newUpgrader(c)
+	c.upgrader.startup()
+
 	return
 }
 
@@ -104,9 +108,14 @@ func (c *controller) Stop() (err error) {
 
 	c.elector.close()
 	c.hc.close()
+	c.upgrader.close()
 
 	log.Trace("[%s] controller stopped", c.participant)
 	return
+}
+
+func (c *controller) Upgrade() <-chan struct{} {
+	return c.upgrader.events()
 }
 
 func (c *controller) amLeader() bool {

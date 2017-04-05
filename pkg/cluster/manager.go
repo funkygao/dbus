@@ -24,4 +24,7 @@ type Manager interface {
 
 	// Rebalance triggers a new leader election across the cluster.
 	Rebalance() error
+
+	// TriggerUpgrade will notify all participants of binary upgrade.
+	TriggerUpgrade() error
 }

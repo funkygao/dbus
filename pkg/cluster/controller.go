@@ -50,4 +50,7 @@ type Controller interface {
 
 	// Stop closes the controller underlying connection and do all the related cleanup.
 	Stop() error
+
+	// Upgrade returns a channel to receive cluster upgrade events.
+	Upgrade() <-chan struct{}
 }

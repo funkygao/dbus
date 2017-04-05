@@ -75,6 +75,7 @@ func (l *leaderElector) close() {
 	// needn't delete /controller znode because when
 	// zkclient closes the ephemeral znode will disappear automatically
 	l.leaderID = ""
+	l.ctx.zc.UnsubscribeDataChanges(l.ctx.kb.leader(), l)
 }
 
 func (l *leaderElector) amLeader() bool {

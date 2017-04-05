@@ -1,6 +1,7 @@
 package zk
 
 import (
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/zkclient"
 )
@@ -18,6 +19,16 @@ func (c *controller) Open() error {
 
 func (c *controller) Close() {
 	c.zc.Disconnect()
+}
+
+func (c *controller) TriggerUpgrade() (err error) {
+	data := []byte(dbus.Revision)
+	err = c.zc.Set(c.kb.upgrade(), data)
+	if zkclient.IsErrNoNode(err) {
+		return c.zc.CreatePersistent(c.kb.upgrade(), data)
+	}
+
+	return
 }
 
 func (c *controller) RegisterResource(resource cluster.Resource) (err error) {
