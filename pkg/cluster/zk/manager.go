@@ -35,6 +35,13 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 		return nil, err
 	}
 
+	liveParticipants := make(map[string]struct{})
+	if ps, err := c.LiveParticipants(); err == nil {
+		for _, p := range ps {
+			liveParticipants[p.Endpoint] = struct{}{}
+		}
+	}
+
 	r := make([]cluster.Resource, 0)
 	for i := range resources {
 		res := cluster.Resource{}
@@ -45,6 +52,10 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 			return r, err
 		}
 		res.State.From(state)
+		if _, present := liveParticipants[res.State.Owner]; !present {
+			// its owner has died
+			res.State.BecomeOrphan()
+		}
 
 		r = append(r, res)
 	}
@@ -59,6 +70,7 @@ func (c *controller) Leader() (cluster.Participant, error) {
 		if zkclient.IsErrNoNode(err) {
 			return p, cluster.ErrNoLeader
 		}
+
 		return p, err
 	}
 

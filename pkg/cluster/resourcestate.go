@@ -22,3 +22,12 @@ func (rs *ResourceState) Marshal() []byte {
 	b, _ := json.Marshal(rs)
 	return b
 }
+
+func (rs *ResourceState) BecomeOrphan() {
+	rs.LeaderEpoch = -1
+	rs.Owner = ""
+}
+
+func (rs *ResourceState) IsOrphan() bool {
+	return rs.LeaderEpoch == -1 && len(rs.Owner) == 0
+}

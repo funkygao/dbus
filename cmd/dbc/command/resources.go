@@ -51,7 +51,11 @@ func (this *Resources) Run(args []string) (exitCode int) {
 
 	lines := []string{"InputPlugin|Resources|Epoch|Owner"}
 	for _, res := range resources {
-		lines = append(lines, fmt.Sprintf("%s|%s|%d|%s", res.InputPlugin, res.Name, res.State.LeaderEpoch, res.State.Owner))
+		if res.State.IsOrphan() {
+			lines = append(lines, fmt.Sprintf("%s|%s|-|-", res.InputPlugin, res.Name))
+		} else {
+			lines = append(lines, fmt.Sprintf("%s|%s|%d|%s", res.InputPlugin, res.Name, res.State.LeaderEpoch, res.State.Owner))
+		}
 	}
 	if len(lines) > 1 {
 		this.Ui.Output(columnize.SimpleFormat(lines))
