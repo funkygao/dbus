@@ -20,8 +20,13 @@ func (c *controller) Close() {
 	c.zc.Disconnect()
 }
 
-func (c *controller) RegisterResource(resource cluster.Resource) error {
-	return c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal())
+func (c *controller) RegisterResource(resource cluster.Resource) (err error) {
+	if err = c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal()); err != nil {
+		return
+	}
+
+	err = c.zc.CreatePersistent(c.kb.resourceState(resource.Name), nil)
+	return
 }
 
 func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
@@ -32,10 +37,16 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 
 	r := make([]cluster.Resource, 0)
 	for i := range resources {
-		model := cluster.Resource{}
-		model.From(marshalled[i])
+		res := cluster.Resource{}
+		res.From(marshalled[i])
+		res.State = cluster.NewResourceState()
+		state, err := c.zc.Get(c.kb.resourceState(res.Name))
+		if err != nil {
+			return r, err
+		}
+		res.State.From(state)
 
-		r = append(r, model)
+		r = append(r, res)
 	}
 
 	return r, nil

@@ -38,6 +38,10 @@ func (kb *keyBuilder) resource(resource string) string {
 	return path.Join(kb.resources(), kb.encodeResource(resource))
 }
 
+func (kb *keyBuilder) resourceState(resource string) string {
+	return path.Join(kb.resource(resource), "state")
+}
+
 func (kb *keyBuilder) encodeResource(resource string) string {
 	return base64.URLEncoding.EncodeToString([]byte(resource))
 }

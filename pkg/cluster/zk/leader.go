@@ -135,6 +135,28 @@ func (l *leader) doRebalance() {
 	if !newDecision.Equals(l.lastDecision) {
 		l.lastDecision = newDecision
 
+		// WAL
+		walFailure := false
+		for participant, resources := range newDecision {
+			for _, resource := range resources {
+				rs := cluster.NewResourceState()
+				rs.LeaderEpoch = l.epoch
+				rs.Owner = participant.Endpoint
+				// TODO add random sleep here to test race condition
+				if err := l.ctx.zc.Set(l.ctx.kb.resourceState(resource.Name), rs.Marshal()); err != nil {
+					// zk conn lost? timeout?
+					// TODO
+					log.Critical("[%s] %s %v", l.ctx.participant, resource.Name, err)
+					walFailure = true
+					break
+				}
+			}
+
+			if walFailure {
+				break
+			}
+		}
+
 		l.ctx.onRebalance(l.epoch, newDecision)
 	} else {
 		log.Trace("[%s] decision stay unchanged, quit rebalance", l.ctx.participant)
