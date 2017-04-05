@@ -30,6 +30,9 @@ func TestParticipant(t *testing.T) {
 	assert.Equal(t, 12, p.Weight)
 	assert.Equal(t, "109faeb", p.Revision)
 	assert.Equal(t, "12.12.12.12:1888", p.Endpoint)
+	assert.Equal(t, "http://12.12.12.12:1888", p.RPCEndpoint())
+	p.APIPort = 1999
+	assert.Equal(t, "http://12.12.12.12:1999", p.APIEndpoint())
 }
 
 func TestParticipantsSort(t *testing.T) {

@@ -40,12 +40,12 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return
 	}
 
-	lines := []string{"Endpoint|Weight|Revision"}
+	lines := []string{"Endpoint|Weight|Revision|API"}
 	for _, p := range ps {
 		if p.Equals(leader) {
-			lines = append(lines, fmt.Sprintf("%s*|%d|%s", p.Endpoint, p.Weight, p.Revision))
+			lines = append(lines, fmt.Sprintf("%s*|%d|%s|%s", p.Endpoint, p.Weight, p.Revision, p.APIEndpoint()))
 		} else {
-			lines = append(lines, fmt.Sprintf("%s|%d|%s", p.Endpoint, p.Weight, p.Revision))
+			lines = append(lines, fmt.Sprintf("%s|%d|%s|%s", p.Endpoint, p.Weight, p.Revision, p.APIEndpoint()))
 		}
 	}
 

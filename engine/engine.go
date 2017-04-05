@@ -114,6 +114,7 @@ func New(globals *GlobalConfig) *Engine {
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
 			Revision: dbus.Revision,
+			APIPort:  globals.APIPort,
 		},
 	}
 }
