@@ -27,7 +27,7 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
-	controller, err := mgr.Controller()
+	leader, err := mgr.Leader()
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
@@ -41,7 +41,7 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	}
 
 	for _, p := range ps {
-		if p.Equals(controller) {
+		if p.Equals(leader) {
 			this.Ui.Warn(p.Endpoint)
 		} else {
 			this.Ui.Info(p.Endpoint)
