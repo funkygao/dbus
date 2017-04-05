@@ -167,16 +167,16 @@ dbus uses epoch to solve this issue.
 - [ ] server_id uniq across the cluster
 - [ ] controller
   - [ ] 2 phase rebalance: close participants then notify new resources
-  - [ ] engine shutdown, controller still send rpc
-  - [ ] owner of resource
-  - [ ] leader RPC has epoch info
-  - [ ] only leader subscribe SessionExpiredListener
-  - [ ] mv rpc server into cluster pkg?
   - [ ] when leader make decision, it persists to zk before RPC for leader failover
     - each participant on startup gets its decision
+  - [ ] owner of resource
+  - [ ] leader RPC has epoch info
+  - [ ] rename Conroller to Participant
+  - [ ] mv rpc server into cluster pkg?
   - [ ] if Ack fails(zk crash), resort to local disk(load on startup)
+  - [X] engine shutdown, controller still send rpc
   - test cases
-    - [ ] brain split
+    - [X] brain split
     - [X] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule
     - [X] cluster chaos monkey
