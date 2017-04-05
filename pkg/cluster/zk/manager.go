@@ -56,6 +56,9 @@ func (c *controller) Leader() (cluster.Participant, error) {
 	var p cluster.Participant
 	data, err := c.zc.Get(c.kb.leader())
 	if err != nil {
+		if zkclient.IsErrNoNode(err) {
+			return p, cluster.ErrNoLeader
+		}
 		return p, err
 	}
 
