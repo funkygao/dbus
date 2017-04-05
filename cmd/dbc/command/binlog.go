@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/funkygao/dbus/engine"
-	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/dbus/plugins/input/mysql"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
@@ -42,10 +41,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 	}
 
 	e := engine.New(nil).LoadConfig(this.fn)
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
-	if err := mgr.Open(); err != nil {
-		panic(err)
-	}
+	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
 	resources, err := mgr.RegisteredResources()

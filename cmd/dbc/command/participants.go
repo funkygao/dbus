@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -25,10 +24,7 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
-	if err := mgr.Open(); err != nil {
-		panic(err)
-	}
+	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
 	controller, err := mgr.Controller()

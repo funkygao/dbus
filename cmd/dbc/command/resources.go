@@ -7,7 +7,6 @@ import (
 
 	"github.com/funkygao/columnize"
 	"github.com/funkygao/dbus/pkg/cluster"
-	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -29,10 +28,7 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
-	if err := mgr.Open(); err != nil {
-		panic(err)
-	}
+	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
 	if len(this.addResource) != 0 {

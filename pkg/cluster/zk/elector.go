@@ -60,11 +60,11 @@ func (l *leaderElector) elect() (win bool) {
 		l.leaderID = l.ctx.participant.Endpoint
 		l.onBecomingLeader()
 	} else {
-		log.Trace("[%s] elect lose :-)", l.ctx.participant)
-
 		l.leaderID = l.fetchLeaderID() // refresh
 		if l.leaderID == "" {
 			log.Warn("[%s] a leader has been elected but just resigned, this will lead to another round of election", l.ctx.participant)
+		} else {
+			log.Trace("[%s] elect lose to %s :-)", l.ctx.participant, l.leaderID)
 		}
 	}
 
