@@ -42,8 +42,6 @@ func (l *leaderElector) fetchLeaderID() string {
 }
 
 func (l *leaderElector) elect() (win bool) {
-	log.Trace("[%s] elect...", l.ctx.participant)
-
 	// we can get here during the initial startup and the HandleDataDeleted callback.
 	// because of the potential race condition, it's possible that the leader has already
 	// been elected when we get here.
@@ -53,6 +51,8 @@ func (l *leaderElector) elect() (win bool) {
 		return
 	}
 
+	log.Trace("[%s] elect...", l.ctx.participant)
+
 	if err := l.ctx.zc.CreateLiveNode(l.ctx.kb.leader(), l.ctx.participant.Marshal(), 2); err == nil {
 		log.Trace("[%s] elect win!", l.ctx.participant)
 
@@ -60,7 +60,7 @@ func (l *leaderElector) elect() (win bool) {
 		l.leaderID = l.ctx.participant.Endpoint
 		l.onBecomingLeader()
 	} else {
-		l.leaderID = l.fetchLeaderID() // refresh
+		l.leaderID = l.fetchLeaderID() // refresh leader id
 		if l.leaderID == "" {
 			log.Warn("[%s] a leader has been elected but just resigned, this will lead to another round of election", l.ctx.participant)
 		} else {

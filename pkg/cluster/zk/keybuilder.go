@@ -1,7 +1,7 @@
 package zk
 
 import (
-	"encoding/base64"
+	"net/url"
 	"path"
 )
 
@@ -47,11 +47,11 @@ func (kb *keyBuilder) resourceState(resource string) string {
 }
 
 func (kb *keyBuilder) encodeResource(resource string) string {
-	return base64.URLEncoding.EncodeToString([]byte(resource))
+	return url.QueryEscape(resource)
 }
 
 func (kb *keyBuilder) decodeResource(encodedResource string) (string, error) {
-	b, err := base64.URLEncoding.DecodeString(encodedResource)
+	b, err := url.QueryUnescape(encodedResource)
 	if err != nil {
 		return "", err
 	}
