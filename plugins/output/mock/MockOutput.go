@@ -11,10 +11,12 @@ import (
 
 type MockOutput struct {
 	blackhole bool
+	metrics   bool
 }
 
 func (this *MockOutput) Init(config *conf.Conf) {
 	this.blackhole = config.Bool("blackhole", false)
+	this.metrics = config.Bool("metrics", true)
 }
 
 func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
@@ -40,7 +42,10 @@ func (this *MockOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error 
 			pack.Recycle()
 
 		case <-tick.C:
-			log.Trace("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
+			if this.metrics {
+				log.Trace("[%s] throughput %s/s", name, gofmt.Comma((n-lastN)/10))
+			}
+
 			lastN = n
 		}
 	}

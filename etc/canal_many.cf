@@ -1,0 +1,22 @@
+{
+    plugins: [
+        {
+            name: "in.test"
+            class: "MysqlbinlogInput"
+            // local://root@localhost:3306/test
+        }
+        {
+            name: "in.mysql"
+            class: "MysqlbinlogInput"
+            // local://root@localhost:3306/mysql
+        }
+
+        {
+            name: "out.mock"
+            class: "MockOutput"
+            metrics: false
+            match: ["in.test", "in.mysql", ]
+        }
+    ]
+
+}

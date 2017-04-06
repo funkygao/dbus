@@ -14,7 +14,7 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 	log.Info("[%s] decision: %+v", e.participant, decision)
 
 	for participant, resources := range decision {
-		log.Trace("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
+		log.Debug("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
 
 		// edge case:
 		// participant might die
@@ -25,17 +25,24 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 		switch statusCode {
 		case http.StatusOK:
 			log.Trace("[%s] rpc<- ok %s", e.participant, participant.Endpoint)
+
 		case http.StatusGone:
 			// e,g.
 			// resource changed, live participant [1, 2, 3], when RPC sending, p[1] gone
 			// just wait for another rebalance event
 			log.Warn("[%s] rpc<- %s gone", e.participant, participant.Endpoint)
+			return
+
 		case http.StatusBadRequest:
 			// should never happen
 			log.Critical("[%s] rpc<- %s bad request", e.participant, participant.Endpoint)
+
 		case http.StatusNotAcceptable:
 			log.Error("[%s] rpc<- %s leader moved", e.participant, participant.Endpoint)
+			return
+
 		default:
+			// TODO
 			log.Error("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)
 		}
 

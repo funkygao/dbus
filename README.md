@@ -165,18 +165,20 @@ dbus uses epoch to solve this issue.
 
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
+- [ ] tweak of batcher yield
+- [ ] kguard integration
 - [ ] controller
+  - [ ] mv rpc server into cluster pkg?
   - [ ] 2 phase rebalance: close participants then notify new resources
   - [ ] leader.onBecomingLeader is parallal: should be sequential
+  - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
   - [X] when leader make decision, it persists to zk before RPC for leader failover
-    - [ ] each participant on startup gets its decision
-  - [ ] owner of resource
-  - [ ] leader RPC has epoch info
-  - [ ] rename Conroller to Participant
-  - [ ] mv rpc server into cluster pkg?
+  - [X] owner of resource
+  - [X] leader RPC has epoch info
   - [ ] if Ack fails(zk crash), resort to local disk(load on startup)
   - [X] engine shutdown, controller still send rpc
   - test cases
+    - [X] sharded resources
     - [X] brain split
     - [X] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule

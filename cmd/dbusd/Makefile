@@ -22,20 +22,27 @@ dispatch:buildrace
 complex:buildrace
 	./dbusd -conf ../../etc/complex.cf
 
+resource:
+	dbc resources -add in.binlog-local://root@localhost:3306
+
+resources:
+	dbc resources -add in.test-local://root@localhost:3306/test
+	dbc resources -add in.mysql-local://root@localhost:3306/mysql
+
 zkconf:
-	@cat ../../etc/canal.cf | zk set -p /dbus/conf
+	@cat ../../etc/canal_many.cf | zk set -p /dbus/conf
 
 canal:build zkconf
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 c1:build zkconf
-	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897 -loglevel trace
 
 c2:build zkconf
-	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10121 -rpc 9878 -api 9898 -loglevel trace
 
 c3:build zkconf
-	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10122 -rpc 9879 -api 9899
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster -pprof :10122 -rpc 9879 -api 9899 -loglevel trace
 
 dump:buildrace
 	./dbusd -conf ../../etc/complex.cf -dump canal.png
