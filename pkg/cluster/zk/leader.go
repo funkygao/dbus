@@ -2,6 +2,7 @@ package zk
 
 import (
 	"strconv"
+	"sync"
 
 	"github.com/funkygao/dbus/pkg/cluster"
 	log "github.com/funkygao/log4go"
@@ -18,6 +19,8 @@ type leader struct {
 
 	pcl zkclient.ZkChildListener // leader watches live participants
 	rcl zkclient.ZkChildListener // leader watches resources
+
+	rebalanceMu sync.Mutex
 }
 
 func newLeader(ctx *controller) *leader {
@@ -112,7 +115,11 @@ func (l *leader) onBecomingLeader() {
 // 1. participants change
 // 2. resources change
 // 3. becoming leader
+// rebalance runs sequentially
 func (l *leader) doRebalance() {
+	l.rebalanceMu.Lock()
+	defer l.rebalanceMu.Unlock()
+
 	liveParticipants, err := l.ctx.LiveParticipants()
 	if err != nil {
 		// TODO
