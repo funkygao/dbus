@@ -22,7 +22,7 @@ func (this *RedisbinlogInput) OnAck(pack *engine.Packet) error {
 }
 
 func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
-	log.Trace("[%s] stopping...", r.Name())
+	log.Debug("[%s] stopping...", r.Name())
 	close(this.stopChan)
 }
 
@@ -34,7 +34,7 @@ func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 		case pack, ok := <-r.InChan():
 			if !ok {
-				log.Trace("yes sir!")
+				log.Debug("yes sir!")
 				break
 			}
 

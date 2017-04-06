@@ -373,7 +373,7 @@ func (e *Engine) ServeForever() (ret error) {
 			continue
 		}
 
-		log.Trace("Stop message sent to %s", inputRunner.Name())
+		log.Debug("Stop message sent to %s", inputRunner.Name())
 		inputRunner.Input().Stop(inputRunner)
 	}
 	e.Unlock()
@@ -385,7 +385,7 @@ func (e *Engine) ServeForever() (ret error) {
 	// we must wait for all the packs to be consumed before shutdown
 
 	for _, filterRunner := range e.FilterRunners {
-		log.Trace("Stop message sent to %s", filterRunner.Name())
+		log.Debug("Stop message sent to %s", filterRunner.Name())
 		e.router.removeFilterMatcher <- filterRunner.getMatcher()
 	}
 	filtersWg.Wait()
@@ -394,7 +394,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	for _, outputRunner := range e.OutputRunners {
-		log.Trace("Stop message sent to %s", outputRunner.Name())
+		log.Debug("Stop message sent to %s", outputRunner.Name())
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()

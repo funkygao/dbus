@@ -166,6 +166,7 @@ dbus uses epoch to solve this issue.
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
 - [ ] tweak of batcher yield
+- [ ] use scheme to distinguish type of DSN
 - [X] kguard integration
 - [ ] controller
   - [ ] what if RPC fails

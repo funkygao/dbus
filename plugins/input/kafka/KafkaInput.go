@@ -33,7 +33,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 
 		case pack, ok := <-r.InChan():
 			if !ok {
-				log.Trace("yes sir!")
+				log.Debug("yes sir!")
 				break
 			}
 

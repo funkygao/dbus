@@ -115,7 +115,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 
 		case pack, ok := <-r.InChan():
 			if !ok {
-				log.Trace("[%s.%s.%s] yes sir!", this.zone, this.cluster, this.topic)
+				log.Debug("[%s.%s.%s] yes sir!", this.zone, this.cluster, this.topic)
 				return nil
 			}
 

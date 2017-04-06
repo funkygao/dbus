@@ -107,9 +107,9 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 
 	globals := Globals()
 	for {
-		log.Info("Input[%s] started", ir.Name())
+		log.Trace("Input[%s] started", ir.Name())
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Info("Input[%s] stopped", ir.Name())
+			log.Trace("Input[%s] stopped", ir.Name())
 		} else {
 			log.Error("Input[%s] stopped: %v", ir.Name(), err)
 		}

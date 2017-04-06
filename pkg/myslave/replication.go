@@ -19,7 +19,7 @@ func (m *MySlave) StopReplication() {
 		return
 	}
 
-	log.Trace("[%s] stopping replication from %s", m.name, m.masterAddr)
+	log.Debug("[%s] stopping replication from %s", m.name, m.masterAddr)
 
 	m.r.Close()
 

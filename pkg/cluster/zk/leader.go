@@ -13,7 +13,7 @@ type leader struct {
 
 	lastDecision cluster.Decision
 
-	epoch          int
+	epoch          int // should never overflow
 	epochZkVersion int32
 
 	pcl zkclient.ZkChildListener // leader watches live participants
