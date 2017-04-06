@@ -10,7 +10,6 @@ import (
 	"github.com/funkygao/dbus/pkg/checkpoint/state/binlog"
 	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
 	"github.com/funkygao/dbus/pkg/model"
-	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
 	conf "github.com/funkygao/jsconf"
 	mylog "github.com/ngaut/log"
@@ -24,7 +23,6 @@ type MySlave struct {
 	r     *replication.BinlogSyncer
 	p     checkpoint.Checkpoint
 	m     *slaveMetrics
-	z     *zk.ZkZone
 	conn  *client.Conn
 	state *binlog.BinlogState
 
@@ -98,13 +96,13 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.m = newMetrics(m.host, m.port)
-	m.z = engine.Globals().GetOrRegisterZkzone(zone)
-	m.p = czk.New(m.z, m.state, m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state,
+		m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }
 
-// MarkAsProcessed notifies the positioner that a certain binlog event
+// MarkAsProcessed notifies the checkpoint that a certain binlog event
 // has been successfully processed and should be committed.
 func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
 	if !r.IsStmtEnd() {
