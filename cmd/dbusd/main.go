@@ -77,7 +77,6 @@ func main() {
 
 		if err = e.ServeForever(); err != nil {
 			// e,g. SIGTERM received
-			log4go.Info("%v", err)
 			break
 		}
 

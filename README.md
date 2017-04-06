@@ -166,14 +166,13 @@ dbus uses epoch to solve this issue.
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
-- [ ] plugins Run has no way of panic
 - [ ] RowsEvent avro
 - [ ] use scheme to distinguish type of DSN
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
   - [X] 2 phase rebalance: close participants then notify new resources
-  - [ ] what if RPC fails
-  - [ ] leader.onBecomingLeader is parallal: should be sequential
+  - [X] what if RPC fails
+  - [X] leader.onBecomingLeader is parallal: should be sequential
   - [ ] hot reload raises cluster herd: participant changes too much
   - [X] when leader make decision, it persists to zk before RPC for leader failover
   - [X] owner of resource
@@ -192,6 +191,7 @@ dbus uses epoch to solve this issue.
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
+- [X] plugins Run has no way of panic
 - [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy

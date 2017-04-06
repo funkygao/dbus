@@ -69,9 +69,10 @@ type Engine struct {
 	inputRecycleChans map[string]chan *Packet
 	filterRecycleChan chan *Packet
 
-	hostname string
-	pid      int
-	stopper  chan struct{}
+	hostname      string
+	pid           int
+	stopper       chan struct{}
+	pluginPanicCh chan error
 }
 
 func New(globals *GlobalConfig) *Engine {
@@ -94,9 +95,10 @@ func New(globals *GlobalConfig) *Engine {
 	}
 
 	return &Engine{
-		pid:      os.Getpid(),
-		hostname: hostname,
-		stopper:  make(chan struct{}),
+		pid:           os.Getpid(),
+		hostname:      hostname,
+		stopper:       make(chan struct{}),
+		pluginPanicCh: make(chan error),
 
 		router: newRouter(),
 
@@ -218,13 +220,13 @@ func (e *Engine) loadPluginSection(section *conf.Conf) string {
 	pluginCategory := pluginType[1]
 	if pluginCategory == "Input" {
 		e.inputRecycleChans[wrapper.name] = make(chan *Packet, Globals().InputRecyclePoolSize)
-		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons)
+		e.InputRunners[wrapper.name] = newInputRunner(plugin.(Input), pluginCommons, e.pluginPanicCh)
 		e.inputWrappers[wrapper.name] = wrapper
 		e.router.metrics.m[wrapper.name] = metrics.NewRegisteredMeter(wrapper.name, metrics.DefaultRegistry)
 		return pluginCommons.name
 	}
 
-	foRunner := newFORunner(plugin, pluginCommons)
+	foRunner := newFORunner(plugin, pluginCommons, e.pluginPanicCh)
 	matcher := newMatcher(section.StringList("match", nil), foRunner)
 	foRunner.matcher = matcher
 
@@ -277,7 +279,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	for _, outputRunner := range e.OutputRunners {
-		log.Trace("launching Output[%s]...", outputRunner.Name())
+		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
 		if err = outputRunner.start(e, outputsWg); err != nil {
@@ -286,7 +288,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	for _, filterRunner := range e.FilterRunners {
-		log.Trace("launching Filter[%s]...", filterRunner.Name())
+		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
 		if err = filterRunner.start(e, filtersWg); err != nil {
@@ -312,7 +314,7 @@ func (e *Engine) ServeForever() (ret error) {
 	go e.router.Start(routerWg)
 
 	for _, inputRunner := range e.InputRunners {
-		log.Trace("launching Input[%s]...", inputRunner.Name())
+		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
 		if err = inputRunner.start(e, inputsWg); err != nil {
@@ -357,6 +359,11 @@ func (e *Engine) ServeForever() (ret error) {
 			case syscall.SIGUSR2:
 				observer.Publish(SIGUSR2, nil)
 			}
+
+		case err := <-e.pluginPanicCh:
+			log.Info("plugin panic, stopping...")
+			ret = err
+			globals.Stopping = true
 		}
 	}
 
