@@ -24,7 +24,7 @@ func (m *manager) AllStates() ([]checkpoint.State, error) {
 		return nil, err
 	}
 
-	r := make([]checkpoint.State, 0)
+	var r []checkpoint.State
 	for _, scheme := range schemes {
 		dsns, _, err := m.zkzone.Conn().Children(path.Join(root, scheme))
 		if err != nil {

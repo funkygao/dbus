@@ -63,9 +63,9 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	if m.GTID {
 		// SELECT @@gtid_mode
 		// SHOW GLOBAL VARIABLES LIKE 'SERVER_UUID'
-		var masterUuid uuid.UUID
+		var masterUUID uuid.UUID
 		// 07c93cd7-a7d3-12a5-94e1-a0369a7c3790:1-313225133
-		set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUuid.String(), 1, 2))
+		set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUUID.String(), 1, 2))
 		syncer, err = m.r.StartSyncGTID(set)
 	} else {
 		syncer, err = m.r.StartSync(mysql.Position{

@@ -54,7 +54,7 @@ func (p *Producer) Start() error {
 	var err error
 	if p.cf.dryrun {
 		// dryrun mode
-		p.b = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
+		p.b = batcher.New(p.cf.Sarama.Producer.Flush.Messages)
 		p.Send = p.dryrunSend
 		return nil
 	}
@@ -71,7 +71,7 @@ func (p *Producer) Start() error {
 		return ErrNotReady
 	}
 
-	p.b = batcher.NewBatcher(p.cf.Sarama.Producer.Flush.Messages)
+	p.b = batcher.New(p.cf.Sarama.Producer.Flush.Messages)
 	if p.ap, err = sarama.NewAsyncProducer(p.brokers, p.cf.Sarama); err != nil {
 		return err
 	}

@@ -30,7 +30,7 @@ func TestGolangPadding(t *testing.T) {
 }
 
 func TestBatcherBasic(t *testing.T) {
-	b := NewBatcher(8)
+	b := New(8)
 	// inject [0, 8)
 	for i := 0; i < 8; i++ {
 		b.Put(i)
@@ -70,7 +70,7 @@ func TestBatcherBasic(t *testing.T) {
 }
 
 func BenchmarkBatcherGetWithBatchSize100(b *testing.B) {
-	batcher := NewBatcher(100)
+	batcher := New(100)
 	go func() {
 		for {
 			batcher.Put(1)
@@ -88,7 +88,7 @@ func BenchmarkBatcherGetWithBatchSize100(b *testing.B) {
 }
 
 func BenchmarkBatcherPutWithBatchSize100(b *testing.B) {
-	batcher := NewBatcher(100)
+	batcher := New(100)
 	go func() {
 		for {
 			_, err := batcher.Get()
@@ -106,7 +106,7 @@ func BenchmarkBatcherPutWithBatchSize100(b *testing.B) {
 }
 
 func BenchmarkBatcherPutWithBatchSize1000(b *testing.B) {
-	batcher := NewBatcher(1000)
+	batcher := New(1000)
 	go func() {
 		for {
 			_, err := batcher.Get()
