@@ -1,11 +1,13 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strings"
 
-	czk "github.com/funkygao/dbus/pkg/cluster/zk"
+	"github.com/funkygao/columnize"
+	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -25,13 +27,10 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
-	if err := mgr.Open(); err != nil {
-		panic(err)
-	}
+	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
-	controller, err := mgr.Controller()
+	leader, err := mgr.Leader()
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
@@ -44,15 +43,40 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return
 	}
 
+	d := cluster.MakeDecision()
+	decision, errs := callAPI(leader, "decision", "GET", "")
+	if len(errs) > 0 {
+		this.Ui.Errorf("%+v", errs)
+		return
+	}
+
+	swallow(json.Unmarshal([]byte(decision), &d))
+
+	lines := []string{"Endpoint|Weight|Revision|API|Resources"}
 	for _, p := range ps {
-		if p.Equals(controller) {
-			this.Ui.Warn(p.Endpoint)
+		if p.Equals(leader) {
+			lines = append(lines, fmt.Sprintf("%s*|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
+				p.APIEndpoint(), this.getResources(p, d)))
 		} else {
-			this.Ui.Info(p.Endpoint)
+			lines = append(lines, fmt.Sprintf("%s|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
+				p.APIEndpoint(), this.getResources(p, d)))
 		}
 	}
 
+	if len(lines) > 1 {
+		this.Ui.Output(columnize.SimpleFormat(lines))
+	}
+
 	return
+}
+
+func (*Participants) getResources(p cluster.Participant, d cluster.Decision) []cluster.Resource {
+	for participant, rs := range d {
+		if p.Endpoint == participant.Endpoint {
+			return rs
+		}
+	}
+	return nil
 }
 
 func (*Participants) Synopsis() string {

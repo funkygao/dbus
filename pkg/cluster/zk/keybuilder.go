@@ -1,7 +1,7 @@
 package zk
 
 import (
-	"encoding/base64"
+	"net/url"
 	"path"
 )
 
@@ -14,6 +14,10 @@ func newKeyBuilder() *keyBuilder {
 	return &keyBuilder{}
 }
 
+func (kb *keyBuilder) upgrade() string {
+	return path.Join(rootPath, "upgrade")
+}
+
 func (kb *keyBuilder) participants() string {
 	return path.Join(rootPath, "participants")
 }
@@ -22,12 +26,12 @@ func (kb *keyBuilder) participant(id string) string {
 	return path.Join(kb.participants(), id)
 }
 
-func (kb *keyBuilder) controller() string {
-	return path.Join(rootPath, "controller")
+func (kb *keyBuilder) leader() string {
+	return path.Join(rootPath, "leader")
 }
 
-func (kb *keyBuilder) controllerEpoch() string {
-	return path.Join(rootPath, "controller_epoch")
+func (kb *keyBuilder) leaderEpoch() string {
+	return path.Join(rootPath, "leader_epoch")
 }
 
 func (kb *keyBuilder) resources() string {
@@ -38,12 +42,16 @@ func (kb *keyBuilder) resource(resource string) string {
 	return path.Join(kb.resources(), kb.encodeResource(resource))
 }
 
+func (kb *keyBuilder) resourceState(resource string) string {
+	return path.Join(kb.resource(resource), "state")
+}
+
 func (kb *keyBuilder) encodeResource(resource string) string {
-	return base64.URLEncoding.EncodeToString([]byte(resource))
+	return url.QueryEscape(resource)
 }
 
 func (kb *keyBuilder) decodeResource(encodedResource string) (string, error) {
-	b, err := base64.URLEncoding.DecodeString(encodedResource)
+	b, err := url.QueryUnescape(encodedResource)
 	if err != nil {
 		return "", err
 	}

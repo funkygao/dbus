@@ -1,6 +1,7 @@
 package zk
 
 import (
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/zkclient"
 )
@@ -20,8 +21,40 @@ func (c *controller) Close() {
 	c.zc.Disconnect()
 }
 
-func (c *controller) RegisterResource(resource cluster.Resource) error {
-	return c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal())
+func (c *controller) TriggerUpgrade() (err error) {
+	data := []byte(dbus.Revision)
+	err = c.zc.Set(c.kb.upgrade(), data)
+	if zkclient.IsErrNoNode(err) {
+		return c.zc.CreatePersistent(c.kb.upgrade(), data)
+	}
+
+	return
+}
+
+func (c *controller) CurrentDecision() cluster.Decision {
+	if !c.amLeader() {
+		return nil
+	}
+
+	return c.leader.lastDecision
+}
+
+func (c *controller) RegisterResource(resource cluster.Resource) (err error) {
+	if err = c.zc.CreatePersistent(c.kb.resource(resource.Name), resource.Marshal()); err != nil {
+		return
+	}
+
+	err = c.zc.CreatePersistent(c.kb.resourceState(resource.Name), nil)
+	return
+}
+
+func (c *controller) UnregisterResource(resource cluster.Resource) (err error) {
+	if err = c.zc.Delete(c.kb.resourceState(resource.Name)); err != nil {
+		return
+	}
+
+	err = c.zc.Delete(c.kb.resource(resource.Name))
+	return
 }
 
 func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
@@ -30,21 +63,42 @@ func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 		return nil, err
 	}
 
+	liveParticipants := make(map[string]struct{})
+	if ps, err := c.LiveParticipants(); err == nil {
+		for _, p := range ps {
+			liveParticipants[p.Endpoint] = struct{}{}
+		}
+	}
+
 	r := make([]cluster.Resource, 0)
 	for i := range resources {
-		model := cluster.Resource{}
-		model.From(marshalled[i])
+		res := cluster.Resource{}
+		res.From(marshalled[i])
+		res.State = cluster.NewResourceState()
+		state, err := c.zc.Get(c.kb.resourceState(res.Name))
+		if err != nil {
+			return r, err
+		}
+		res.State.From(state)
+		if _, present := liveParticipants[res.State.Owner]; !present {
+			// its owner has died
+			res.State.BecomeOrphan()
+		}
 
-		r = append(r, model)
+		r = append(r, res)
 	}
 
 	return r, nil
 }
 
-func (c *controller) Controller() (cluster.Participant, error) {
+func (c *controller) Leader() (cluster.Participant, error) {
 	var p cluster.Participant
-	data, err := c.zc.Get(c.kb.controller())
+	data, err := c.zc.Get(c.kb.leader())
 	if err != nil {
+		if zkclient.IsErrNoNode(err) {
+			return p, cluster.ErrNoLeader
+		}
+
 		return p, err
 	}
 
@@ -67,4 +121,8 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 	}
 
 	return r, nil
+}
+
+func (c *controller) Rebalance() error {
+	return c.zc.Delete(c.kb.leader())
 }

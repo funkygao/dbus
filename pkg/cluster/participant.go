@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"strings"
 )
@@ -10,6 +11,8 @@ import (
 type Participant struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	Weight   int    `json:"weight"`
+	Revision string `json:"revision,omitempty"`
+	APIPort  int    `json:"api_port,omitempty"`
 }
 
 func (p *Participant) Marshal() []byte {
@@ -19,6 +22,15 @@ func (p *Participant) Marshal() []byte {
 
 func (p *Participant) From(data []byte) {
 	json.Unmarshal(data, p)
+}
+
+func (p *Participant) RPCEndpoint() string {
+	return fmt.Sprintf("http://%s", p.Endpoint)
+}
+
+func (p *Participant) APIEndpoint() string {
+	host, _, _ := net.SplitHostPort(p.Endpoint)
+	return fmt.Sprintf("http://%s:%d", host, p.APIPort)
 }
 
 func (p Participant) String() string {
@@ -39,7 +51,7 @@ func (p *Participant) Valid() bool {
 		return false
 	}
 
-	if len(host) == 0 || len(port) == 0 {
+	if len(host) == 0 || len(port) == 0 /*|| p.APIPort == 0 */ {
 		return false
 	}
 

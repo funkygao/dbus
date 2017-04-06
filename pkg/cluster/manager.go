@@ -12,6 +12,9 @@ type Manager interface {
 	// RegisterResource register a resource for an input plugin.
 	RegisterResource(resource Resource) error
 
+	// UnregisterResource removes a resource.
+	UnregisterResource(resource Resource) error
+
 	// RegisteredResources returns all the registered resource in the cluster.
 	// The return map is in the form of {input: []resource}
 	RegisteredResources() ([]Resource, error)
@@ -19,6 +22,14 @@ type Manager interface {
 	// LiveParticipants returns currently online participants.
 	LiveParticipants() ([]Participant, error)
 
-	// Controller returns the controller participant.
-	Controller() (Participant, error)
+	// Leader returns the controller leader participant.
+	Leader() (Participant, error)
+
+	// Rebalance triggers a new leader election across the cluster.
+	Rebalance() error
+
+	// TriggerUpgrade will notify all participants of binary upgrade.
+	TriggerUpgrade() error
+
+	CurrentDecision() Decision
 }

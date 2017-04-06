@@ -19,7 +19,7 @@ func (m *MySlave) StopReplication() {
 		return
 	}
 
-	log.Trace("[%s] stopping replication...", m.name)
+	log.Trace("[%s] stopping replication from %s", m.name, m.masterAddr)
 
 	m.r.Close()
 
@@ -84,7 +84,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	}
 
 	close(ready)
-	log.Trace("[%s] ready to receive mysql binlog from %s", m.name, m.masterAddr)
+	log.Debug("[%s] ready to receive mysql binlog from %s", m.name, m.masterAddr)
 
 	timeout := time.Second
 	maxTimeout := time.Minute

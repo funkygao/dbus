@@ -23,7 +23,7 @@ type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string
 func (e *Engine) launchAPIServer() {
 	e.apiRouter = mux.NewRouter()
 	e.apiServer = &http.Server{
-		Addr:         fmt.Sprintf("127.0.0.1:%d", Globals().APIPort),
+		Addr:         strings.TrimLeft(e.participant.APIEndpoint(), "http://"),
 		Handler:      e.apiRouter,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
@@ -57,6 +57,7 @@ func (e *Engine) setupAPIRoutings() {
 	// API
 	e.RegisterAPI("/api/v1/pause/{input}", e.handleAPIPauseV1).Methods("PUT")
 	e.RegisterAPI("/api/v1/resume/{input}", e.handleAPIResumeV1).Methods("PUT")
+	e.RegisterAPI("/api/v1/decision", e.handleAPIDecisionV1).Methods("GET")
 }
 
 func (e *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
@@ -199,7 +200,11 @@ func (e *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
 			// pretty write json result
 			w.Header().Set("Content-Type", "application/json")
 
-			pretty, _ := json.MarshalIndent(ret, "", "    ")
+			pretty, jsonErr := json.MarshalIndent(ret, "", "    ")
+			if jsonErr != nil {
+				ret = map[string]interface{}{"error": jsonErr.Error()}
+				pretty, _ = json.MarshalIndent(ret, "", "    ")
+			}
 			w.Write(pretty)
 		}
 	})

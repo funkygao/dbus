@@ -24,13 +24,6 @@ func init() {
 	cmd := os.Args[0]
 
 	commands = map[string]cli.CommandFactory{
-		"status": func() (cli.Command, error) {
-			return &command.Status{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
 		"checkpoint": func() (cli.Command, error) {
 			return &command.Checkpoint{
 				Ui:  ui,
@@ -40,6 +33,13 @@ func init() {
 
 		"rebalance": func() (cli.Command, error) {
 			return &command.Rebalance{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
+		"upgrade": func() (cli.Command, error) {
+			return &command.Upgrade{
 				Ui:  ui,
 				Cmd: cmd,
 			}, nil

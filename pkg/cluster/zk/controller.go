@@ -22,9 +22,10 @@ type controller struct {
 	strategyFunc cluster.StrategyFunc
 	participant  cluster.Participant
 
-	leader  *leader
-	hc      *healthCheck
-	elector *leaderElector
+	leader   *leader
+	hc       *healthCheck
+	elector  *leaderElector
+	upgrader *upgrader
 
 	// only when participant is leader will this callback be triggered.
 	onRebalance cluster.RebalanceCallback
@@ -56,18 +57,18 @@ func NewController(zkSvr string, participant cluster.Participant, strategy clust
 }
 
 func (c *controller) connectToZookeeper() (err error) {
-	log.Debug("connecting to zookeeper...")
+	log.Debug("[%s] connecting to zookeeper...", c.participant)
 	if err = c.zc.Connect(); err != nil {
 		return
 	}
 
 	for retries := 0; retries < 3; retries++ {
 		if err = c.zc.WaitUntilConnected(c.zc.SessionTimeout()); err == nil {
-			log.Trace("connected to zookeeper")
+			log.Trace("[%s] connected to zookeeper", c.participant)
 			break
 		}
 
-		log.Warn("retry=%d %v", retries, err)
+		log.Warn("[%s] retry=%d %v", c.participant, retries, err)
 	}
 
 	return
@@ -84,6 +85,8 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
+	c.zc.CreateEmptyPersistentIfNotPresent(c.kb.upgrade())
+
 	c.hc = newHealthCheck(c.participant, c.zc, c.kb)
 	c.hc.startup()
 
@@ -93,6 +96,24 @@ func (c *controller) Start() (err error) {
 
 	c.elector = newLeaderElector(c, c.leader.onBecomingLeader, c.leader.onResigningAsLeader)
 	c.elector.startup()
+
+	c.upgrader = newUpgrader(c)
+	c.upgrader.startup()
+
+	go func() {
+		for {
+			select {
+			case err, ok := <-c.zc.LisenterErrors():
+				if !ok {
+					return
+				}
+
+				// for now, just log the err
+				// TODO how to handle it?
+				log.Error("[%s] %v", c.participant, err)
+			}
+		}
+	}()
 
 	return
 }
@@ -104,9 +125,14 @@ func (c *controller) Stop() (err error) {
 
 	c.elector.close()
 	c.hc.close()
+	c.upgrader.close()
 
 	log.Trace("[%s] controller stopped", c.participant)
 	return
+}
+
+func (c *controller) Upgrade() <-chan struct{} {
+	return c.upgrader.events()
 }
 
 func (c *controller) amLeader() bool {
@@ -115,7 +141,11 @@ func (c *controller) amLeader() bool {
 
 func (c *controller) HandleNewSession() (err error) {
 	log.Trace("[%s] ZK expired; shutdown all controller components and try re-elect", c.participant)
-	c.leader.onResigningAsLeader()
+
+	if c.amLeader() {
+		c.leader.onResigningAsLeader()
+	}
+
 	c.elector.elect()
 	return
 }

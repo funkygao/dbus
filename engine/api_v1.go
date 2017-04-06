@@ -36,3 +36,12 @@ func (e *Engine) handleAPIResumeV1(w http.ResponseWriter, r *http.Request, param
 	log.Warn("plugin[%s] is not able to resume", inputPlugin)
 	return nil, ErrInvalidParam
 }
+
+func (e *Engine) handleAPIDecisionV1(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+	m := e.ClusterManager()
+	if m == nil {
+		return nil, ErrInvalidParam
+	}
+
+	return m.CurrentDecision(), nil
+}

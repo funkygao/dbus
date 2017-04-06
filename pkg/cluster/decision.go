@@ -1,5 +1,9 @@
 package cluster
 
+import (
+	"encoding/json"
+)
+
 // Decision is the cluster leader new assignment of resources to participants.
 type Decision map[Participant][]Resource
 
@@ -29,6 +33,30 @@ func (d Decision) IsAssigned(p Participant) bool {
 
 func (d Decision) Close(p Participant) {
 	d[p] = nil
+}
+
+func (d Decision) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	for p, rs := range d {
+		m[p.String()] = rs
+	}
+
+	return json.Marshal(m)
+}
+
+func (d Decision) UnmarshalJSON(data []byte) error {
+	v := make(map[string][]Resource)
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	for p, rs := range v {
+		participant := Participant{
+			Endpoint: p,
+		}
+		d[participant] = rs
+	}
+	return nil
 }
 
 // Equals compares 2 decision, return true if they are the same.

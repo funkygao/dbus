@@ -9,14 +9,14 @@ import (
 	"github.com/funkygao/gocli"
 )
 
-type Rebalance struct {
+type Upgrade struct {
 	Ui  cli.Ui
 	Cmd string
 }
 
-func (this *Rebalance) Run(args []string) (exitCode int) {
+func (this *Upgrade) Run(args []string) (exitCode int) {
 	var zone string
-	cmdFlags := flag.NewFlagSet("rebalance", flag.ContinueOnError)
+	cmdFlags := flag.NewFlagSet("upgrade", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
 	if err := cmdFlags.Parse(args); err != nil {
@@ -26,29 +26,21 @@ func (this *Rebalance) Run(args []string) (exitCode int) {
 	mgr := openClusterManager(zone)
 	defer mgr.Close()
 
-	if err := mgr.Rebalance(); err != nil {
-		this.Ui.Error(err.Error())
-	} else {
-		this.Ui.Info("rebalanced")
-	}
+	swallow(mgr.TriggerUpgrade())
+	this.Ui.Info("ok")
 
 	return
 }
 
-func (*Rebalance) Synopsis() string {
-	return "Make cluster re-elect leader and rebalance"
+func (*Upgrade) Synopsis() string {
+	return "Trigger hot upgrade of all dbusd binaries"
 }
 
-func (this *Rebalance) Help() string {
+func (this *Upgrade) Help() string {
 	help := fmt.Sprintf(`
-Usage: %s rebalance [options]
+Usage: %s upgrade
 
     %s
-
-Options:
-
-    -z zone
-
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)
 }

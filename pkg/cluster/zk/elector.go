@@ -28,12 +28,12 @@ func newLeaderElector(ctx *controller, onBecomingLeader func(), onResigningAsLea
 
 func (l *leaderElector) startup() {
 	// watch for leader changes
-	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.controller(), l)
+	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.leader(), l)
 	l.elect()
 }
 
 func (l *leaderElector) fetchLeaderID() string {
-	b, err := l.ctx.zc.Get(l.ctx.kb.controller())
+	b, err := l.ctx.zc.Get(l.ctx.kb.leader())
 	if err != nil {
 		return ""
 	}
@@ -42,8 +42,6 @@ func (l *leaderElector) fetchLeaderID() string {
 }
 
 func (l *leaderElector) elect() (win bool) {
-	log.Trace("[%s] elect...", l.ctx.participant)
-
 	// we can get here during the initial startup and the HandleDataDeleted callback.
 	// because of the potential race condition, it's possible that the leader has already
 	// been elected when we get here.
@@ -53,18 +51,20 @@ func (l *leaderElector) elect() (win bool) {
 		return
 	}
 
-	if err := l.ctx.zc.CreateLiveNode(l.ctx.kb.controller(), l.ctx.participant.Marshal(), 2); err == nil {
+	log.Trace("[%s] elect...", l.ctx.participant)
+
+	if err := l.ctx.zc.CreateLiveNode(l.ctx.kb.leader(), l.ctx.participant.Marshal(), 2); err == nil {
 		log.Trace("[%s] elect win!", l.ctx.participant)
 
 		win = true
 		l.leaderID = l.ctx.participant.Endpoint
 		l.onBecomingLeader()
 	} else {
-		log.Trace("[%s] elect lose :-)", l.ctx.participant)
-
-		l.leaderID = l.fetchLeaderID() // refresh
+		l.leaderID = l.fetchLeaderID() // refresh leader id
 		if l.leaderID == "" {
 			log.Warn("[%s] a leader has been elected but just resigned, this will lead to another round of election", l.ctx.participant)
+		} else {
+			log.Trace("[%s] elect lose to %s :-)", l.ctx.participant, l.leaderID)
 		}
 	}
 
@@ -75,6 +75,7 @@ func (l *leaderElector) close() {
 	// needn't delete /controller znode because when
 	// zkclient closes the ephemeral znode will disappear automatically
 	l.leaderID = ""
+	l.ctx.zc.UnsubscribeDataChanges(l.ctx.kb.leader(), l)
 }
 
 func (l *leaderElector) amLeader() bool {

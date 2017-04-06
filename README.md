@@ -92,8 +92,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - MockInput
 - StreamInput
   
-  for polyglot
-
 #### Filter
 
 - MysqlbinlogFilter
@@ -105,8 +103,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - ESOutput
 - MockOutput
 - StreamOutput
-
-  for polyglot
 
 ### Configuration
 
@@ -148,7 +144,7 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 - logstash has better ecosystem
 - dbus is cluster aware, provides delivery guarantee, data provenance
 
-#### can there be 1 leader at the same time?
+#### can there be more than 1 leaders at the same time?
 
 Yes.
 
@@ -169,18 +165,21 @@ dbus uses epoch to solve this issue.
 
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
+- [ ] tweak of batcher yield
+- [X] kguard integration
 - [ ] controller
+  - [ ] what if RPC fails
   - [ ] 2 phase rebalance: close participants then notify new resources
-  - [ ] engine shutdown, controller still send rpc
-  - [ ] owner of resource
-  - [ ] leader RPC has epoch info
-  - [ ] only leader subscribe SessionExpiredListener
-  - [ ] mv rpc server into cluster pkg?
-  - [ ] when leader make decision, it persists to zk before RPC for leader failover
-    - each participant on startup gets its decision
+  - [ ] leader.onBecomingLeader is parallal: should be sequential
+  - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
+  - [X] when leader make decision, it persists to zk before RPC for leader failover
+  - [X] owner of resource
+  - [X] leader RPC has epoch info
   - [ ] if Ack fails(zk crash), resort to local disk(load on startup)
+  - [X] engine shutdown, controller still send rpc
   - test cases
-    - [ ] brain split
+    - [X] sharded resources
+    - [X] brain split
     - [X] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule
     - [X] cluster chaos monkey

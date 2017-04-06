@@ -29,7 +29,7 @@ func newLeader(ctx *controller) *leader {
 }
 
 func (l *leader) fetchEpoch() {
-	data, stat, err := l.ctx.zc.GetWithStat(l.ctx.kb.controllerEpoch())
+	data, stat, err := l.ctx.zc.GetWithStat(l.ctx.kb.leaderEpoch())
 	if err != nil {
 		if !zkclient.IsErrNoNode(err) {
 			log.Error("%v", err)
@@ -46,14 +46,14 @@ func (l *leader) incrementEpoch() (ok bool) {
 	newEpoch := l.epoch + 1
 	data := []byte(strconv.Itoa(newEpoch))
 	// CAS
-	newStat, err := l.ctx.zc.SetWithVersion(l.ctx.kb.controllerEpoch(), data, l.epochZkVersion)
+	newStat, err := l.ctx.zc.SetWithVersion(l.ctx.kb.leaderEpoch(), data, l.epochZkVersion)
 	if err != nil {
 		switch {
 		case zkclient.IsErrNoNode(err):
 			// if path doesn't exist, this is the first controller whose epoch should be 1
 			// the following call can still fail if another controller gets elected between checking if the path exists and
 			// trying to create the controller epoch path
-			if err := l.ctx.zc.CreatePersistent(l.ctx.kb.controllerEpoch(), data); err != nil {
+			if err := l.ctx.zc.CreatePersistent(l.ctx.kb.leaderEpoch(), data); err != nil {
 				if zkclient.IsErrNodeExists(err) {
 					log.Warn("leader moved to another participant! abort rebalance")
 					return
@@ -91,6 +91,8 @@ func (l *leader) onResigningAsLeader() {
 	l.ctx.elector.leaderID = ""
 	l.epoch = 0
 	l.epochZkVersion = 0
+
+	log.Trace("[%s] resigned as leader", l.ctx.participant)
 }
 
 func (l *leader) onBecomingLeader() {
@@ -102,7 +104,7 @@ func (l *leader) onBecomingLeader() {
 		return
 	}
 
-	log.Trace("become controller leader and trigger rebalance!")
+	log.Trace("[%s] become controller leader and trigger rebalance!", l.ctx.participant)
 	l.doRebalance()
 }
 
@@ -111,14 +113,14 @@ func (l *leader) onBecomingLeader() {
 // 2. resources change
 // 3. becoming leader
 func (l *leader) doRebalance() {
-	participants, err := l.ctx.LiveParticipants()
+	liveParticipants, err := l.ctx.LiveParticipants()
 	if err != nil {
 		// TODO
 		log.Critical("[%s] %s", l.ctx.participant, err)
 		return
 	}
-	if len(participants) == 0 {
-		log.Critical("[%s] no alive participants found", l.ctx.participant)
+	if len(liveParticipants) == 0 {
+		log.Critical("[%s] no live participants found", l.ctx.participant)
 		return
 	}
 
@@ -129,9 +131,31 @@ func (l *leader) doRebalance() {
 		return
 	}
 
-	newDecision := l.ctx.strategyFunc(participants, resources)
+	newDecision := l.ctx.strategyFunc(liveParticipants, resources)
 	if !newDecision.Equals(l.lastDecision) {
 		l.lastDecision = newDecision
+
+		// WAL
+		walFailure := false
+		for participant, resources := range newDecision {
+			for _, resource := range resources {
+				rs := cluster.NewResourceState()
+				rs.LeaderEpoch = l.epoch
+				rs.Owner = participant.Endpoint
+				// TODO add random sleep here to test race condition
+				if err := l.ctx.zc.Set(l.ctx.kb.resourceState(resource.Name), rs.Marshal()); err != nil {
+					// zk conn lost? timeout?
+					// TODO
+					log.Critical("[%s] %s %v", l.ctx.participant, resource.Name, err)
+					walFailure = true
+					break
+				}
+			}
+
+			if walFailure {
+				break
+			}
+		}
 
 		l.ctx.onRebalance(l.epoch, newDecision)
 	} else {

@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
@@ -112,6 +113,8 @@ func New(globals *GlobalConfig) *Engine {
 		participant: cluster.Participant{
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
+			Revision: dbus.Revision,
+			APIPort:  globals.APIPort,
 		},
 	}
 }
@@ -264,14 +267,6 @@ func (e *Engine) ServeForever() (ret error) {
 	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
 
 	e.launchAPIServer()
-	if globals.ClusterEnabled {
-		e.launchRPCServer()
-
-		if err = e.controller.Start(); err != nil {
-			panic(err)
-		}
-		log.Info("[%s] controller started", e.participant)
-	}
 
 	if telemetry.Default != nil {
 		go func() {
@@ -324,6 +319,18 @@ func (e *Engine) ServeForever() (ret error) {
 			inputsWg.Done()
 			panic(err)
 		}
+	}
+
+	if globals.ClusterEnabled {
+		e.launchRPCServer()
+
+		log.Trace("[%s] participant starting...", e.participant)
+		if err = e.controller.Start(); err != nil {
+			panic(err)
+		}
+		go e.watchUpgrade(e.controller.Upgrade())
+
+		log.Info("[%s] participant started", e.participant)
 	}
 
 	configChanged := make(chan *conf.Conf)
@@ -414,4 +421,12 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	return
+}
+
+func (e *Engine) ClusterManager() cluster.Manager {
+	if Globals().ClusterEnabled {
+		return e.controller.(cluster.Manager)
+	}
+
+	return nil
 }

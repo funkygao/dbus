@@ -7,7 +7,6 @@ import (
 
 	"github.com/funkygao/columnize"
 	"github.com/funkygao/dbus/pkg/cluster"
-	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -18,6 +17,7 @@ type Resources struct {
 
 	zone        string
 	addResource string
+	delResource string
 }
 
 func (this *Resources) Run(args []string) (exitCode int) {
@@ -25,14 +25,12 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
 	cmdFlags.StringVar(&this.addResource, "add", "", "")
+	cmdFlags.StringVar(&this.delResource, "del", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(this.zone))
-	if err := mgr.Open(); err != nil {
-		panic(err)
-	}
+	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
 	if len(this.addResource) != 0 {
@@ -46,6 +44,11 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		return
 	}
 
+	if len(this.delResource) > 0 {
+		this.doDelResource(mgr, this.delResource)
+		return
+	}
+
 	// list all resources
 	resources, err := mgr.RegisteredResources()
 	if err != nil {
@@ -53,15 +56,30 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		return
 	}
 
-	lines := []string{"InputPlugin|Resources"}
+	lines := []string{"InputPlugin|Resources|Epoch|Owner"}
 	for _, res := range resources {
-		lines = append(lines, fmt.Sprintf("%s|%s", res.InputPlugin, res.Name))
+		if res.State.IsOrphan() {
+			lines = append(lines, fmt.Sprintf("%s|%s|-|-", res.InputPlugin, res.Name))
+		} else {
+			lines = append(lines, fmt.Sprintf("%s|%s|%d|%s", res.InputPlugin, res.Name, res.State.LeaderEpoch, res.State.Owner))
+		}
 	}
 	if len(lines) > 1 {
 		this.Ui.Output(columnize.SimpleFormat(lines))
 	}
 
 	return
+}
+
+func (this *Resources) doDelResource(mgr cluster.Manager, resource string) {
+	res := cluster.Resource{
+		Name: resource,
+	}
+	if err := mgr.UnregisterResource(res); err != nil {
+		this.Ui.Error(err.Error())
+	} else {
+		this.Ui.Info("ok")
+	}
 }
 
 func (this *Resources) doAddResource(mgr cluster.Manager, input, resource string) {
@@ -94,6 +112,8 @@ Options:
       resource DSN
       mysql zone://user:pass@host:port/db1,db2,...,dbn
       kafka zone://cluster/topic#partition
+
+    -del resource
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)
