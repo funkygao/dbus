@@ -43,6 +43,10 @@ func (r *Resource) From(data []byte) {
 	json.Unmarshal(data, r)
 }
 
+func (r Resource) String() string {
+	return r.Name
+}
+
 type Resources []Resource
 
 func (rs Resources) Marshal() []byte {
