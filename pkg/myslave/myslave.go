@@ -2,6 +2,7 @@ package myslave
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -46,13 +47,17 @@ type MySlave struct {
 	rowsEvent chan *model.RowsEvent
 }
 
+var setupLogger sync.Once
+
 // New creates a MySlave instance.
 func New(dsn string) *MySlave {
-	// github.com/siddontang/go-mysql is using github.com/ngaut/log
-	mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
-	if err := mylog.SetOutputByName("myslave.log"); err != nil {
-		panic(err)
-	}
+	setupLogger.Do(func() {
+		// github.com/siddontang/go-mysql is using github.com/ngaut/log
+		mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
+		if err := mylog.SetOutputByName("myslave.log"); err != nil {
+			panic(err)
+		}
+	})
 
 	return &MySlave{
 		dsn:        dsn,

@@ -12,6 +12,9 @@ type Manager interface {
 	// RegisterResource register a resource for an input plugin.
 	RegisterResource(resource Resource) error
 
+	// UnregisterResource removes a resource.
+	UnregisterResource(resource Resource) error
+
 	// RegisteredResources returns all the registered resource in the cluster.
 	// The return map is in the form of {input: []resource}
 	RegisteredResources() ([]Resource, error)

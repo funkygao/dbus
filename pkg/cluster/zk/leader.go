@@ -113,14 +113,14 @@ func (l *leader) onBecomingLeader() {
 // 2. resources change
 // 3. becoming leader
 func (l *leader) doRebalance() {
-	participants, err := l.ctx.LiveParticipants()
+	liveParticipants, err := l.ctx.LiveParticipants()
 	if err != nil {
 		// TODO
 		log.Critical("[%s] %s", l.ctx.participant, err)
 		return
 	}
-	if len(participants) == 0 {
-		log.Critical("[%s] no alive participants found", l.ctx.participant)
+	if len(liveParticipants) == 0 {
+		log.Critical("[%s] no live participants found", l.ctx.participant)
 		return
 	}
 
@@ -131,7 +131,7 @@ func (l *leader) doRebalance() {
 		return
 	}
 
-	newDecision := l.ctx.strategyFunc(participants, resources)
+	newDecision := l.ctx.strategyFunc(liveParticipants, resources)
 	if !newDecision.Equals(l.lastDecision) {
 		l.lastDecision = newDecision
 

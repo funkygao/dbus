@@ -48,6 +48,15 @@ func (c *controller) RegisterResource(resource cluster.Resource) (err error) {
 	return
 }
 
+func (c *controller) UnregisterResource(resource cluster.Resource) (err error) {
+	if err = c.zc.Delete(c.kb.resourceState(resource.Name)); err != nil {
+		return
+	}
+
+	err = c.zc.Delete(c.kb.resource(resource.Name))
+	return
+}
+
 func (c *controller) RegisteredResources() ([]cluster.Resource, error) {
 	resources, marshalled, err := c.zc.ChildrenValues(c.kb.resources())
 	if err != nil {
