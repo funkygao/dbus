@@ -17,6 +17,7 @@ type Resources struct {
 
 	zone        string
 	addResource string
+	delResource string
 }
 
 func (this *Resources) Run(args []string) (exitCode int) {
@@ -24,6 +25,7 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
 	cmdFlags.StringVar(&this.addResource, "add", "", "")
+	cmdFlags.StringVar(&this.delResource, "del", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -39,6 +41,11 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		}
 
 		this.doAddResource(mgr, tuples[0], tuples[1])
+		return
+	}
+
+	if len(this.delResource) > 0 {
+		this.doDelResource(mgr, this.delResource)
 		return
 	}
 
@@ -62,6 +69,17 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	}
 
 	return
+}
+
+func (this *Resources) doDelResource(mgr cluster.Manager, resource string) {
+	res := cluster.Resource{
+		Name: resource,
+	}
+	if err := mgr.UnregisterResource(res); err != nil {
+		this.Ui.Error(err.Error())
+	} else {
+		this.Ui.Info("ok")
+	}
 }
 
 func (this *Resources) doAddResource(mgr cluster.Manager, input, resource string) {
@@ -94,6 +112,8 @@ Options:
       resource DSN
       mysql zone://user:pass@host:port/db1,db2,...,dbn
       kafka zone://cluster/topic#partition
+
+    -del resource
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

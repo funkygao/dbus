@@ -85,6 +85,8 @@ func (c *controller) Start() (err error) {
 		}
 	}
 
+	c.zc.CreateEmptyPersistentIfNotPresent(c.kb.upgrade())
+
 	c.hc = newHealthCheck(c.participant, c.zc, c.kb)
 	c.hc.startup()
 
