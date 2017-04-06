@@ -18,8 +18,8 @@ func TestKeyBuilder(t *testing.T) {
 	assert.Equal(t, true, strings.HasPrefix(kb.participant("foobar"), kb.participants()))
 
 	// resource related
-	assert.Equal(t, "/dbus/cluster/resources/bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg==", kb.resource("local://root:@localhost:3306"))
-	assert.Equal(t, "/dbus/cluster/resources/bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg==/state", kb.resourceState("local://root:@localhost:3306"))
+	assert.Equal(t, "/dbus/cluster/resources/local%3A%2F%2Froot%3A%40localhost%3A3306", kb.resource("local://root:@localhost:3306"))
+	assert.Equal(t, "/dbus/cluster/resources/local%3A%2F%2Froot%3A%40localhost%3A3306/state", kb.resourceState("local://root:@localhost:3306"))
 
 	// controller related
 	assert.Equal(t, "/dbus/cluster/leader", kb.leader())
@@ -28,8 +28,8 @@ func TestKeyBuilder(t *testing.T) {
 
 func TestKeyBuildEncodeDecodeResource(t *testing.T) {
 	kb := newKeyBuilder()
-	encoded := "bG9jYWw6Ly9yb290OkBsb2NhbGhvc3Q6MzMwNg=="
-	resource := "local://root:@localhost:3306"
+	encoded := "local%3A%2F%2Froot%3A%40localhost%3A3306%2Ftest%2Cmysql"
+	resource := "local://root:@localhost:3306/test,mysql"
 	assert.Equal(t, encoded, kb.encodeResource(resource))
 	r, err := kb.decodeResource(encoded)
 	assert.Equal(t, nil, err)
