@@ -44,8 +44,10 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 				return
 
 			default:
-				// TODO unexpected
-				log.Critical("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)
+				log.Error("[%s] rpc<- %s %d, trigger new rebalance!", e.participant, participant.Endpoint, statusCode)
+				if err := e.ClusterManager().Rebalance(); err != nil {
+					log.Critical("%s", err)
+				}
 			}
 
 		}
