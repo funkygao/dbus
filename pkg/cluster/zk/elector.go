@@ -84,7 +84,13 @@ func (l *leaderElector) amLeader() bool {
 }
 
 func (l *leaderElector) HandleDataChange(dataPath string, lastData []byte) error {
+	wasLeader := l.amLeader()
 	l.leaderID = l.fetchLeaderID()
+	amLeader := l.amLeader()
+	if wasLeader && !amLeader {
+		l.onResigningAsLeader()
+	}
+
 	log.Trace("[%s] new leader is %s", l.ctx.participant, l.leaderID)
 	return nil
 }
