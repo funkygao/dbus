@@ -1,11 +1,13 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strings"
 
 	"github.com/funkygao/columnize"
+	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
@@ -31,6 +33,7 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	leader, err := mgr.Leader()
 	if err != nil {
 		this.Ui.Error(err.Error())
+		return
 	}
 
 	// list all resources
@@ -40,12 +43,23 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return
 	}
 
-	lines := []string{"Endpoint|Weight|Revision|API"}
+	d := cluster.MakeDecision()
+	decision, errs := callAPI(leader, "decision", "GET", "")
+	if len(errs) > 0 {
+		this.Ui.Errorf("%+v", errs)
+		return
+	}
+
+	swallow(json.Unmarshal([]byte(decision), &d))
+
+	lines := []string{"Endpoint|Weight|Revision|API|Resources"}
 	for _, p := range ps {
 		if p.Equals(leader) {
-			lines = append(lines, fmt.Sprintf("%s*|%d|%s|%s", p.Endpoint, p.Weight, p.Revision, p.APIEndpoint()))
+			lines = append(lines, fmt.Sprintf("%s*|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
+				p.APIEndpoint(), this.getResources(p, d)))
 		} else {
-			lines = append(lines, fmt.Sprintf("%s|%d|%s|%s", p.Endpoint, p.Weight, p.Revision, p.APIEndpoint()))
+			lines = append(lines, fmt.Sprintf("%s|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
+				p.APIEndpoint(), this.getResources(p, d)))
 		}
 	}
 
@@ -53,19 +67,16 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		this.Ui.Output(columnize.SimpleFormat(lines))
 	}
 
-	if leader.Valid() {
-		this.Ui.Output("")
-		this.Ui.Outputf("Decision from %s", leader)
-		decision, errs := callAPI(leader, "decision", "GET", "")
-		if len(errs) > 0 {
-			this.Ui.Errorf("%+v", errs)
-			return
-		}
-
-		this.Ui.Output(decision)
-	}
-
 	return
+}
+
+func (*Participants) getResources(p cluster.Participant, d cluster.Decision) []cluster.Resource {
+	for participant, rs := range d {
+		if p.Endpoint == participant.Endpoint {
+			return rs
+		}
+	}
+	return nil
 }
 
 func (*Participants) Synopsis() string {
