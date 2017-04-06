@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -72,14 +71,14 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 
 	// dispatch decision to input plugins
 	for inputName, rs := range inputResourcesMap {
-		ir, ok := e.InputRunners[inputName]
-		if !ok {
+		if ir, ok := e.InputRunners[inputName]; ok {
+			log.Trace("feed %s: %+v", inputName, rs)
+			ir.feedResources(rs)
+		} else {
 			// should never happen
 			// if it happens, must be human operation fault
-			panic(fmt.Sprintf("Input[%s] not found", inputName))
+			log.Critical("feed %s ignored: %+v", inputName, rs)
 		}
-
-		ir.feedResources(rs)
 	}
 
 }
