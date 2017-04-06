@@ -48,7 +48,7 @@ func (l *leaderElector) elect() (win bool) {
 	// been elected when we get here.
 	l.leaderID = l.fetchLeaderID()
 	if l.leaderID != "" {
-		log.Trace("[%s] found leader: %s", l.ctx.participant, l.leaderID)
+		log.Trace("[%s] found leader: %s, quit elect", l.ctx.participant, l.leaderID)
 		return
 	}
 
