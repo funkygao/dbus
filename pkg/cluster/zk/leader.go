@@ -20,7 +20,7 @@ type leader struct {
 	pcl zkclient.ZkChildListener // leader watches live participants
 	rcl zkclient.ZkChildListener // leader watches resources
 
-	rebalanceMu sync.Mutex
+	rbLockStep sync.Mutex
 }
 
 func newLeader(ctx *controller) *leader {
@@ -117,8 +117,8 @@ func (l *leader) onBecomingLeader() {
 // 3. becoming leader
 // rebalance runs sequentially
 func (l *leader) doRebalance() {
-	l.rebalanceMu.Lock()
-	defer l.rebalanceMu.Unlock()
+	l.rbLockStep.Lock()
+	defer l.rbLockStep.Unlock()
 
 	liveParticipants, err := l.ctx.LiveParticipants()
 	if err != nil {
