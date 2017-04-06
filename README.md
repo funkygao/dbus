@@ -166,9 +166,9 @@ dbus uses epoch to solve this issue.
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] server_id uniq across the cluster
 - [ ] tweak of batcher yield
-- [ ] kguard integration
+- [X] kguard integration
 - [ ] controller
-  - [ ] mv rpc server into cluster pkg?
+  - [ ] what if RPC fails
   - [ ] 2 phase rebalance: close participants then notify new resources
   - [ ] leader.onBecomingLeader is parallal: should be sequential
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
