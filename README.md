@@ -167,6 +167,7 @@ dbus uses epoch to solve this issue.
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
 - [ ] RowsEvent avro
+- [ ] KafkaInput plugin
 - [ ] use scheme to distinguish type of DSN
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
