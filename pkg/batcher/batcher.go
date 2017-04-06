@@ -37,8 +37,8 @@ type Batcher struct {
 	contents  []interface{}
 }
 
-// NewBatcher create a new smart batcher instance.
-func NewBatcher(capacity int) *Batcher {
+// New create a new smart batcher instance.
+func New(capacity int) *Batcher {
 	return &Batcher{
 		capacity: uint32(capacity),
 		stopped:  0,

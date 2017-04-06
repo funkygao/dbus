@@ -39,7 +39,7 @@ type producer struct {
 
 func newProducer() *producer {
 	p := &producer{
-		batcher:       batcher.NewBatcher(batchSize),
+		batcher:       batcher.New(batchSize),
 		kafkaOutDatas: []int{},
 		kafkaOut:      make(chan int, 25),
 		kafkaSentOk:   sequence.New(),

@@ -167,10 +167,11 @@ dbus uses epoch to solve this issue.
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
 - [ ] plugins Run has no way of panic
+- [ ] RowsEvent avro
 - [ ] use scheme to distinguish type of DSN
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
-  - [ ] 2 phase rebalance: close participants then notify new resources
+  - [X] 2 phase rebalance: close participants then notify new resources
   - [ ] what if RPC fails
   - [ ] leader.onBecomingLeader is parallal: should be sequential
   - [ ] hot reload raises cluster herd: participant changes too much

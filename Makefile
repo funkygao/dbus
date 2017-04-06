@@ -76,36 +76,36 @@ fmtcheck:
 
 # Check for syntax errors
 vet:
-	GOPATH=$(GOPATH) go vet ./...
+	-GOPATH=$(GOPATH) go vet ./...
 
 # Check for style errors
 lint:
-	GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./...
+	-GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./...
 
 # Generate the coverage report
 coverage:
 	@mkdir -p .target/report
-	@GOPATH=$(GOPATH) go test -covermode=count ./... | grep -v "no test files" | column -t
+	-@GOPATH=$(GOPATH) go test -covermode=count ./... | grep -v "no test files" | column -t
 
 # Report cyclomatic complexity
 cyclo:
 	@mkdir -p .target/report
-	GOPATH=$(GOPATH) gocyclo -avg . | tee .target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
+	-GOPATH=$(GOPATH) gocyclo -avg . | tee .target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect ineffectual assignments
 ineffassign:
 	@mkdir -p .target/report
-	GOPATH=$(GOPATH) ineffassign . | tee .target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
+	-GOPATH=$(GOPATH) ineffassign . | tee .target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect commonly misspelled words in source files
 misspell:
-	find . -type f -name "*.go" -exec misspell -error {} \; | tee .target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
-	misspell README.md
+	-find . -type f -name "*.go" -exec misspell -error {} \; | tee .target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
+	-misspell README.md
 
 # AST scanner
 astscan:
 	@mkdir -p .target/report
-	GOPATH=$(GOPATH) gas ./... | tee .target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0
+	-GOPATH=$(GOPATH) gas ./... | tee .target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Generate source docs
 docs:
@@ -115,7 +115,8 @@ docs:
 	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > .target/docs/index.html
 
 # Alias to run all quality-assurance checks
-qa: fmtcheck test vet lint coverage cyclo ineffassign misspell astscan
+qa: fmtcheck vet lint coverage ineffassign misspell astscan
+	-go test ./...
 
 # Get the dependencies
 deps:
