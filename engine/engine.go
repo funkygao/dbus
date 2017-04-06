@@ -422,3 +422,11 @@ func (e *Engine) ServeForever() (ret error) {
 
 	return
 }
+
+func (e *Engine) ClusterManager() cluster.Manager {
+	if Globals().ClusterEnabled {
+		return e.controller.(cluster.Manager)
+	}
+
+	return nil
+}

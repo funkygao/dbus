@@ -53,6 +53,18 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		this.Ui.Output(columnize.SimpleFormat(lines))
 	}
 
+	if leader.Valid() {
+		this.Ui.Output("")
+		this.Ui.Outputf("Decision from %s", leader)
+		decision, errs := callAPI(leader, "decision", "GET", "")
+		if len(errs) > 0 {
+			this.Ui.Errorf("%+v", errs)
+			return
+		}
+
+		this.Ui.Output(decision)
+	}
+
 	return
 }
 

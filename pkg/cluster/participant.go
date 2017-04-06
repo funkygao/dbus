@@ -51,7 +51,7 @@ func (p *Participant) Valid() bool {
 		return false
 	}
 
-	if len(host) == 0 || len(port) == 0 {
+	if len(host) == 0 || len(port) == 0 /*|| p.APIPort == 0 */ {
 		return false
 	}
 

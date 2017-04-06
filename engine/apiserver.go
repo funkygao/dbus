@@ -200,7 +200,11 @@ func (e *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
 			// pretty write json result
 			w.Header().Set("Content-Type", "application/json")
 
-			pretty, _ := json.MarshalIndent(ret, "", "    ")
+			pretty, jsonErr := json.MarshalIndent(ret, "", "    ")
+			if jsonErr != nil {
+				ret = map[string]interface{}{"error": jsonErr.Error()}
+				pretty, _ = json.MarshalIndent(ret, "", "    ")
+			}
 			w.Write(pretty)
 		}
 	})
