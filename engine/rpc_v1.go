@@ -61,7 +61,7 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 		if _, present := inputResourcesMap[inputName]; !present {
 			// will close this input
 			if ir, ok := e.InputRunners[inputName]; ok {
-				log.Trace("closing Input[%s]", inputName)
+				log.Trace("stopping Input[%s]", inputName)
 				ir.feedResources(nil)
 			}
 		}
@@ -77,7 +77,11 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// should never happen
 			// if it happens, must be human operation fault
-			log.Critical("feed %s ignored: %+v", inputName, rs)
+			log.Critical("feed %s renounced: %+v", inputName, rs)
+
+			if err := e.controller.RenounceResources(rs); err != nil {
+				log.Error("%+v %s", rs, err)
+			}
 		}
 	}
 

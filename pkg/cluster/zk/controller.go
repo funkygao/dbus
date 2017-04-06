@@ -127,12 +127,22 @@ func (c *controller) Stop() (err error) {
 	c.hc.close()
 	c.upgrader.close()
 
-	log.Trace("[%s] controller stopped", c.participant)
+	log.Info("[%s] controller stopped", c.participant)
 	return
 }
 
 func (c *controller) Upgrade() <-chan struct{} {
 	return c.upgrader.events()
+}
+
+func (c *controller) RenounceResources(rs []cluster.Resource) error {
+	for _, r := range rs {
+		if err := c.zc.Set(c.kb.resourceState(r.Name), []byte{}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *controller) amLeader() bool {
