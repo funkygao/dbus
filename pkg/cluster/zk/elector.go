@@ -28,6 +28,7 @@ func newLeaderElector(ctx *controller, onBecomingLeader func(), onResigningAsLea
 
 func (l *leaderElector) startup() {
 	// watch for leader changes
+	// leader also need watch leader changes because of network partition
 	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.leader(), l)
 	l.elect()
 }
