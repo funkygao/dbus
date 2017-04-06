@@ -26,7 +26,9 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 		case http.StatusOK:
 			log.Trace("[%s] rpc<- ok %s", e.participant, participant.Endpoint)
 		case http.StatusGone:
-			// will wait for another rebalance event
+			// e,g.
+			// resource changed, live participant [1, 2, 3], when RPC sending, p[1] gone
+			// just wait for another rebalance event
 			log.Warn("[%s] rpc<- %s gone", e.participant, participant.Endpoint)
 		case http.StatusBadRequest:
 			// should never happen
