@@ -26,6 +26,10 @@ func (r *Resource) DSN() string {
 	return r.Name
 }
 
+func (r *Resource) IsOrphan() bool {
+	return r.State == nil || r.State.IsOrphan()
+}
+
 func (r *Resource) Marshal() []byte {
 	b, _ := json.Marshal(r)
 	return b
