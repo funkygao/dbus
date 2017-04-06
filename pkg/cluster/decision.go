@@ -32,6 +32,11 @@ func (d Decision) IsAssigned(p Participant) bool {
 	return present
 }
 
+// Empty returns true if the decision is empty.
+func (d Decision) Empty() bool {
+	return len(d) == 0
+}
+
 // Close revokes all resources from a participant.
 func (d Decision) Close(p Participant) {
 	d[p] = nil

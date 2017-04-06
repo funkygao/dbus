@@ -40,6 +40,12 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 	e.epoch = epoch // remember the leader epoch
 	e.Unlock()
 
+	phase := r.FormValue("phase")
+	if len(phase) == 0 {
+		http.Error(w, "empty phase", http.StatusBadRequest)
+		return
+	}
+
 	resources := cluster.UnmarshalRPCResources(body)
 	log.Debug("local dispatching %d resources: %v", len(resources), resources)
 
@@ -53,36 +59,48 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	e.irmMu.Lock()
-	defer e.irmMu.Unlock()
+	switch phase {
+	case "1":
+		toStopFound := false
+		e.irmMu.Lock()
+		for inputName := range e.irm {
+			if _, present := inputResourcesMap[inputName]; !present {
+				// will close this input
+				if ir, ok := e.InputRunners[inputName]; ok {
+					log.Trace("phase1: stopping Input[%s]", inputName)
+					ir.feedResources(nil)
+					toStopFound = true
+				}
+			}
+		}
+		e.irm = inputResourcesMap
+		e.irmMu.Unlock()
 
-	// find the 'to be idle' input plugins
-	for inputName := range e.irm {
-		if _, present := inputResourcesMap[inputName]; !present {
-			// will close this input
+		if !toStopFound {
+			log.Trace("phase1: nothing to stop")
+		}
+
+	case "2":
+		// dispatch decision to input plugins
+		for inputName, rs := range inputResourcesMap {
 			if ir, ok := e.InputRunners[inputName]; ok {
-				log.Trace("stopping Input[%s]", inputName)
-				ir.feedResources(nil)
+				log.Trace("phase2: feed %s %+v", inputName, rs)
+				ir.feedResources(rs)
+			} else {
+				// should never happen
+				// if it happens, must be human operation fault
+				log.Critical("phase2: feed %s renounced %+v", inputName, rs)
+
+				if err := e.controller.RenounceResources(rs); err != nil {
+					log.Error("%+v %s", rs, err)
+				}
 			}
 		}
-	}
 
-	e.irm = inputResourcesMap
-
-	// dispatch decision to input plugins
-	for inputName, rs := range inputResourcesMap {
-		if ir, ok := e.InputRunners[inputName]; ok {
-			log.Trace("feed %s: %+v", inputName, rs)
-			ir.feedResources(rs)
-		} else {
-			// should never happen
-			// if it happens, must be human operation fault
-			log.Critical("feed %s renounced: %+v", inputName, rs)
-
-			if err := e.controller.RenounceResources(rs); err != nil {
-				log.Error("%+v %s", rs, err)
-			}
-		}
+	default:
+		// should never happen
+		log.Critical("phase=%s?", phase)
+		http.Error(w, "invalid phase", http.StatusBadRequest)
 	}
 
 }
