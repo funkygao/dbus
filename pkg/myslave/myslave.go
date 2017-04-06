@@ -12,6 +12,7 @@ import (
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/golib/sync2"
 	conf "github.com/funkygao/jsconf"
+	mylog "github.com/ngaut/log"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/replication"
 )
@@ -47,6 +48,12 @@ type MySlave struct {
 
 // New creates a MySlave instance.
 func New(dsn string) *MySlave {
+	// github.com/siddontang/go-mysql is using github.com/ngaut/log
+	mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
+	if err := mylog.SetOutputByName("myslave.log"); err != nil {
+		panic(err)
+	}
+
 	return &MySlave{
 		dsn:        dsn,
 		dbExcluded: map[string]struct{}{},
