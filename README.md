@@ -164,14 +164,17 @@ dbus uses epoch to solve this issue.
 ### TODO
 
 - [ ] enhance Decision.Equals to avoid thundering herd
-- [ ] server_id uniq across the cluster
+- [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
-- [X] kguard integration
+- [ ] RowsEvent avro
+- [ ] use scheme to distinguish type of DSN
+- [ ] KafkaConsumer might not be able to Stop
 - [ ] controller
-  - [ ] what if RPC fails
-  - [ ] 2 phase rebalance: close participants then notify new resources
-  - [ ] leader.onBecomingLeader is parallal: should be sequential
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
+  - [X] 2 phase rebalance: close participants then notify new resources
+  - [X] what if RPC fails
+  - [X] leader.onBecomingLeader is parallal: should be sequential
+  - [ ] hot reload raises cluster herd: participant changes too much
   - [X] when leader make decision, it persists to zk before RPC for leader failover
   - [X] owner of resource
   - [X] leader RPC has epoch info
@@ -185,9 +188,12 @@ dbus uses epoch to solve this issue.
     - [X] cluster chaos monkey
 - [ ] batcher only retries after full batch ack'ed, add timer?
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [X] kguard integration
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
+- [X] KafkaInput plugin
+- [X] plugins Run has no way of panic
 - [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [X] make canal, high cpu usage
   - because CAS backoff 1us, cpu busy

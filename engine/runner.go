@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"runtime/debug"
 	"sync"
 
@@ -61,18 +62,20 @@ func (pb *pRunnerBase) Plugin() Plugin {
 type foRunner struct {
 	pRunnerBase
 
-	matcher   *matcher
-	inChan    chan *Packet
-	leakCount int
+	matcher *matcher
+
+	inChan  chan *Packet
+	panicCh chan error
 }
 
-func newFORunner(plugin Plugin, pluginCommons *pluginCommons) *foRunner {
+func newFORunner(plugin Plugin, pluginCommons *pluginCommons, panicCh chan error) *foRunner {
 	return &foRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        plugin,
 			pluginCommons: pluginCommons,
 		},
-		inChan: make(chan *Packet, Globals().PluginChanSize),
+		inChan:  make(chan *Packet, Globals().PluginChanSize),
+		panicCh: panicCh,
 	}
 }
 
@@ -109,11 +112,20 @@ func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
 
 func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	defer func() {
+		wg.Done()
+
 		if err := recover(); err != nil {
 			log.Critical("[%s] shutdown completely for: %v\n%s", fo.Name(), err, string(debug.Stack()))
-		}
 
-		wg.Done()
+			reason := errors.New("unexpected reason")
+			switch panicErr := err.(type) {
+			case string:
+				reason = errors.New(panicErr)
+			case error:
+				reason = panicErr
+			}
+			fo.panicCh <- reason
+		}
 	}()
 
 	var (

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"runtime/debug"
 	"sync"
 
@@ -51,14 +52,16 @@ type iRunner struct {
 	inChan chan *Packet
 
 	resourcesCh chan []cluster.Resource
+	panicCh     chan error
 }
 
-func newInputRunner(input Input, pluginCommons *pluginCommons) (r *iRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan error) (r *iRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        input.(Plugin),
 			pluginCommons: pluginCommons,
 		},
+		panicCh:     panicCh,
 		resourcesCh: make(chan []cluster.Resource), // FIXME how to close it
 	}
 }
@@ -98,18 +101,27 @@ func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
 
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
+		wg.Done()
+
 		if err := recover(); err != nil {
 			log.Critical("[%s] shutdown completely for: %v\n%s", ir.Name(), err, string(debug.Stack()))
-		}
 
-		wg.Done()
+			reason := errors.New("unexpected reason")
+			switch panicErr := err.(type) {
+			case string:
+				reason = errors.New(panicErr)
+			case error:
+				reason = panicErr
+			}
+			ir.panicCh <- reason
+		}
 	}()
 
 	globals := Globals()
 	for {
-		log.Info("Input[%s] started", ir.Name())
+		log.Trace("Input[%s] started", ir.Name())
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Info("Input[%s] stopped", ir.Name())
+			log.Trace("Input[%s] stopped", ir.Name())
 		} else {
 			log.Error("Input[%s] stopped: %v", ir.Name(), err)
 		}

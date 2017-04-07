@@ -224,7 +224,7 @@ func (r *Router) runReporter(wg *sync.WaitGroup) {
 func (r *Router) removeMatcher(matcher *matcher, matchers []*matcher) {
 	for idx, m := range matchers {
 		if m == matcher {
-			log.Trace("closing matcher for %s", m.runner.Name())
+			log.Debug("closing matcher for %s", m.runner.Name())
 
 			close(m.InChan())
 			matchers[idx] = nil

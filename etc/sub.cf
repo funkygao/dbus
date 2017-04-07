@@ -1,0 +1,32 @@
+{
+    // DAG
+    // MockInput -> out.kafka -> in.kafka -> MockOutput
+
+    plugins: [
+        {
+            name: "MockInput"
+            sleep: "100ms"
+        }
+
+        {
+            name: "out.kafka"
+            class: "KafkaOutput"
+            reporter: true
+            dsn: "local://me/foobar"
+            match: ["MockInput", ]
+        }
+
+        {
+            // will consume messages generated from MockInput
+            name: "in.kafka"
+            class: "KafkaInput"
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: false
+            match:  ["in.kafka", ]
+        }
+    ]
+
+}

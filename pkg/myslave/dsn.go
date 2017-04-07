@@ -9,7 +9,7 @@ import (
 
 // ParseDSN parse mysql DSN(data source name).
 // The DSN is in the form of zone://user:pass@host:port/db1,db2,...,dbn
-// The zone is used for zk positioner.
+// The zone is used for zk checkpoint.
 func ParseDSN(dsn string) (zone, host string, port uint16, username, passwd string, dbs []string, err error) {
 	var u *url.URL
 	if u, err = url.Parse(dsn); err != nil {

@@ -20,6 +20,15 @@ func makeRowsEvent() *RowsEvent {
 	}
 }
 
+func TestAvroMarshaller(t *testing.T) {
+	t.SkipNow()
+
+	r := makeRowsEvent()
+	b, err := avroMarshaller(r)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "exp", string(b))
+}
+
 func TestRowsEventFlags(t *testing.T) {
 	r := makeRowsEvent()
 	r.SetFlags(1)

@@ -1,7 +1,6 @@
 package watchers
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -33,6 +32,7 @@ func (this *dbusWatcher) Run() {
 	resourcesGauge := metrics.NewRegisteredGauge("dbus.resources", nil)
 	orphanResourcesGauge := metrics.NewRegisteredGauge("dbus.resources.orphan", nil)
 	participantsGauge := metrics.NewRegisteredGauge("dbus.participants", nil)
+	reelectGauge := metrics.NewRegisteredGauge("dbus.reelect", nil)
 
 	mgr := czk.NewManager(this.zkzone.ZkAddrs())
 	if err := mgr.Open(); err != nil {
@@ -40,6 +40,7 @@ func (this *dbusWatcher) Run() {
 		return
 	}
 
+	lastLeader := cluster.Participant{}
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
@@ -59,14 +60,28 @@ func (this *dbusWatcher) Run() {
 						orphanN++
 					}
 				}
-			}
-			resourcesGauge.Update(int64(len(resources)))
-			orphanResourcesGauge.Update(int64(orphanN))
 
-			if liveParticipants, err := this.mgr.LiveParticipants(); err != nil {
+				resourcesGauge.Update(int64(len(resources)))
+				orphanResourcesGauge.Update(int64(orphanN))
+			}
+
+			if liveParticipants, err := mgr.LiveParticipants(); err != nil {
 				log.Error("%s %v", this.ident, err)
 			} else {
 				participantsGauge.Update(int64(len(liveParticipants)))
+			}
+
+			if leader, err := mgr.Leader(); err != nil {
+				log.Error("%s %v", this.ident, err)
+			} else {
+				if lastLeader.Valid() && !leader.Equals(lastLeader) {
+					log.Trace("%s new leader: %s", this.ident, leader)
+					reelectGauge.Update(1)
+				} else {
+					reelectGauge.Update(0)
+				}
+
+				lastLeader = leader
 			}
 		}
 	}

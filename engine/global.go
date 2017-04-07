@@ -89,7 +89,7 @@ func DefaultGlobals() *GlobalConfig {
 		HubChanSize:           200,
 		PluginChanSize:        150,
 		RouterTrack:           true,
-		WatchdogTick:          time.Minute * 2,
+		WatchdogTick:          time.Minute * 10,
 		StartedAt:             time.Now(),
 		registry:              map[string]interface{}{},
 	}

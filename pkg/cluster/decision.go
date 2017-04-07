@@ -26,15 +26,23 @@ func (d Decision) Get(p Participant) []Resource {
 	return d[p]
 }
 
+// IsAssigned returns if the decision has resources assigned for a participant.
 func (d Decision) IsAssigned(p Participant) bool {
 	_, present := d[p]
 	return present
 }
 
+// Empty returns true if the decision is empty.
+func (d Decision) Empty() bool {
+	return len(d) == 0
+}
+
+// Close revokes all resources from a participant.
 func (d Decision) Close(p Participant) {
 	d[p] = nil
 }
 
+// MarshalJSON implements json.Marshaler.
 func (d Decision) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	for p, rs := range d {
@@ -44,6 +52,7 @@ func (d Decision) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
 func (d Decision) UnmarshalJSON(data []byte) error {
 	v := make(map[string][]Resource)
 	if err := json.Unmarshal(data, &v); err != nil {

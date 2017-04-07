@@ -17,7 +17,7 @@ type Resource struct {
 // UnmarshalRPCResources is used by a participant to unmarshal RPC reblance request body into list of resources.
 // It will get all the resources that the participant will lead.
 func UnmarshalRPCResources(data []byte) []Resource {
-	r := make([]Resource, 0)
+	var r []Resource
 	json.Unmarshal(data, &r)
 	return r
 }
@@ -41,6 +41,10 @@ func (r Resource) Equals(that Resource) bool {
 
 func (r *Resource) From(data []byte) {
 	json.Unmarshal(data, r)
+}
+
+func (r Resource) String() string {
+	return r.Name
 }
 
 type Resources []Resource

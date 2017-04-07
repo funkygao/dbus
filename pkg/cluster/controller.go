@@ -53,4 +53,7 @@ type Controller interface {
 
 	// Upgrade returns a channel to receive cluster upgrade events.
 	Upgrade() <-chan struct{}
+
+	// RenounceResources declares the unrecognized resources.
+	RenounceResources([]Resource) error
 }

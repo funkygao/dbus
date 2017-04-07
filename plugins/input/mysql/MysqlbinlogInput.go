@@ -28,7 +28,7 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
-	log.Trace("[%s] stopping...", r.Name())
+	log.Debug("[%s] stopping...", r.Name())
 
 	close(this.stopChan)
 	if this.slave != nil {
@@ -70,14 +70,14 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 			select {
 			case <-this.stopChan:
-				log.Trace("[%s] yes sir!", name)
+				log.Debug("[%s] yes sir!", name)
 				return nil
 			case myResources = <-resourcesCh:
 			}
 		}
 
 		dsn := myResources[0].DSN() // MysqlbinlogInput only consumes 1 resource
-		log.Trace("[%s] starting replication from %+v...", name, dsn)
+		log.Trace("[%s] starting replication from %s...", name, dsn)
 		this.slave = myslave.New(dsn).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {
 			// err might be: read initial handshake error
@@ -95,7 +95,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		select {
 		case <-ready:
 		case <-this.stopChan:
-			log.Trace("[%s] yes sir!", name)
+			log.Debug("[%s] yes sir!", name)
 			return nil
 		}
 
@@ -106,7 +106,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		for {
 			select {
 			case <-this.stopChan:
-				log.Trace("[%s] yes sir!", name)
+				log.Debug("[%s] yes sir!", name)
 				return nil
 
 			case err := <-errors:
@@ -114,7 +114,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
 				// read initial handshake error, caused by Too many connections
-				log.Error("[%s] backoff %s: %v", name, backoff, err)
+				log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
 				this.slave.StopReplication()
 
 				// myResources not changed, so next round still consume the same resources
@@ -122,33 +122,33 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 				select {
 				case <-time.After(backoff):
 				case <-this.stopChan:
-					log.Trace("[%s] yes sir!", name)
+					log.Debug("[%s] yes sir!", name)
 					return nil
 				}
 				goto RESTART_REPLICATION
 
 			case pack, ok := <-r.InChan():
 				if !ok {
-					log.Trace("[%s] yes sir!", name)
+					log.Debug("[%s] yes sir!", name)
 					return nil
 				}
 
 				select {
 				case err := <-errors:
 					// TODO is this necessary?
-					log.Error("[%s] backoff %s: %v", name, backoff, err)
+					log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
 					this.slave.StopReplication()
 
 					select {
 					case <-time.After(backoff):
 					case <-this.stopChan:
-						log.Trace("[%s] yes sir!", name)
+						log.Debug("[%s] yes sir!", name)
 						return nil
 					}
 					goto RESTART_REPLICATION
 
 				case myResources = <-resourcesCh:
-					log.Trace("[%s] cluster rebalanced", name)
+					log.Trace("[%s] cluster rebalanced, stop from %s", name, dsn)
 					this.slave.StopReplication()
 					goto RESTART_REPLICATION
 
@@ -168,7 +168,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 					}
 
 				case <-this.stopChan:
-					log.Trace("[%s] yes sir!", name)
+					log.Debug("[%s] yes sir!", name)
 					return nil
 				}
 			}

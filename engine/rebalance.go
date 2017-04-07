@@ -13,45 +13,50 @@ import (
 func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 	log.Info("[%s] decision: %+v", e.participant, decision)
 
-	for participant, resources := range decision {
-		log.Debug("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
+	// 2 phase commit
+	for phase := 1; phase <= 2; phase++ {
+		for participant, resources := range decision {
+			log.Debug("[%s] rpc-> %s %+v", e.participant, participant.Endpoint, resources)
 
-		// edge case:
-		// participant might die
-		// participant not die, but its Input plugin panic
-		// leader might die
-		// rpc might be rejected
-		statusCode := e.callRPC(participant.Endpoint, epoch, resources)
-		switch statusCode {
-		case http.StatusOK:
-			log.Trace("[%s] rpc<- ok %s", e.participant, participant.Endpoint)
+			// edge case:
+			// participant might die
+			// participant not die, but its Input plugin panic
+			// leader might die
+			// rpc might be rejected
+			statusCode := e.callRPC(participant.Endpoint, epoch, phase, resources)
+			switch statusCode {
+			case http.StatusOK:
+				log.Trace("[%s] rpc<- ok %s", e.participant, participant.Endpoint)
 
-		case http.StatusGone:
-			// e,g.
-			// resource changed, live participant [1, 2, 3], when RPC sending, p[1] gone
-			// just wait for another rebalance event
-			log.Warn("[%s] rpc<- %s gone", e.participant, participant.Endpoint)
-			return
+			case http.StatusGone:
+				// e,g.
+				// resource changed, live participant [1, 2, 3], when RPC sending, p[1] gone
+				// just wait for another rebalance event
+				log.Warn("[%s] rpc<- %s gone", e.participant, participant.Endpoint)
+				return
 
-		case http.StatusBadRequest:
-			// should never happen
-			log.Critical("[%s] rpc<- %s bad request", e.participant, participant.Endpoint)
+			case http.StatusBadRequest:
+				// should never happen
+				log.Critical("[%s] rpc<- %s bad request", e.participant, participant.Endpoint)
 
-		case http.StatusNotAcceptable:
-			log.Error("[%s] rpc<- %s leader moved", e.participant, participant.Endpoint)
-			return
+			case http.StatusNotAcceptable:
+				log.Error("[%s] rpc<- %s leader moved, await next rebalance", e.participant, participant.Endpoint)
+				return
 
-		default:
-			// TODO
-			log.Error("[%s] rpc<- %s %d", e.participant, participant.Endpoint, statusCode)
+			default:
+				log.Error("[%s] rpc<- %s %d, trigger new rebalance!", e.participant, participant.Endpoint, statusCode)
+				if err := e.ClusterManager().Rebalance(); err != nil {
+					log.Critical("%s", err)
+				}
+			}
+
 		}
-
 	}
 }
 
-func (e *Engine) callRPC(endpoint string, epoch int, resources []cluster.Resource) int {
+func (e *Engine) callRPC(endpoint string, epoch int, phase int, resources []cluster.Resource) int {
 	resp, _, errs := gorequest.New().
-		Post(fmt.Sprintf("http://%s/v1/rebalance?epoch=%d", endpoint, epoch)).
+		Post(fmt.Sprintf("http://%s/v1/rebalance?epoch=%d&phase=%d", endpoint, epoch, phase)).
 		Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).
 		SendString(string(cluster.Resources(resources).Marshal())).
 		End()

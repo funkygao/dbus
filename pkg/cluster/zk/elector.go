@@ -28,6 +28,7 @@ func newLeaderElector(ctx *controller, onBecomingLeader func(), onResigningAsLea
 
 func (l *leaderElector) startup() {
 	// watch for leader changes
+	// leader also need watch leader changes because of network partition
 	l.ctx.zc.SubscribeDataChanges(l.ctx.kb.leader(), l)
 	l.elect()
 }
@@ -47,7 +48,7 @@ func (l *leaderElector) elect() (win bool) {
 	// been elected when we get here.
 	l.leaderID = l.fetchLeaderID()
 	if l.leaderID != "" {
-		log.Trace("[%s] found leader: %s", l.ctx.participant, l.leaderID)
+		log.Trace("[%s] found leader: %s, quit elect", l.ctx.participant, l.leaderID)
 		return
 	}
 
@@ -83,7 +84,13 @@ func (l *leaderElector) amLeader() bool {
 }
 
 func (l *leaderElector) HandleDataChange(dataPath string, lastData []byte) error {
+	wasLeader := l.amLeader()
 	l.leaderID = l.fetchLeaderID()
+	amLeader := l.amLeader()
+	if wasLeader && !amLeader {
+		l.onResigningAsLeader()
+	}
+
 	log.Trace("[%s] new leader is %s", l.ctx.participant, l.leaderID)
 	return nil
 }
