@@ -101,17 +101,11 @@ func (c *controller) Start() (err error) {
 	c.upgrader.startup()
 
 	go func() {
-		for {
-			select {
-			case err, ok := <-c.zc.LisenterErrors():
-				if !ok {
-					return
-				}
-
-				// for now, just log the err
-				// TODO how to handle it?
-				log.Error("[%s] %v", c.participant, err)
-			}
+		// when zc Disconnect, this goroutine will go away
+		for err := range c.zc.LisenterErrors() {
+			// for now, just log the err
+			// TODO how to handle it?
+			log.Error("[%s] %v", c.participant, err)
 		}
 	}()
 

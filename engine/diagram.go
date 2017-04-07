@@ -57,8 +57,9 @@ func (e *Engine) exportPipeline(outfile string, format string, layout string, sc
 	}
 
 	dot += "\r\n}"
-	cmdLine := fmt.Sprintf("dot -o%s -T%s -K%s -s%s %s", outfile, format, layout, scale, more)
 
+	// the cmdLine is internal generated, should not vulnerable to security attack
+	cmdLine := fmt.Sprintf("dot -o%s -T%s -K%s -s%s %s", outfile, format, layout, scale, more)
 	cmd := exec.Command(`/bin/sh`, `-c`, cmdLine)
 	cmd.Stdin = strings.NewReader(dot)
 

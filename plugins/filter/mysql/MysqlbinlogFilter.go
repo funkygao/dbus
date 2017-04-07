@@ -31,26 +31,21 @@ type MysqlbinlogFilter struct {
 func (this *MysqlbinlogFilter) Init(config *conf.Conf) {}
 
 func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error {
-	for {
-		select {
-		case pack, ok := <-r.InChan():
-			if !ok {
-				return nil
-			}
-
-			row, ok := pack.Payload.(*model.RowsEvent)
-			if !ok {
-				pack.Recycle()
-
-				log.Warn("illegal payload: %+v", pack.Payload)
-				continue
-			}
-
-			p := h.ClonePacket(pack)
-			p.Ident = row.Schema
-			r.Inject(p)
-
+	for pack := range r.InChan() {
+		row, ok := pack.Payload.(*model.RowsEvent)
+		if !ok {
 			pack.Recycle()
+
+			log.Warn("illegal payload: %+v", pack.Payload)
+			continue
 		}
+
+		p := h.ClonePacket(pack)
+		p.Ident = row.Schema
+		r.Inject(p)
+
+		pack.Recycle()
 	}
+
+	return nil
 }
