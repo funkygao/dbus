@@ -34,6 +34,7 @@ zkconf:
 
 sub:build
 	@cat ../../etc/sub.cf | zk set -p /dbus/conf
+	-dbc resources -add in.kafka-local://me/foobar#0
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 canal:build zkconf
