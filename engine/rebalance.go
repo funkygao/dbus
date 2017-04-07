@@ -40,7 +40,7 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 				log.Critical("[%s] rpc<- %s bad request", e.participant, participant.Endpoint)
 
 			case http.StatusNotAcceptable:
-				log.Error("[%s] rpc<- %s leader moved", e.participant, participant.Endpoint)
+				log.Error("[%s] rpc<- %s leader moved, await next rebalance", e.participant, participant.Endpoint)
 				return
 
 			default:
