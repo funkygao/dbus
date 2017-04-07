@@ -37,6 +37,7 @@ func (this *Resources) Run(args []string) (exitCode int) {
 		tuples := strings.SplitN(this.addResource, "-", 2)
 		if len(tuples) != 2 {
 			this.Ui.Error("invalid resource fmt")
+			this.Ui.Output(this.Help())
 			return 2
 		}
 
