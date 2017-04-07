@@ -17,6 +17,7 @@ import (
 type KafkaOutput struct {
 	zone, cluster, topic string
 	reporter             bool
+	rowsEventOnly        bool
 
 	cf *conf.Conf
 }
@@ -30,6 +31,7 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 		panic("invalid configuration: " + fmt.Sprintf("%s.%s.%s", this.zone, this.cluster, this.topic))
 	}
 	this.reporter = config.Bool("reporter", false)
+	this.rowsEventOnly = config.Bool("rowsevent", false)
 	this.cf = config
 }
 
@@ -119,12 +121,13 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				return nil
 			}
 
-			row, ok := pack.Payload.(*model.RowsEvent)
-			if !ok {
-				pack.Recycle()
+			if this.rowsEventOnly {
+				if _, ok := pack.Payload.(*model.RowsEvent); !ok {
+					pack.Recycle()
 
-				log.Error("[%s.%s.%s] bad payload: %+v", this.zone, this.cluster, this.topic, pack.Payload)
-				continue
+					log.Error("[%s.%s.%s] bad payload: %+v", this.zone, this.cluster, this.topic, pack.Payload)
+					continue
+				}
 			}
 
 			n++
@@ -133,7 +136,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			for {
 				if err := producer.Send(&sarama.ProducerMessage{
 					Topic:    this.topic,
-					Value:    row,
+					Value:    pack.Payload,
 					Metadata: pack,
 				}); err == nil {
 					break
