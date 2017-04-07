@@ -167,8 +167,8 @@ dbus uses epoch to solve this issue.
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
 - [ ] RowsEvent avro
-- [ ] KafkaInput plugin
 - [ ] use scheme to distinguish type of DSN
+- [ ] KafkaConsumer might not be able to Stop
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
   - [X] 2 phase rebalance: close participants then notify new resources
@@ -192,6 +192,7 @@ dbus uses epoch to solve this issue.
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
+- [X] KafkaInput plugin
 - [X] plugins Run has no way of panic
 - [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [X] make canal, high cpu usage

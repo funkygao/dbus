@@ -18,6 +18,8 @@ type Config struct {
 	async  bool
 	dryrun bool
 
+	consumeChanBufSize int
+
 	Sarama *sarama.Config
 }
 
@@ -61,9 +63,10 @@ func DefaultConfig() *Config {
 	cf.Consumer.MaxProcessingTime = time.Second * 2
 
 	return &Config{
-		Sarama: cf,
-		async:  true,
-		dryrun: false,
+		Sarama:             cf,
+		async:              true,
+		dryrun:             false,
+		consumeChanBufSize: 1 << 8,
 	}
 }
 
@@ -92,6 +95,11 @@ func (c *Config) AsyncMode() *Config {
 
 func (c *Config) DryrunMode() *Config {
 	c.dryrun = true
+	return c
+}
+
+func (c *Config) SetConsumerChanBuffer(size int) *Config {
+	c.consumeChanBufSize = size
 	return c
 }
 
