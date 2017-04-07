@@ -5,6 +5,7 @@
     plugins: [
         {
             name: "MockInput"
+            sleep: "100ms"
         }
 
         {
@@ -23,8 +24,8 @@
         
         {
             name:   "MockOutput"
-            blackhole: true
-            match:  ["KafkaInput", ]
+            blackhole: false
+            match:  ["in.kafka", ]
         }
     ]
 

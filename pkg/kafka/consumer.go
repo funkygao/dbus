@@ -79,12 +79,12 @@ func (c *Consumer) Stop() error {
 
 		c.wg.Wait()
 
+		// safe to close
 		close(c.errors)
 		close(c.messages)
 	})
 
 	return err
-
 }
 
 func (c *Consumer) consumerCluster(tp topicPartitions) {
@@ -138,6 +138,7 @@ func (c *Consumer) consumePartition(pc sarama.PartitionConsumer, wg *sync.WaitGr
 				return
 			}
 
+			// TODO if blocked, consumer can't be stopped
 			c.messages <- msg
 		}
 	}
