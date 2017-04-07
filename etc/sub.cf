@@ -1,0 +1,14 @@
+{
+    plugins: [
+        {
+            name: "KafkaInput"
+        }
+        
+        {
+            name:   "MockOutput"
+            blackhole: true
+            match:  ["KafkaInput", ]
+        }
+    ]
+
+}

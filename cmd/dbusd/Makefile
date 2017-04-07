@@ -32,6 +32,10 @@ resources:
 zkconf:
 	@cat ../../etc/canal_many.cf | zk set -p /dbus/conf
 
+sub:build
+	@cat ../../etc/sub.cf | zk set -p /dbus/conf
+	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
+
 canal:build zkconf
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
