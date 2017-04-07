@@ -78,6 +78,9 @@ func (c *Consumer) Stop() error {
 		}
 
 		c.wg.Wait()
+
+		close(c.errors)
+		close(c.messages)
 	})
 
 	return err
@@ -94,7 +97,7 @@ func (c *Consumer) consumerCluster(tp topicPartitions) {
 	var wg sync.WaitGroup
 	for topic, partitions := range tp.tps {
 		for _, partitionID := range partitions {
-			// FIXME initial offset
+			// FIXME initial offset, integration with checkpoint pkg
 		RETRY:
 			pc, err := consumer.ConsumePartition(topic, partitionID, sarama.OffsetNewest)
 			if err != nil {
