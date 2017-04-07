@@ -31,6 +31,8 @@ help:
 	@echo "    make format      : Format the source code"
 	@echo "    make fmtcheck    : Check if the source code has been formatted"
 	@echo "    make vet         : Check for suspicious constructs"
+	@echo "    make simple      : Simplify code"
+	@echo "    make checkall    : Check all"
 	@echo "    make lint        : Check for style errors"
 	@echo "    make coverage    : Generate the coverage report"
 	@echo "    make cyclo       : Generate the cyclomatic complexity report"
@@ -82,6 +84,17 @@ vet:
 lint:
 	-GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./...
 
+simple:
+	-gosimple ./...
+
+checkall:
+	-aligncheck ./...
+	-structcheck ./...
+	-varcheck ./...
+	-aligncheck ./...
+	-errcheck ./...
+	-staticcheck ./...
+
 # Generate the coverage report
 coverage:
 	@mkdir -p .target/report
@@ -129,6 +142,7 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/HewlettPackard/gas
 	GOPATH=$(GOPATH) go get github.com/dominikh/go-tools
 	GOPATH=$(GOPATH) go get github.com/pquerna/ffjson
+	GOPATH=$(GOPATH) go get github.com/wgliang/goreporter
 
 # Remove any build artifact
 clean:
