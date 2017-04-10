@@ -97,7 +97,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 		panic("GTID not implemented")
 	}
 
-	m.m = newMetrics(m.host, m.port)
+	m.m = newMetrics(m.name)
 	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
 		m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
