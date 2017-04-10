@@ -40,7 +40,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	e := engine.New(nil).LoadConfig(this.fn)
+	e := engine.New(nil).LoadFrom(this.fn)
 	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
