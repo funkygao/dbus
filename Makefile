@@ -1,7 +1,7 @@
 # List special make targets that are not associated with files
 .PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell astscan qa deps clean nuke install loc
 
-VERSION=0.3.2-release
+VERSION=0.3.3-beta
 
 SHELL=/bin/bash
 CURRENTDIR=$(shell pwd)
@@ -126,6 +126,7 @@ docs:
 	nohup sh -c 'GOPATH=$(GOPATH) godoc -http=127.0.0.1:6060' > .target/godoc_server.log 2>&1 &
 	wget --directory-prefix=.target/docs/ --execute robots=off --retry-connrefused --recursive --no-parent --adjust-extension --page-requisites --convert-links http://127.0.0.1:6060/pkg/github.com/${VENDOR}/${PROJECT}/ ; kill -9 `lsof -ti :6060`
 	@echo '<html><head><meta http-equiv="refresh" content="0;./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html"/></head><a href="./127.0.0.1:6060/pkg/'${REPOPATH}'/'${PROJECT}'/index.html">'${PKGNAME}' Documentation ...</a></html>' > .target/docs/index.html
+	open .target/docs/index.html
 
 # Alias to run all quality-assurance checks
 qa: fmtcheck vet lint coverage ineffassign misspell astscan

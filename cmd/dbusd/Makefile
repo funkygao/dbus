@@ -37,7 +37,8 @@ sub:build
 	-dbc resources -add in.kafka-local://me/foobar#0
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
-canal:build zkconf
+canal:build zkconf resources
+	-dbc resources -add in.binlog-local://root@localhost:3306
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 c1:build zkconf

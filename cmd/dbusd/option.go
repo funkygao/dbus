@@ -36,7 +36,7 @@ var (
 )
 
 const (
-	USAGE = `dbusd - Distributed DataBus
+	usage = `dbusd - Distributed DataBus
 
 Flags:
 `
@@ -64,7 +64,7 @@ func parseFlags() {
 	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, USAGE)
+		fmt.Fprint(os.Stderr, usage)
 		flag.PrintDefaults()
 	}
 	flag.Parse()

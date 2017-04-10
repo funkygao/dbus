@@ -1,8 +1,13 @@
 package zk
 
 import (
+	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/gorequest"
 	"github.com/funkygao/zkclient"
 )
 
@@ -104,6 +109,32 @@ func (c *controller) Leader() (cluster.Participant, error) {
 
 	p.From(data)
 	return p, nil
+}
+
+func (c *controller) CallParticipants(q string) (err error) {
+	var ps []cluster.Participant
+	ps, err = c.LiveParticipants()
+	if err != nil {
+		return
+	}
+
+	var wg sync.WaitGroup
+	for _, p := range ps {
+		wg.Add(1)
+
+		targetUri := fmt.Sprintf("%s/%s", p.APIEndpoint(), strings.TrimLeft(q, "/"))
+		go func(wg *sync.WaitGroup, targetUri string) {
+			defer wg.Done()
+
+			if _, _, errs := gorequest.New().Post(targetUri).
+				Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).End(); len(errs) > 0 {
+				err = errs[0]
+			}
+		}(&wg, targetUri)
+	}
+	wg.Wait()
+
+	return
 }
 
 func (c *controller) LiveParticipants() ([]cluster.Participant, error) {

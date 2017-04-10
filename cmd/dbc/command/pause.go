@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gocli"
 )
 
@@ -12,6 +13,7 @@ type Pause struct {
 	Ui  cli.Ui
 	Cmd string
 
+	zone       string
 	inputName  string
 	resumeMode bool
 }
@@ -19,16 +21,33 @@ type Pause struct {
 func (this *Pause) Run(args []string) (exitCode int) {
 	cmdFlags := flag.NewFlagSet("pause", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
+	cmdFlags.StringVar(&this.zone, "z", ctx.DefaultZone(), "")
 	cmdFlags.StringVar(&this.inputName, "in", "", "")
 	cmdFlags.BoolVar(&this.resumeMode, "r", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	// call api server
-	// /api/v1/pause/{input}
-	// /api/v1/resume/{input}
+	if len(this.inputName) == 0 {
+		this.Ui.Output(this.Help())
+		return 2
+	}
 
+	mgr := openClusterManager(this.zone)
+	defer mgr.Close()
+
+	var q string
+	if this.resumeMode {
+		q = fmt.Sprintf("api/v1/resume/%s", this.inputName)
+	} else {
+		q = fmt.Sprintf("api/v1/pause/%s", this.inputName)
+	}
+	if err := mgr.CallParticipants(q); err != nil {
+		this.Ui.Error(err.Error())
+		return
+	}
+
+	this.Ui.Info("ok")
 	return
 }
 

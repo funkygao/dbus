@@ -18,6 +18,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// APIHandler is the HTTP API server handler signature.
 type APIHandler func(w http.ResponseWriter, req *http.Request, params map[string]interface{}) (interface{}, error)
 
 func (e *Engine) launchAPIServer() {
@@ -97,6 +98,7 @@ func (e *Engine) handleAPIDag(w http.ResponseWriter, r *http.Request, params map
 	pngFile := fmt.Sprintf("%s/dag.png", dir)
 	dot := d.MakeDotGraph(fmt.Sprintf("%s/dag.dot", dir))
 
+	// the cmdLine is internal generated, should not vulnerable to security attack
 	cmdLine := fmt.Sprintf("dot -o%s -Tpng -s3", pngFile)
 	cmd := exec.Command(`/bin/sh`, `-c`, cmdLine)
 	cmd.Stdin = strings.NewReader(dot)
