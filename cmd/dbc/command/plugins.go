@@ -50,7 +50,7 @@ func (this *Plugins) Run(args []string) (exitCode int) {
 }
 
 func (*Plugins) Synopsis() string {
-	return "Display mysql binlog related info"
+	return "List all plugins"
 }
 
 func (this *Plugins) Help() string {
