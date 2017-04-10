@@ -45,6 +45,13 @@ func init() {
 			}, nil
 		},
 
+		"plugins": func() (cli.Command, error) {
+			return &command.Plugins{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"pause": func() (cli.Command, error) {
 			return &command.Pause{
 				Ui:  ui,
