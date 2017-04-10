@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"runtime"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -11,6 +12,7 @@ import (
 
 type MockInput struct {
 	stopChan chan struct{}
+	inChan   <-chan *engine.Packet
 
 	payload engine.Payloader
 	sleep   time.Duration
@@ -41,7 +43,7 @@ func (this *MockInput) OnAck(pack *engine.Packet) error {
 }
 
 func (this *MockInput) Stop(r engine.InputRunner) {
-	log.Trace("[%s] stopping...", r.Name())
+	log.Debug("[%s] stopping...", r.Name())
 	close(this.stopChan)
 }
 
@@ -50,24 +52,27 @@ func (this *MockInput) CleanupForRestart() bool {
 }
 
 func (this *MockInput) Pause(r engine.InputRunner) error {
-	log.Warn("[%s] paused", r.Name())
+	log.Info("[%s] paused", r.Name())
+	this.inChan = nil
 	return nil
 }
 
 func (this *MockInput) Resume(r engine.InputRunner) error {
 	log.Info("[%s] resumed", r.Name())
+	this.inChan = r.InChan()
 	return nil
 }
 
 func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	this.inChan = r.InChan()
 	for {
 		select {
 		case <-this.stopChan:
 			return nil
 
-		case pack, ok := <-r.InChan():
+		case pack, ok := <-this.inChan:
 			if !ok {
-				log.Debug("yes sir!")
+				log.Debug("[%s] yes sir!", r.Name())
 				break
 			}
 
@@ -77,6 +82,9 @@ func (this *MockInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 			if this.sleep > 0 {
 				time.Sleep(this.sleep)
 			}
+
+		default:
+			runtime.Gosched()
 		}
 	}
 
