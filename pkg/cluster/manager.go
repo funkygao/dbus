@@ -31,5 +31,9 @@ type Manager interface {
 	// TriggerUpgrade will notify all participants of binary upgrade.
 	TriggerUpgrade() error
 
+	// CurrentDecision returns current decision of the leader.
 	CurrentDecision() Decision
+
+	// CallParticipants calls each participants API specified by the query string.
+	CallParticipants(q string) error
 }
