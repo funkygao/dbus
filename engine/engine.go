@@ -361,6 +361,8 @@ func (e *Engine) ServeForever() (ret error) {
 		go e.watchUpgrade(e.ClusterManager().Upgrade())
 
 		log.Info("[%s] participant started", e.participant)
+	} else {
+		log.Info("cluster disabled")
 	}
 
 	configChanged := make(chan *conf.Conf)
