@@ -37,7 +37,7 @@ type GlobalConfig struct {
 	Stopping       bool
 	Debug          bool
 	ClusterEnabled bool
-	Zone           string
+	Zone           string // used to locate kguard
 	RouterTrack    bool
 
 	RPCPort int
