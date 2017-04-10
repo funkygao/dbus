@@ -5,7 +5,7 @@ import (
 	"path"
 )
 
-const rootPath = "/dbus/cluster"
+var rootPath = "/dbus/cluster"
 
 type keyBuilder struct {
 }

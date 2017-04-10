@@ -31,11 +31,12 @@ type MySlave struct {
 	Predicate func(schema, table string) bool
 	GTID      bool // global tx id
 
-	dsn          string
-	masterAddr   string
-	host         string
-	port         uint16
-	user, passwd string
+	zrootCheckpoint string
+	dsn             string
+	masterAddr      string
+	host            string
+	port            uint16
+	user, passwd    string
 
 	dbAllowed  map[string]struct{}
 	dbExcluded map[string]struct{}
@@ -48,7 +49,7 @@ type MySlave struct {
 var setupLogger sync.Once
 
 // New creates a MySlave instance.
-func New(dsn string) *MySlave {
+func New(dsn string, zrootCheckpoint string) *MySlave {
 	setupLogger.Do(func() {
 		// github.com/siddontang/go-mysql is using github.com/ngaut/log
 		mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
@@ -58,10 +59,11 @@ func New(dsn string) *MySlave {
 	})
 
 	return &MySlave{
-		dsn:        dsn,
-		dbExcluded: map[string]struct{}{},
-		dbAllowed:  map[string]struct{}{},
-		state:      binlog.New(dsn),
+		zrootCheckpoint: zrootCheckpoint,
+		dsn:             dsn,
+		dbExcluded:      map[string]struct{}{},
+		dbAllowed:       map[string]struct{}{},
+		state:           binlog.New(dsn),
 	}
 }
 
@@ -96,7 +98,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.m = newMetrics(m.host, m.port)
-	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state,
+	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
 		m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m

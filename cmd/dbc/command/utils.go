@@ -13,7 +13,7 @@ import (
 )
 
 func openClusterManager(zone string) cluster.Manager {
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone))
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), "")
 	swallow(mgr.Open())
 
 	return mgr

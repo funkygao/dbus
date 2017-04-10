@@ -193,7 +193,7 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 func (e *Engine) LoadFrom(loc string) *Engine {
 	if len(loc) == 0 {
 		// if no location provided, use the default zk
-		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), DbusConfZnode)
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), Globals().ZrootConf)
 	}
 
 	zkSvr, realPath := parseConfigPath(loc)
@@ -289,7 +289,7 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Info("engine starting...")
 
 	if globals.ClusterEnabled {
-		e.controller = czk.NewController(e.zkSvr, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
+		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
 	}
 
 	// setup signal handler first to avoid race condition
@@ -361,6 +361,8 @@ func (e *Engine) ServeForever() (ret error) {
 		go e.watchUpgrade(e.ClusterManager().Upgrade())
 
 		log.Info("[%s] participant started", e.participant)
+	} else {
+		log.Info("cluster disabled")
 	}
 
 	configChanged := make(chan *conf.Conf)

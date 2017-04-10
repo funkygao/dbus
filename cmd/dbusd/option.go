@@ -30,6 +30,10 @@ var (
 		hubPoolSize    int
 		pluginPoolSize int
 
+		zrootCheckpoint string
+		zrootCluster    string
+		zrootConfig     string
+
 		apiPort int
 		rpcPort int
 	}
@@ -62,6 +66,9 @@ func parseFlags() {
 	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
 	flag.IntVar(&options.rpcPort, "rpc", 9877, "rpc server port")
 	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
+	flag.StringVar(&options.zrootCheckpoint, "rootcheckpoint", "", "checkpoint znode root")
+	flag.StringVar(&options.zrootCluster, "rootcluster", "", "cluster znode root")
+	flag.StringVar(&options.zrootConfig, "rootconfig", "", "config znode root")
 	flag.StringVar(&options.visualizeFile, "dump", "", "visualize the pipleline to a png file. graphviz must be installed")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, usage)

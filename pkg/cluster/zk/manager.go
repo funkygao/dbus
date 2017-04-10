@@ -13,7 +13,11 @@ import (
 )
 
 // NewManager creates a Manager with zookeeper as underlying storage.
-func NewManager(zkSvr string) cluster.Manager {
+func NewManager(zkSvr string, zroot string) cluster.Manager {
+	if len(zroot) > 0 {
+		rootPath = zroot
+	}
+
 	return &controller{
 		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
 	}

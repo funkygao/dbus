@@ -30,7 +30,7 @@ func TestCheckpointZKBinlog(t *testing.T) {
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
 	s := binlog.New("")
 	zpath := "12.12.1.2:3334"
-	z := New(zkzone, s, zpath, time.Minute)
+	z := New(zkzone, s, "", zpath, time.Minute)
 	defer zkzone.DeleteRecursive(realPath(s, zpath))
 
 	assert.Equal(t, checkpoint.ErrStateNotFound, z.LastPersistedState(s))
