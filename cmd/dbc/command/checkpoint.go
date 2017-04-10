@@ -33,13 +33,14 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
 	mgr := czk.NewManager(zkzone)
-	states, err := mgr.AllStates()
-	if err != nil {
-		this.Ui.Error(err.Error())
-		return 2
-	}
 
 	for {
+		states, err := mgr.AllStates()
+		if err != nil {
+			this.Ui.Error(err.Error())
+			return 2
+		}
+
 		lines := []string{"Scheme|DSN|Position"}
 		for _, state := range states {
 			lines = append(lines, fmt.Sprintf("%s|%s|%s", state.Scheme(), state.DSN(), state.String()))
