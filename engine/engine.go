@@ -385,7 +385,6 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 	e.Unlock()
 	inputsWg.Wait() // wait for all inputs done
-	log.Info("all Inputs stopped")
 
 	// ok, now we are sure no more inputs, but in route.inChan there
 	// still may be filter injected packs and output not consumed packs
@@ -396,16 +395,12 @@ func (e *Engine) ServeForever() (ret error) {
 		e.router.removeFilterMatcher <- filterRunner.getMatcher()
 	}
 	filtersWg.Wait()
-	if len(e.FilterRunners) > 0 {
-		log.Info("all Filters stopped")
-	}
 
 	for _, outputRunner := range e.OutputRunners {
 		log.Debug("Stop message sent to %s", outputRunner.Name())
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
-	log.Info("all Outputs stopped")
 
 	e.router.Stop()
 	routerWg.Wait()

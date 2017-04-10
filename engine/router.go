@@ -192,7 +192,7 @@ LOOP:
 }
 
 func (r *Router) Stop() {
-	log.Trace("Router stopping...")
+	log.Debug("Router stopping...")
 	close(r.hub)
 	close(r.stopper)
 
