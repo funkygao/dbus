@@ -7,6 +7,14 @@ import (
 )
 
 func assignRoundRobin(participants []Participant, resources []Resource) (decision Decision) {
+	var onlineParticipants []Participant
+	for _, p := range participants {
+		if p.AccceptResources() {
+			onlineParticipants = append(onlineParticipants, p)
+		}
+	}
+	participants = onlineParticipants
+
 	sortedParticipants := Participants(participants)
 	sortedResources := Resources(resources)
 	sort.Sort(sortedParticipants)

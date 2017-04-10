@@ -119,6 +119,7 @@ func New(globals *GlobalConfig) *Engine {
 		participant: cluster.Participant{
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
+			State:    cluster.StateOnline,
 			Revision: dbus.Revision,
 			APIPort:  globals.APIPort,
 		},
