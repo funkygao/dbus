@@ -2,6 +2,7 @@ package zk
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/funkygao/dbus"
@@ -121,7 +122,7 @@ func (c *controller) CallParticipants(q string) (err error) {
 	for _, p := range ps {
 		wg.Add(1)
 
-		targetUri := fmt.Sprintf("%s/%s", p.APIEndpoint(), q)
+		targetUri := fmt.Sprintf("%s/%s", p.APIEndpoint(), strings.TrimLeft(q, "/"))
 		go func(wg *sync.WaitGroup, targetUri string) {
 			defer wg.Done()
 
