@@ -3,6 +3,8 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/funkygao/dbus"
@@ -17,6 +19,13 @@ func openClusterManager(zone string) cluster.Manager {
 	swallow(mgr.Open())
 
 	return mgr
+}
+
+func refreshScreen() {
+	c := exec.Command("clear")
+	c.Stdout = os.Stdout
+	c.Run()
+	c.Wait()
 }
 
 func swallow(err error) {
