@@ -7,11 +7,13 @@ import (
 	"runtime"
 
 	"github.com/funkygao/dbus"
+	"github.com/funkygao/gafka/ctx"
 )
 
 var (
 	options struct {
 		debug bool
+		zone  string
 
 		configPath    string
 		validateConf  bool
@@ -66,6 +68,7 @@ func parseFlags() {
 	flag.IntVar(&options.pluginPoolSize, "ppool", pPool, "plugin pool size")
 	flag.IntVar(&options.rpcPort, "rpc", 9877, "rpc server port")
 	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
+	flag.StringVar(&options.zone, "z", ctx.DefaultZone(), "zone")
 	flag.StringVar(&options.zrootCheckpoint, "rootcheckpoint", "", "checkpoint znode root")
 	flag.StringVar(&options.zrootCluster, "rootcluster", "", "cluster znode root")
 	flag.StringVar(&options.zrootConfig, "rootconfig", "", "config znode root")

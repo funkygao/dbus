@@ -38,6 +38,7 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 			case http.StatusBadRequest:
 				// should never happen
 				log.Critical("[%s/%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
+				e.callSOS("[%s/%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
 
 			case http.StatusNotAcceptable:
 				log.Error("[%s/%d] rpc<- %s leader moved, await next rebalance", e.participant, phase, participant.Endpoint)
@@ -45,6 +46,8 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 
 			default:
 				log.Error("[%s/%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
+				e.callSOS("[%s/%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
+
 				if err := e.ClusterManager().Rebalance(); err != nil {
 					log.Critical("%s", err)
 				}

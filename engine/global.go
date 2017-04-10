@@ -11,6 +11,7 @@ import (
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 const (
@@ -36,6 +37,7 @@ type GlobalConfig struct {
 	Stopping       bool
 	Debug          bool
 	ClusterEnabled bool
+	Zone           string
 	RouterTrack    bool
 
 	RPCPort int
@@ -77,7 +79,12 @@ func (g *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 		g.registry[key] = zkzone
 	}
 
-	return g.registry[key].(*zk.ZkZone)
+	if z, ok := g.registry[key].(*zk.ZkZone); ok {
+		return z
+	}
+
+	log.Critical("unknown zone: %s", zone)
+	return nil
 }
 
 func DefaultGlobals() *GlobalConfig {

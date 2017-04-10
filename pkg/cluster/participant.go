@@ -17,7 +17,7 @@ const (
 )
 
 var stateText = map[State]string{
-	StateUnknown: "unkown",
+	StateUnknown: "unknown",
 	StateOnline:  "online",
 	StateOffline: "offline",
 }
