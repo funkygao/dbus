@@ -23,7 +23,7 @@ func (this *KafkaInput) Init(config *conf.Conf) {
 }
 
 func (this *KafkaInput) Stop(r engine.InputRunner) {
-	log.Trace("[%s] stopping...", r.Name())
+	log.Debug("[%s] stopping...", r.Name())
 	close(this.stopChan)
 	if this.c != nil {
 		this.c.Stop()

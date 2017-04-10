@@ -34,7 +34,7 @@ func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 		case pack, ok := <-r.InChan():
 			if !ok {
-				log.Debug("yes sir!")
+				log.Debug("[%s] yes sir!", r.Name())
 				break
 			}
 
