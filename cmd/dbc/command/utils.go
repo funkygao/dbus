@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/funkygao/dbus"
-	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
@@ -14,7 +13,7 @@ import (
 )
 
 func openClusterManager(zone string) cluster.Manager {
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), engine.Globals().ZrootCluster)
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), "")
 	swallow(mgr.Open())
 
 	return mgr
