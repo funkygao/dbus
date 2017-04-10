@@ -358,7 +358,7 @@ func (e *Engine) ServeForever() (ret error) {
 		if err = e.controller.Start(); err != nil {
 			panic(err)
 		}
-		go e.watchUpgrade(e.controller.Upgrade())
+		go e.watchUpgrade(e.ClusterManager().Upgrade())
 
 		log.Info("[%s] participant started", e.participant)
 	}
