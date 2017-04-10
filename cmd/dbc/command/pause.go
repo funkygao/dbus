@@ -42,7 +42,7 @@ func (this *Pause) Run(args []string) (exitCode int) {
 	} else {
 		q = fmt.Sprintf("api/v1/pause/%s", this.inputName)
 	}
-	if err := mgr.CallParticipants(q); err != nil {
+	if err := mgr.CallParticipants("PUT", q); err != nil {
 		this.Ui.Error(err.Error())
 		return
 	}

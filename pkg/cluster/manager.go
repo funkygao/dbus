@@ -35,5 +35,5 @@ type Manager interface {
 	CurrentDecision() Decision
 
 	// CallParticipants calls each participants API specified by the query string.
-	CallParticipants(q string) error
+	CallParticipants(method string, q string) error
 }

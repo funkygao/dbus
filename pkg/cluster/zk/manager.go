@@ -2,6 +2,7 @@ package zk
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -111,7 +112,7 @@ func (c *controller) Leader() (cluster.Participant, error) {
 	return p, nil
 }
 
-func (c *controller) CallParticipants(q string) (err error) {
+func (c *controller) CallParticipants(method string, q string) (err error) {
 	var ps []cluster.Participant
 	ps, err = c.LiveParticipants()
 	if err != nil {
@@ -126,10 +127,23 @@ func (c *controller) CallParticipants(q string) (err error) {
 		go func(wg *sync.WaitGroup, targetUri string) {
 			defer wg.Done()
 
-			if _, _, errs := gorequest.New().Post(targetUri).
-				Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).End(); len(errs) > 0 {
-				err = errs[0]
+			r := gorequest.New()
+			switch strings.ToUpper(method) {
+			case "PUT":
+				r = r.Put(targetUri)
+			case "POST":
+				r = r.Post(targetUri)
+			case "GET":
+				r = r.Get(targetUri)
 			}
+
+			resp, _, errs := r.Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).End()
+			if len(errs) > 0 {
+				err = errs[0]
+			} else if resp.StatusCode != http.StatusOK {
+				err = fmt.Errorf("%s %s", p, http.StatusText(resp.StatusCode))
+			}
+
 		}(&wg, targetUri)
 	}
 	wg.Wait()

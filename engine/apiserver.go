@@ -183,6 +183,9 @@ func (e *Engine) RegisterAPI(path string, handlerFunc APIHandler) *mux.Route {
 		var status int
 		if err == nil {
 			status = http.StatusOK
+		} else if err == ErrInvalidParam {
+			status = http.StatusBadRequest
+			w.WriteHeader(status)
 		} else {
 			status = http.StatusInternalServerError
 			w.WriteHeader(status)
