@@ -52,9 +52,10 @@ func (b *DAGBuilder) Validate() error {
 	return nil
 }
 
-func (b *DAGBuilder) CreateDAG() *DAGBuilder {
+func (b *DAGBuilder) CreateDAG() *conf.Conf {
 	if err := b.Validate(); err != nil {
 		panic(err)
 	}
+
 	return nil
 }

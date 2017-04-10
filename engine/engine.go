@@ -73,6 +73,7 @@ type Engine struct {
 	hostname      string
 	pid           int
 	stopper       chan struct{}
+	shutdown      chan struct{}
 	pluginPanicCh chan error
 }
 
@@ -100,6 +101,7 @@ func New(globals *GlobalConfig) *Engine {
 		pid:           os.Getpid(),
 		hostname:      hostname,
 		stopper:       make(chan struct{}),
+		shutdown:      make(chan struct{}),
 		pluginPanicCh: make(chan error),
 
 		router: newRouter(),
@@ -268,6 +270,10 @@ func (e *Engine) loadPluginSection(section *conf.Conf) string {
 	return pluginCommons.name
 }
 
+func (e *Engine) Shutdown() {
+	close(e.shutdown)
+}
+
 func (e *Engine) ServeForever() (ret error) {
 	var (
 		outputsWg = new(sync.WaitGroup)
@@ -363,6 +369,10 @@ func (e *Engine) ServeForever() (ret error) {
 		select {
 		case <-configChanged:
 			log.Info("%s changed, closing...", e.Conf.ConfPath())
+			globals.Stopping = true
+
+		case <-e.shutdown:
+			log.Info("shutdown...")
 			globals.Stopping = true
 
 		case sig := <-globals.sigChan:
