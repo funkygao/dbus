@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
 	"time"
 
@@ -37,6 +38,8 @@ func main() {
 			debug.PrintStack()
 		}
 	}()
+
+	fmt.Fprint(os.Stderr, logo[1:])
 
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug

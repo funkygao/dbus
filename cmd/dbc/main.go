@@ -50,7 +50,7 @@ func main() {
 		}
 	}
 
-	c := cli.NewCLI(app, dbus.Version+"-"+dbus.Revision)
+	c := cli.NewCLI(app, fmt.Sprintf("dbc %s (%s)", dbus.Version, dbus.Revision))
 	c.Args = os.Args[1:]
 	c.Commands = commands
 	c.HelpFunc = func(m map[string]cli.CommandFactory) string {

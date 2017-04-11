@@ -81,8 +81,8 @@ func parseFlags() {
 }
 
 func showVersionAndExit() {
-	fmt.Fprintf(os.Stderr, "%s %s (build: %s)\n", os.Args[0], dbus.Version, dbus.Revision)
-	fmt.Fprintf(os.Stderr, "Built with %s %s for %s/%s\n",
-		runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	fmt.Fprintf(os.Stderr, "%s %s (%s)\n", os.Args[0], dbus.Version, dbus.Revision)
+	fmt.Fprintf(os.Stderr, "Built with %s %s for %s/%s at %s by %s\n",
+		runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH, dbus.BuildDate, dbus.BuildUser)
 	os.Exit(0)
 }
