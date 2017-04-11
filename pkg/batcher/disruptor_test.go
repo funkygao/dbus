@@ -29,8 +29,8 @@ func TestGolangPadding(t *testing.T) {
 	t.Log(unsafe.Sizeof(*newInefficient)) // 32
 }
 
-func TestBatcherBasic(t *testing.T) {
-	b := New(8)
+func TestDisruptorBasic(t *testing.T) {
+	b := NewDisruptor(8)
 	// inject [0, 8)
 	for i := 0; i < 8; i++ {
 		b.Put(i)
@@ -69,8 +69,8 @@ func TestBatcherBasic(t *testing.T) {
 
 }
 
-func BenchmarkBatcherGetWithBatchSize100(b *testing.B) {
-	batcher := New(100)
+func BenchmarkDisruptorGetWithBatchSize100(b *testing.B) {
+	batcher := NewDisruptor(100)
 	go func() {
 		for {
 			batcher.Put(1)
@@ -87,8 +87,8 @@ func BenchmarkBatcherGetWithBatchSize100(b *testing.B) {
 	}
 }
 
-func BenchmarkBatcherPutWithBatchSize100(b *testing.B) {
-	batcher := New(100)
+func BenchmarkDisruptorPutWithBatchSize100(b *testing.B) {
+	batcher := NewDisruptor(100)
 	go func() {
 		for {
 			_, err := batcher.Get()
@@ -105,8 +105,8 @@ func BenchmarkBatcherPutWithBatchSize100(b *testing.B) {
 	}
 }
 
-func BenchmarkBatcherPutWithBatchSize1000(b *testing.B) {
-	batcher := New(1000)
+func BenchmarkDisruptorPutWithBatchSize1000(b *testing.B) {
+	batcher := NewDisruptor(1000)
 	go func() {
 		for {
 			_, err := batcher.Get()
