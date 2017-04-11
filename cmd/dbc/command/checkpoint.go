@@ -41,9 +41,9 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 			return 2
 		}
 
-		lines := []string{"Scheme|DSN|Position"}
+		lines := []string{"Input|Scheme|DSN|Position"}
 		for _, state := range states {
-			lines = append(lines, fmt.Sprintf("%s|%s|%s", state.Scheme(), state.DSN(), state.String()))
+			lines = append(lines, fmt.Sprintf("%s|%s|%s|%s", state.Name(), state.Scheme(), state.DSN(), state.String()))
 		}
 
 		if len(lines) > 1 {

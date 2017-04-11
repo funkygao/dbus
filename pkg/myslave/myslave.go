@@ -49,7 +49,7 @@ type MySlave struct {
 var setupLogger sync.Once
 
 // New creates a MySlave instance.
-func New(dsn string, zrootCheckpoint string) *MySlave {
+func New(name, dsn string, zrootCheckpoint string) *MySlave {
 	setupLogger.Do(func() {
 		// github.com/siddontang/go-mysql is using github.com/ngaut/log
 		mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
@@ -63,7 +63,7 @@ func New(dsn string, zrootCheckpoint string) *MySlave {
 		dsn:             dsn,
 		dbExcluded:      map[string]struct{}{},
 		dbAllowed:       map[string]struct{}{},
-		state:           binlog.New(dsn),
+		state:           binlog.New(dsn, name),
 	}
 }
 
