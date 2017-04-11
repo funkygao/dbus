@@ -286,7 +286,7 @@ func (e *Engine) ServeForever() (ret error) {
 		err     error
 	)
 
-	log.Info("engine starting...")
+	log.Trace("engine starting...")
 
 	if globals.ClusterEnabled {
 		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
@@ -368,6 +368,7 @@ func (e *Engine) ServeForever() (ret error) {
 	configChanged := make(chan *conf.Conf)
 	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
+	log.Info("engine started")
 	for !globals.Stopping {
 		select {
 		case <-configChanged:
