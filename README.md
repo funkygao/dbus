@@ -163,6 +163,7 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] myslave should have no checkpoint, placed in Input
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
