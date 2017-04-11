@@ -180,10 +180,13 @@ func (p *Producer) asyncSendWorker() {
 
 		default:
 			if msg, err := p.b.Get(); err == nil {
-				// FIXME what if msg is nil
-				// FIXME a batch of 10, msg7 always fail, lead to dead loop
-				pm := msg.(*sarama.ProducerMessage)
-				p.ap.Input() <- pm
+				select {
+				case <-p.stopper:
+					return
+				default:
+				}
+
+				p.ap.Input() <- msg.(*sarama.ProducerMessage)
 				p.m.asyncSend.Mark(1)
 			} else {
 				log.Trace("[%s] batcher closed", p.name)
