@@ -17,4 +17,7 @@ type State interface {
 
 	// Scheme returns the type of statte.
 	Scheme() string
+
+	// Name returns name of the state.
+	Name() string
 }

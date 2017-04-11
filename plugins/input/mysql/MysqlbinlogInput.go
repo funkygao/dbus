@@ -42,7 +42,7 @@ func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
 
 // used only for dbc: ugly design
 func (this *MysqlbinlogInput) ConnectMyslave(dsn string) {
-	this.slave = myslave.New(dsn, engine.Globals().ZrootCheckpoint).LoadConfig(this.cf)
+	this.slave = myslave.New("", dsn, engine.Globals().ZrootCheckpoint).LoadConfig(this.cf)
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
@@ -79,7 +79,7 @@ func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 
 		dsn := myResources[0].DSN() // MysqlbinlogInput only consumes 1 resource
 		log.Trace("[%s] starting replication from %s...", name, dsn)
-		this.slave = myslave.New(dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
+		this.slave = myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
 		if err := this.slave.AssertValidRowFormat(); err != nil {
 			// err might be: read initial handshake error
 			panic(err)

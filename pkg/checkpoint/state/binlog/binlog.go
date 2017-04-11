@@ -14,12 +14,13 @@ var (
 type BinlogState struct {
 	dsn string
 
+	Ident  string `json:"ident,omitempty"`
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 }
 
-func New(dsn string) *BinlogState {
-	return &BinlogState{dsn: dsn}
+func New(dsn string, name string) *BinlogState {
+	return &BinlogState{dsn: dsn, Ident: name}
 }
 
 func (s *BinlogState) Marshal() []byte {
@@ -38,6 +39,10 @@ func (s *BinlogState) reset() {
 
 func (s *BinlogState) String() string {
 	return fmt.Sprintf("%s-%d", s.File, s.Offset)
+}
+
+func (s *BinlogState) Name() string {
+	return s.Ident
 }
 
 func (s *BinlogState) DSN() string {

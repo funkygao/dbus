@@ -40,9 +40,13 @@ func (m *manager) AllStates() ([]checkpoint.State, error) {
 			// FIXME ugly design
 			switch scheme {
 			case "myslave":
-				s := binlog.New(dsn)
+				s := binlog.New(dsn, "") // empty name is ok, wait for Unmarshal
 				s.Unmarshal(data)
 				r = append(r, s)
+
+			case "kafka":
+				// TODO
+
 			default:
 				panic("unknown scheme: " + scheme)
 			}
