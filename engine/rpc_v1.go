@@ -61,7 +61,8 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 
 	switch phase {
 	case "1":
-		toStopFound := false
+		foundInputToStop := false
+		keepRunningN := 0
 		e.irmMu.Lock()
 		for inputName := range e.irm {
 			if _, present := inputResourcesMap[inputName]; !present {
@@ -69,15 +70,18 @@ func (e *Engine) doLocalRebalanceV1(w http.ResponseWriter, r *http.Request) {
 				if ir, ok := e.InputRunners[inputName]; ok {
 					log.Trace("phase1: stopping Input[%s]", inputName)
 					ir.feedResources(nil)
-					toStopFound = true
+					foundInputToStop = true
 				}
+			} else {
+				// this input plugin continues just like nothing happened
+				keepRunningN++
 			}
 		}
 		e.irm = inputResourcesMap
 		e.irmMu.Unlock()
 
-		if !toStopFound {
-			log.Trace("phase1: nothing to stop")
+		if !foundInputToStop {
+			log.Trace("phase1: no one to stop, %d Input keep running", keepRunningN)
 		}
 
 	case "2":

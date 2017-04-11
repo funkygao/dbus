@@ -16,7 +16,7 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 	// 2 phase commit
 	for phase := 1; phase <= 2; phase++ {
 		for participant, resources := range decision {
-			log.Debug("[%s/%d] rpc-> %s %+v", e.participant, phase, participant.Endpoint, resources)
+			log.Debug("[%s-%d] rpc-> %s %+v", e.participant, phase, participant.Endpoint, resources)
 
 			// edge case:
 			// participant might die
@@ -26,27 +26,27 @@ func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
 			statusCode := e.callRPC(participant.Endpoint, epoch, phase, resources)
 			switch statusCode {
 			case http.StatusOK:
-				log.Trace("[%s/%d] rpc<- ok %s", e.participant, phase, participant.Endpoint)
+				log.Trace("[%s-%d] rpc<- ok %s", e.participant, phase, participant.Endpoint)
 
 			case http.StatusGone:
 				// e,g.
 				// resource changed, live participant [1, 2, 3], when RPC sending, p[1] gone
 				// just wait for another rebalance event
-				log.Warn("[%s/%d] rpc<- %s gone", e.participant, phase, participant.Endpoint)
+				log.Warn("[%s-%d] rpc<- %s gone", e.participant, phase, participant.Endpoint)
 				return
 
 			case http.StatusBadRequest:
 				// should never happen
-				log.Critical("[%s/%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
-				e.callSOS("[%s/%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
+				log.Critical("[%s-%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
+				e.callSOS("[%s-%d] rpc<- %s bad request", e.participant, phase, participant.Endpoint)
 
 			case http.StatusNotAcceptable:
-				log.Error("[%s/%d] rpc<- %s leader moved, await next rebalance", e.participant, phase, participant.Endpoint)
+				log.Error("[%s-%d] rpc<- %s leader moved, await next rebalance", e.participant, phase, participant.Endpoint)
 				return
 
 			default:
-				log.Error("[%s/%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
-				e.callSOS("[%s/%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
+				log.Error("[%s-%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
+				e.callSOS("[%s-%d] rpc<- %s %d, trigger new rebalance!", e.participant, phase, participant.Endpoint, statusCode)
 
 				if err := e.ClusterManager().Rebalance(); err != nil {
 					log.Critical("%s", err)

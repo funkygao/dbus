@@ -12,7 +12,7 @@ func (e *Engine) watchUpgrade(evts <-chan struct{}) {
 	endpoint := os.Getenv("UPGRADE_ENDPOINT")
 	if len(endpoint) == 0 {
 		evts = nil
-		log.Warn("upgrade events ignored")
+		log.Warn("empty UPGRADE_ENDPOINT, upgrade events ignored")
 	}
 
 	for {
