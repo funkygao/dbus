@@ -12,14 +12,15 @@ var (
 )
 
 type KafkaState struct {
-	dsn string
+	dsn  string
+	name string
 
 	PartitionID int32
 	Offset      int64
 }
 
-func New(dsn string) *KafkaState {
-	return &KafkaState{dsn: dsn}
+func New(dsn string, name string) *KafkaState {
+	return &KafkaState{dsn: dsn, name: name}
 }
 
 func (s *KafkaState) Marshal() []byte {
@@ -34,6 +35,10 @@ func (s *KafkaState) Unmarshal(data []byte) {
 func (s *KafkaState) reset() {
 	s.PartitionID = 0
 	s.Offset = 0
+}
+
+func (s *KafkaState) Name() string {
+	return s.name
 }
 
 func (s *KafkaState) String() string {

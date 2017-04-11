@@ -21,11 +21,11 @@ type Binlog struct {
 	Ui  cli.Ui
 	Cmd string
 
-	zone        string
-	fn          string
-	plugin      string
-	binlogsMode bool
-	binlogPos   string
+	zone           string
+	fn             string
+	plugin         string
+	binlogsOfInput string
+	binlogPos      string
 }
 
 func (this *Binlog) Run(args []string) (exitCode int) {
@@ -34,7 +34,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
 	cmdFlags.StringVar(&this.fn, "c", "", "")
 	cmdFlags.StringVar(&this.plugin, "id", "", "")
-	cmdFlags.BoolVar(&this.binlogsMode, "logs", false, "")
+	cmdFlags.StringVar(&this.binlogsOfInput, "logs", "", "")
 	cmdFlags.StringVar(&this.binlogPos, "pos", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -89,16 +89,16 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 
 		return
 
-	case this.binlogsMode:
-		ir, present := e.InputRunners[this.plugin]
+	case this.binlogsOfInput != "":
+		ir, present := e.InputRunners[this.binlogsOfInput]
 		if !present {
-			this.Ui.Errorf("%s not found", this.plugin)
+			this.Ui.Errorf("%s not found", this.binlogsOfInput)
 			return 2
 		}
 
 		my := ir.Plugin().(*mysql.MysqlbinlogInput)
 		for _, res := range resources {
-			if res.InputPlugin == this.plugin {
+			if res.InputPlugin == this.binlogsOfInput {
 				my.ConnectMyslave(res.DSN())
 				break
 			}
@@ -108,7 +108,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 			panic(err)
 		}
 
-		this.Ui.Info(this.plugin)
+		this.Ui.Info(this.binlogsOfInput)
 		for _, l := range logs {
 			this.Ui.Output(l)
 		}
@@ -148,7 +148,7 @@ Options:
 
     -id input plugin name
 
-    -logs
+    -logs input plugin name
       Display a master binlog status
 
     -pos file-offset
