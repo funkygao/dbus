@@ -40,7 +40,7 @@ func (this *Binlog) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	e := engine.New(nil).LoadConfig(this.fn)
+	e := engine.New(nil).LoadFrom(this.fn)
 	mgr := openClusterManager(this.zone)
 	defer mgr.Close()
 
@@ -133,7 +133,7 @@ func (*Binlog) Synopsis() string {
 
 func (this *Binlog) Help() string {
 	help := fmt.Sprintf(`
-Usage: %s binlog -c filename [options]
+Usage: %s binlog [options]
 
     %s
 
@@ -141,8 +141,10 @@ Usage: %s binlog -c filename [options]
 
 Options:
 
-    -c config file
+    -c config location
       If empty, load from zookeeper
+      zk location example:
+      localhost:2181/dbus/conf
 
     -id input plugin name
 

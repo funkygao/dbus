@@ -14,8 +14,8 @@ func TestStategyRoundRobin(t *testing.T) {
 		{Name: "d"},
 		{Name: "e"},
 	}
-	p1 := Participant{Endpoint: "1"}
-	p2 := Participant{Endpoint: "2"}
+	p1 := Participant{Endpoint: "1", State: StateOnline}
+	p2 := Participant{Endpoint: "2", State: StateOnline}
 	participants := []Participant{
 		p1,
 		p2,

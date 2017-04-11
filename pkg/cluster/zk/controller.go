@@ -32,7 +32,7 @@ type controller struct {
 }
 
 // New creates a Controller with zookeeper as underlying storage.
-func NewController(zkSvr string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
+func NewController(zkSvr string, zroot string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
@@ -47,6 +47,10 @@ func NewController(zkSvr string, participant cluster.Participant, strategy clust
 		panic("strategy not implemented")
 	}
 
+	if len(zroot) > 0 {
+		rootPath = zroot
+	}
+
 	return &controller{
 		kb:           newKeyBuilder(),
 		participant:  participant,
@@ -57,14 +61,12 @@ func NewController(zkSvr string, participant cluster.Participant, strategy clust
 }
 
 func (c *controller) connectToZookeeper() (err error) {
-	log.Debug("[%s] connecting to zookeeper...", c.participant)
 	if err = c.zc.Connect(); err != nil {
 		return
 	}
 
 	for retries := 0; retries < 3; retries++ {
 		if err = c.zc.WaitUntilConnected(c.zc.SessionTimeout()); err == nil {
-			log.Trace("[%s] connected to zookeeper", c.participant)
 			break
 		}
 

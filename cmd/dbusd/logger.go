@@ -40,6 +40,5 @@ func setupLogging() {
 	syscall.Dup2(int(f.Fd()), int(os.Stdout.Fd()))
 	syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
 	fmt.Fprintf(os.Stderr, "\n%s %s (build: %s)\n===================\n",
-		time.Now(),
-		dbus.Version, dbus.Revision)
+		time.Now(), dbus.Version, dbus.Revision)
 }

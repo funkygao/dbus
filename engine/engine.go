@@ -36,6 +36,7 @@ type Engine struct {
 	sync.RWMutex
 	*conf.Conf
 
+	zkSvr       string
 	participant cluster.Participant
 	controller  cluster.Controller
 	epoch       int // cache of latest cluster leader epoch
@@ -72,9 +73,11 @@ type Engine struct {
 	hostname      string
 	pid           int
 	stopper       chan struct{}
+	shutdown      chan struct{}
 	pluginPanicCh chan error
 }
 
+// New creates an engine.
 func New(globals *GlobalConfig) *Engine {
 	if globals == nil {
 		globals = DefaultGlobals()
@@ -98,6 +101,7 @@ func New(globals *GlobalConfig) *Engine {
 		pid:           os.Getpid(),
 		hostname:      hostname,
 		stopper:       make(chan struct{}),
+		shutdown:      make(chan struct{}),
 		pluginPanicCh: make(chan error),
 
 		router: newRouter(),
@@ -115,6 +119,7 @@ func New(globals *GlobalConfig) *Engine {
 		participant: cluster.Participant{
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
+			State:    cluster.StateOnline,
 			Revision: dbus.Revision,
 			APIPort:  globals.APIPort,
 		},
@@ -136,41 +141,24 @@ func (e *Engine) ClonePacket(p *Packet) *Packet {
 	return pack
 }
 
-// LoadConfig load the configuration by location.
-// The location can be empty: use default zk zone /dbus/conf.
-// If config is stored on file, the loc arg is file path.
-// If config is stored on zookeeper, the loc arg is like localhost:2181/foo/bar.
-func (e *Engine) LoadConfig(loc string) *Engine {
-	if len(loc) == 0 {
-		// if no location provided, use the default zk
-		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), DbusConfZnode)
+// ClusterManager returns the cluster manager.
+// If cluster is disabled, returns nil.
+func (e *Engine) ClusterManager() cluster.Manager {
+	if Globals().ClusterEnabled {
+		return e.controller.(cluster.Manager)
 	}
 
-	zkSvr, realPath := parseConfigPath(loc)
-	var (
-		cf  *conf.Conf
-		err error
-	)
-	if len(zkSvr) == 0 {
-		// from file system
-		cf, err = conf.Load(realPath)
-	} else {
-		// from zookeeper
-		cf, err = conf.Load(realPath, conf.WithZkSvr(zkSvr))
-		if err != nil {
-			err = fmt.Errorf("%s %v", loc, err)
-		}
-	}
-	if err != nil {
-		panic(err)
-	}
+	return nil
+}
 
+// SubmitDAG submits a DAG configuration to the engine.
+func (e *Engine) SubmitDAG(cf *conf.Conf) *Engine {
+	return e.loadConfig(cf)
+}
+
+func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 	e.Conf = cf
 	Globals().Conf = cf
-
-	if Globals().ClusterEnabled {
-		e.controller = czk.NewController(zkSvr, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
-	}
 
 	// 'plugins' section
 	var pluginNames = make(map[string]struct{})
@@ -196,6 +184,39 @@ func (e *Engine) LoadConfig(loc string) *Engine {
 	}
 
 	return e
+}
+
+// LoadFrom load the configuration by location.
+// The location can be empty: use default zk zone /dbus/conf.
+// If config is stored on file, the loc arg is file path.
+// If config is stored on zookeeper, the loc arg is like localhost:2181/foo/bar.
+func (e *Engine) LoadFrom(loc string) *Engine {
+	if len(loc) == 0 {
+		// if no location provided, use the default zk
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), Globals().ZrootConf)
+	}
+
+	zkSvr, realPath := parseConfigPath(loc)
+	var (
+		cf  *conf.Conf
+		err error
+	)
+	if len(zkSvr) == 0 {
+		// from file system
+		cf, err = conf.Load(realPath)
+	} else {
+		// from zookeeper
+		e.zkSvr = zkSvr
+		cf, err = conf.Load(realPath, conf.WithZkSvr(zkSvr))
+		if err != nil {
+			err = fmt.Errorf("%s %v", loc, err)
+		}
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	return e.loadConfig(cf)
 }
 
 func (e *Engine) loadPluginSection(section *conf.Conf) string {
@@ -250,6 +271,10 @@ func (e *Engine) loadPluginSection(section *conf.Conf) string {
 	return pluginCommons.name
 }
 
+func (e *Engine) Shutdown() {
+	close(e.shutdown)
+}
+
 func (e *Engine) ServeForever() (ret error) {
 	var (
 		outputsWg = new(sync.WaitGroup)
@@ -261,7 +286,11 @@ func (e *Engine) ServeForever() (ret error) {
 		err     error
 	)
 
-	log.Info("engine starting...")
+	log.Trace("engine starting...")
+
+	if globals.ClusterEnabled {
+		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
+	}
 
 	// setup signal handler first to avoid race condition
 	// if Input terminates very fast, global.Shutdown will not be able to trap it
@@ -318,7 +347,6 @@ func (e *Engine) ServeForever() (ret error) {
 
 		inputsWg.Add(1)
 		if err = inputRunner.start(e, inputsWg); err != nil {
-			inputsWg.Done()
 			panic(err)
 		}
 	}
@@ -330,18 +358,25 @@ func (e *Engine) ServeForever() (ret error) {
 		if err = e.controller.Start(); err != nil {
 			panic(err)
 		}
-		go e.watchUpgrade(e.controller.Upgrade())
+		go e.watchUpgrade(e.ClusterManager().Upgrade())
 
 		log.Info("[%s] participant started", e.participant)
+	} else {
+		log.Info("cluster disabled")
 	}
 
 	configChanged := make(chan *conf.Conf)
 	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
+	log.Info("engine started")
 	for !globals.Stopping {
 		select {
 		case <-configChanged:
 			log.Info("%s changed, closing...", e.Conf.ConfPath())
+			globals.Stopping = true
+
+		case <-e.shutdown:
+			log.Info("shutdown...")
 			globals.Stopping = true
 
 		case sig := <-globals.sigChan:
@@ -423,12 +458,4 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	return
-}
-
-func (e *Engine) ClusterManager() cluster.Manager {
-	if Globals().ClusterEnabled {
-		return e.controller.(cluster.Manager)
-	}
-
-	return nil
 }

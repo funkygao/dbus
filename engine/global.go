@@ -11,6 +11,7 @@ import (
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 const (
@@ -18,8 +19,6 @@ const (
 	STOP    = "stop"
 	SIGUSR1 = "user1"
 	SIGUSR2 = "user2"
-
-	DbusConfZnode = "/dbus/conf"
 )
 
 var (
@@ -38,10 +37,15 @@ type GlobalConfig struct {
 	Stopping       bool
 	Debug          bool
 	ClusterEnabled bool
+	Zone           string // used to locate kguard
 	RouterTrack    bool
 
 	RPCPort int
 	APIPort int
+
+	ZrootConf       string
+	ZrootCluster    string
+	ZrootCheckpoint string
 
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
@@ -75,7 +79,12 @@ func (g *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {
 		g.registry[key] = zkzone
 	}
 
-	return g.registry[key].(*zk.ZkZone)
+	if z, ok := g.registry[key].(*zk.ZkZone); ok {
+		return z
+	}
+
+	log.Critical("unknown zone: %s", zone)
+	return nil
 }
 
 func DefaultGlobals() *GlobalConfig {
@@ -92,5 +101,8 @@ func DefaultGlobals() *GlobalConfig {
 		WatchdogTick:          time.Minute * 10,
 		StartedAt:             time.Now(),
 		registry:              map[string]interface{}{},
+		ZrootConf:             "/dbus/conf",
+		ZrootCheckpoint:       "/dbus/checkpoint",
+		ZrootCluster:          "/dbus/cluster",
 	}
 }

@@ -7,10 +7,26 @@ import (
 	"strings"
 )
 
+// State is state of a participant in a cluster.
+type State uint8
+
+const (
+	StateUnknown State = 0
+	StateOnline  State = 1
+	StateOffline State = 2
+)
+
+var stateText = map[State]string{
+	StateUnknown: "unknown",
+	StateOnline:  "online",
+	StateOffline: "offline",
+}
+
 // Participant is a live node that can get Resource assignment from controller leader.
 type Participant struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	Weight   int    `json:"weight"`
+	State    State  `json:"state,omitempty"`
 	Revision string `json:"revision,omitempty"`
 	APIPort  int    `json:"api_port,omitempty"`
 }
@@ -24,6 +40,11 @@ func (p *Participant) From(data []byte) {
 	json.Unmarshal(data, p)
 }
 
+// AccceptResources returns whether the participant is able to accespt assigned resources from leader.
+func (p *Participant) AccceptResources() bool {
+	return p.State == StateOnline
+}
+
 func (p *Participant) RPCEndpoint() string {
 	return fmt.Sprintf("http://%s", p.Endpoint)
 }
@@ -31,6 +52,10 @@ func (p *Participant) RPCEndpoint() string {
 func (p *Participant) APIEndpoint() string {
 	host, _, _ := net.SplitHostPort(p.Endpoint)
 	return fmt.Sprintf("http://%s:%d", host, p.APIPort)
+}
+
+func (p *Participant) StateText() string {
+	return stateText[p.State]
 }
 
 func (p Participant) String() string {

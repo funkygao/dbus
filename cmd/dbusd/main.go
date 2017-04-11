@@ -3,6 +3,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
 	"time"
 
@@ -38,6 +39,8 @@ func main() {
 		}
 	}()
 
+	fmt.Fprint(os.Stderr, logo[1:])
+
 	globals := engine.DefaultGlobals()
 	globals.Debug = options.debug
 	globals.RPCPort = options.rpcPort
@@ -48,6 +51,16 @@ func main() {
 	globals.HubChanSize = options.hubPoolSize
 	globals.PluginChanSize = options.pluginPoolSize
 	globals.ClusterEnabled = options.clusterEnable
+	globals.Zone = options.zone
+	if len(options.zrootCheckpoint) > 0 {
+		globals.ZrootCheckpoint = options.zrootCheckpoint
+	}
+	if len(options.zrootCluster) > 0 {
+		globals.ZrootCluster = options.zrootCluster
+	}
+	if len(options.zrootConfig) > 0 {
+		globals.ZrootConf = options.zrootConfig
+	}
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
@@ -63,7 +76,7 @@ func main() {
 	t0 := time.Now()
 	var err error
 	for {
-		e := engine.New(globals).LoadConfig(options.configPath)
+		e := engine.New(globals).LoadFrom(options.configPath)
 
 		if options.visualizeFile != "" {
 			e.ExportDiagram(options.visualizeFile)

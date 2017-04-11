@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/funkygao/columnize"
 	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
@@ -18,29 +19,43 @@ type Checkpoint struct {
 }
 
 func (this *Checkpoint) Run(args []string) (exitCode int) {
-	var zone string
+	var (
+		zone    string
+		topMode bool
+	)
 	cmdFlags := flag.NewFlagSet("checkpoint", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.BoolVar(&topMode, "top", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
 	mgr := czk.NewManager(zkzone)
-	states, err := mgr.AllStates()
-	if err != nil {
-		this.Ui.Error(err.Error())
-		return 2
-	}
 
-	lines := []string{"Scheme|DSN|Position"}
-	for _, state := range states {
-		lines = append(lines, fmt.Sprintf("%s|%s|%s", state.Scheme(), state.DSN(), state.String()))
-	}
+	for {
+		states, err := mgr.AllStates()
+		if err != nil {
+			this.Ui.Error(err.Error())
+			return 2
+		}
 
-	if len(lines) > 1 {
-		this.Ui.Output(columnize.SimpleFormat(lines))
+		lines := []string{"Scheme|DSN|Position"}
+		for _, state := range states {
+			lines = append(lines, fmt.Sprintf("%s|%s|%s", state.Scheme(), state.DSN(), state.String()))
+		}
+
+		if len(lines) > 1 {
+			this.Ui.Output(columnize.SimpleFormat(lines))
+		}
+
+		if !topMode {
+			break
+		}
+
+		time.Sleep(time.Second * 3)
+		refreshScreen()
 	}
 
 	return
@@ -59,6 +74,9 @@ Usage: %s checkpoint [options]
 Options:
 
     -z zone
+
+    -top
+      Run in top mode.
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

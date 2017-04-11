@@ -25,11 +25,14 @@ type checkpointZK struct {
 	lastCommitted time.Time
 }
 
-func New(zkzone *zk.ZkZone, state checkpoint.State, zpath string, interval time.Duration) checkpoint.Checkpoint {
+func New(zkzone *zk.ZkZone, state checkpoint.State, zroot string, zpath string, interval time.Duration) checkpoint.Checkpoint {
 	if strings.Contains(zpath, "/") {
 		panic("zpath illegal")
 	}
 
+	if len(zroot) > 0 {
+		root = zroot
+	}
 	zpath = realPath(state, zpath)
 	if err := zkzone.EnsurePathExists(path.Dir(zpath)); err != nil {
 		panic(err)

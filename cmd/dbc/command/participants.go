@@ -52,14 +52,14 @@ func (this *Participants) Run(args []string) (exitCode int) {
 
 	swallow(json.Unmarshal([]byte(decision), &d))
 
-	lines := []string{"Endpoint|Weight|Revision|API|Resources"}
+	lines := []string{"Endpoint|State|Weight|Revision|Resources"}
 	for _, p := range ps {
 		if p.Equals(leader) {
-			lines = append(lines, fmt.Sprintf("%s*|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
-				p.APIEndpoint(), this.getResources(p, d)))
+			lines = append(lines, fmt.Sprintf("%s*|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+				p.Weight, p.Revision, this.getResources(p, d)))
 		} else {
-			lines = append(lines, fmt.Sprintf("%s|%d|%s|%s|%+v", p.Endpoint, p.Weight, p.Revision,
-				p.APIEndpoint(), this.getResources(p, d)))
+			lines = append(lines, fmt.Sprintf("%s|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+				p.Weight, p.Revision, this.getResources(p, d)))
 		}
 	}
 

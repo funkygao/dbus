@@ -13,13 +13,17 @@ PKGNAME=${VENDOR}-${PROJECT}
 GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown')
 GIT_ID=$(shell git rev-parse HEAD | cut -c1-7)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
-go_version=$(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
+GO_VERSION=$(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
+BUILD_TIME=$(shell date '+%Y%m%d-%H:%M:%S')
+BUILD_USER=$(shell echo `whoami`@`hostname`)
 GO_FLAGS=${GO_FLAGS:-} # Extra go flags to use in the build.
 
 ldflags="\
 -X github.com/funkygao/dbus.Version=$(VERSION) \
 -X github.com/funkygao/dbus.Branch=${GIT_BRANCH} \
 -X github.com/funkygao/dbus.Revision=${GIT_ID}${GIT_DIRTY} \
+-X github.com/funkygao/dbus.BuildDate=${BUILD_TIME} \
+-X github.com/funkygao/dbus.BuildUser=${BUILD_USER} \
 -w"
 
 help:

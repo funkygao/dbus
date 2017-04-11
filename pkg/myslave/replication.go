@@ -22,6 +22,7 @@ func (m *MySlave) StopReplication() {
 	log.Debug("[%s] stopping replication from %s", m.name, m.masterAddr)
 
 	m.r.Close()
+	m.m.Close()
 
 	if err := m.p.Shutdown(); err != nil {
 		log.Error("[%s] %s", m.name, err)

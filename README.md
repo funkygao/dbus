@@ -163,6 +163,7 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] myslave should have no checkpoint, placed in Input
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
@@ -200,6 +201,7 @@ dbus uses epoch to solve this issue.
 - [X] ugly design of Input/Output ack mechanism
   - we might learn from storm bolt ack
 - [X] some goroutine leakage
+- [X] telemetry mysql.binlog.lag/tps tag name should be input name
 - [X] pipeline
   - 1 input, multiple output
   - filter to dispatch dbs of a single binlog to different output

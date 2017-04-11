@@ -16,6 +16,12 @@ inputs:build
 fanout:buildrace
 	./dbusd -conf ../../etc/fanout.cf
 
+db1:
+	for i in `seq 1000`;do echo "insert into t1 values(39)" | mysql -uroot db1 ; done
+
+db2:
+	for i in `seq 1000`;do echo "insert into t2 values(86)" | mysql -uroot db2 ; done
+
 dispatch:buildrace
 	./dbusd -conf ../../etc/dispatch.cf
 

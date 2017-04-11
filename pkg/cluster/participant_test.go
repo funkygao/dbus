@@ -25,6 +25,9 @@ func TestParticipant(t *testing.T) {
 	p.Endpoint = "12.1.1.1:1222"
 	assert.Equal(t, true, p.Valid())
 
+	p.State = StateOffline
+	assert.Equal(t, false, p.AccceptResources())
+
 	p = &Participant{}
 	p.From([]byte(`{"weight":12,"revision":"109faeb","endpoint":"12.12.12.12:1888"}`))
 	assert.Equal(t, 12, p.Weight)
