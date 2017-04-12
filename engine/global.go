@@ -14,13 +14,6 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-const (
-	RELOAD  = "reload"
-	STOP    = "stop"
-	SIGUSR1 = "user1"
-	SIGUSR2 = "user2"
-)
-
 var (
 	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")

@@ -21,7 +21,6 @@ import (
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
-	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
@@ -295,7 +294,7 @@ func (e *Engine) ServeForever() (ret error) {
 	// setup signal handler first to avoid race condition
 	// if Input terminates very fast, global.Shutdown will not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 
 	e.launchAPIServer()
 
@@ -387,12 +386,6 @@ func (e *Engine) ServeForever() (ret error) {
 				log.Info("shutdown...")
 				globals.Stopping = true
 				ret = ErrQuitingSigal
-
-			case syscall.SIGUSR1:
-				observer.Publish(SIGUSR1, nil)
-
-			case syscall.SIGUSR2:
-				observer.Publish(SIGUSR2, nil)
 			}
 
 		case err := <-e.pluginPanicCh:
