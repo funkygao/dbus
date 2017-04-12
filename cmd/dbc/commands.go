@@ -38,6 +38,13 @@ func init() {
 			}, nil
 		},
 
+		"config": func() (cli.Command, error) {
+			return &command.Config{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"upgrade": func() (cli.Command, error) {
 			return &command.Upgrade{
 				Ui:  ui,
