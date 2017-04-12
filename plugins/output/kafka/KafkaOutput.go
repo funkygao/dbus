@@ -115,7 +115,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			log.Trace("[%s] throughput %s/s", r.Name(), gofmt.Comma((n-lastN)/10))
 			lastN = n
 
-		case pack, ok := <-r.InChan():
+		case pack, ok := <-r.Exchange().InChan():
 			if !ok {
 				log.Debug("[%s.%s.%s] yes sir!", this.zone, this.cluster, this.topic)
 				return nil

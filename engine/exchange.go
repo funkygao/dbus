@@ -5,7 +5,7 @@ package engine
 type Exchange interface {
 
 	// InChan returns input channel from which Inputs can get reusable Packets.
-	InChan() chan *Packet
+	InChan() <-chan *Packet
 
 	// Inject injects Packet into engine for consumers.
 	Inject(pack *Packet)

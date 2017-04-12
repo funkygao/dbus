@@ -25,6 +25,7 @@ type PluginRunner interface {
 	// Class returns the class name of the underlying plugin.
 	Class() string
 
+	// Exchange returns an Exchange for the plugin to exchange packets.
 	Exchange() Exchange
 
 	// Plugin returns the underlying plugin object.
@@ -39,8 +40,6 @@ type PluginRunner interface {
 // FilterOutputRunner is the common interface shared by FilterRunner and OutputRunner.
 type FilterOutputRunner interface {
 	PluginRunner
-
-	InChan() chan *Packet
 
 	getMatcher() *matcher
 }
@@ -68,7 +67,7 @@ func (pb *pRunnerBase) Conf() *conf.Conf {
 	return pb.pluginCommons.cf
 }
 
-// foRunner is filter output runner.
+// foRunner is filter/output runner.
 type foRunner struct {
 	pRunnerBase
 
@@ -105,7 +104,7 @@ func (fo *foRunner) Exchange() Exchange {
 	return fo
 }
 
-func (fo *foRunner) InChan() chan *Packet {
+func (fo *foRunner) InChan() <-chan *Packet {
 	return fo.inChan
 }
 

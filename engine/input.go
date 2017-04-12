@@ -72,7 +72,7 @@ func (ir *iRunner) Inject(pack *Packet) {
 	ir.engine.router.hub <- pack
 }
 
-func (ir *iRunner) InChan() chan *Packet {
+func (ir *iRunner) InChan() <-chan *Packet {
 	return ir.inChan
 }
 
