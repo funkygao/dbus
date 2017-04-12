@@ -155,3 +155,8 @@ func (m *MySlave) Events() <-chan *model.RowsEvent {
 func (m *MySlave) Errors() <-chan error {
 	return m.errors
 }
+
+// DSN returns the data source name of the mysql connection.
+func (m *MySlave) DSN() string {
+	return m.dsn
+}
