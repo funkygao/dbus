@@ -32,6 +32,7 @@ type Acker interface {
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.
+// If duplicated name found, panic!
 func RegisterPlugin(name string, factory func() Plugin) {
 	if _, present := availablePlugins[name]; present {
 		panic(fmt.Sprintf("plugin[%s] cannot register twice", name))

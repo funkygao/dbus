@@ -14,18 +14,12 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-const (
-	RELOAD  = "reload"
-	STOP    = "stop"
-	SIGUSR1 = "user1"
-	SIGUSR2 = "user2"
-)
-
 var (
 	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
 	// Globals returns the global configurations of dbus.
+	// We export func instead of var to prevent the global var from being overwritten.
 	Globals func() *GlobalConfig
 )
 

@@ -217,7 +217,7 @@ func (e *Engine) ServeForever() {
 	// if Input terminates very soon, global.Shutdown will
 	// not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	e.launchHttpServ()
 
@@ -283,22 +283,12 @@ func (e *Engine) ServeForever() {
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
 
 			switch sig {
-			case syscall.SIGHUP:
-				log.Info("Reloading...")
-				observer.Publish(RELOAD, nil)
-
 			case syscall.SIGINT, syscall.SIGTERM:
 				log.Info("shutdown...")
 				globals.Stopping = true
 				if telemetry.Default != nil {
 					telemetry.Default.Stop()
 				}
-
-			case syscall.SIGUSR1:
-				observer.Publish(SIGUSR1, nil)
-
-			case syscall.SIGUSR2:
-				observer.Publish(SIGUSR2, nil)
 			}
 		}
 	}

@@ -27,19 +27,20 @@ func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
 }
 
 func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	ex := r.Exchange()
 	for {
 		select {
 		case <-this.stopChan:
 			return nil
 
-		case pack, ok := <-r.InChan():
+		case pack, ok := <-ex.InChan():
 			if !ok {
 				log.Debug("[%s] yes sir!", r.Name())
 				break
 			}
 
 			pack.Payload = model.Bytes("hello world")
-			r.Inject(pack)
+			ex.Inject(pack)
 		}
 	}
 

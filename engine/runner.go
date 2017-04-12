@@ -25,6 +25,8 @@ type PluginRunner interface {
 	// Class returns the class name of the underlying plugin.
 	Class() string
 
+	Exchange() Exchange
+
 	// Plugin returns the underlying plugin object.
 	Plugin() Plugin
 
@@ -97,6 +99,10 @@ func (fo *foRunner) Ack(pack *Packet) error {
 
 func (fo *foRunner) Inject(pack *Packet) {
 	fo.engine.router.hub <- pack
+}
+
+func (fo *foRunner) Exchange() Exchange {
+	return fo
 }
 
 func (fo *foRunner) InChan() chan *Packet {

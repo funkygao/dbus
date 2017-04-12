@@ -12,6 +12,7 @@ import (
 func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
+	ex := r.Exchange()
 
 	globals := engine.Globals()
 	var myResources []cluster.Resource
@@ -88,7 +89,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 				}
 				goto RESTART_REPLICATION
 
-			case pack, ok := <-r.InChan():
+			case pack, ok := <-ex.InChan():
 				if !ok {
 					log.Debug("[%s] yes sir!", name)
 					return nil
@@ -121,7 +122,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 
 					if row.Length() < this.maxEventLength {
 						pack.Payload = row
-						r.Inject(pack)
+						ex.Inject(pack)
 					} else {
 						// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
 						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
