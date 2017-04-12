@@ -10,6 +10,9 @@ type Resource struct {
 	Name        string `json:"name,omitempty"`
 	Cost        int    `json:"cost,omitempty"`
 
+	// Resources within a group will be assign to a single participant. TODO
+	Group int `json:"group,omitempty"`
+
 	// will not persist in json
 	State *ResourceState `json:"-"`
 }

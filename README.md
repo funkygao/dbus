@@ -13,9 +13,23 @@
 
 dbus = distributed data bus
 
-It is yet another databus that transfer/transform pipeline data between plugins.
+It is yet another versatile databus system that transfer/transform pipeline data between plugins.
 
-You can think of dbus as logstash + flume + nifi/camel + canal, with builtin cluster support and delivery guarantee.
+dbus works by building a DAG of structured data out of the different plugins: from data input, via filter, to the output.
+
+Similar projects
+
+- logstash
+- flume
+- nifi
+- camel
+- kettle
+- zapier
+- google cloud dataflow
+- canal
+- yahoo pipes (dead)
+
+### Status
 
 dbus is not yet a 1.0.
 We're writing more tests, fixing bugs, working on TODOs.
@@ -52,7 +66,7 @@ system mediation logic.
   - hot reload
   - dryrun throughput 1.9M packets/s
 - Cluster Support
-  - models of helix+kafka controller
+  - modelling borrowed from helix+kafka controller
   - currently only leader/standby with sharding, without replica
   - easy to write a distributed plugin
 
@@ -163,10 +177,13 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] resource group
 - [ ] myslave should have no checkpoint, placed in Input
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] myslave server_id uniq across the cluster
 - [ ] tweak of batcher yield
+- [ ] add Operator for Filter
+  - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
 - [ ] use scheme to distinguish type of DSN
 - [ ] KafkaConsumer might not be able to Stop
