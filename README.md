@@ -15,7 +15,7 @@ dbus = distributed data bus
 
 It is yet another databus that transfer/transform pipeline data between plugins.
 
-You can think of dbus as logstash + flume + nifi + canal, with builtin cluster support and delivery guarantee.
+You can think of dbus as logstash + flume + nifi/camel + canal, with builtin cluster support and delivery guarantee.
 
 dbus is not yet a 1.0.
 We're writing more tests, fixing bugs, working on TODOs.

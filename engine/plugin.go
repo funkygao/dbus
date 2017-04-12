@@ -58,9 +58,11 @@ func (pw *pluginWrapper) Create() (plugin Plugin) {
 type pluginCommons struct {
 	name  string
 	class string
+	cf    *conf.Conf
 }
 
 func (pc *pluginCommons) loadConfig(section *conf.Conf) {
+	pc.cf = section
 	if pc.name = section.String("name", ""); pc.name == "" {
 		panic(fmt.Sprintf("name is required"))
 	}

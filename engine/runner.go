@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 )
 
@@ -26,6 +27,9 @@ type PluginRunner interface {
 
 	// Plugin returns the underlying plugin object.
 	Plugin() Plugin
+
+	// Conf returns the underlying plugin specific configuration.
+	Conf() *conf.Conf
 
 	start(e *Engine, wg *sync.WaitGroup) (err error)
 }
@@ -56,6 +60,10 @@ func (pb *pRunnerBase) Class() string {
 
 func (pb *pRunnerBase) Plugin() Plugin {
 	return pb.plugin
+}
+
+func (pb *pRunnerBase) Conf() *conf.Conf {
+	return pb.pluginCommons.cf
 }
 
 // foRunner is filter output runner.
