@@ -50,6 +50,18 @@ func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 }
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	if dsn := r.Conf().String("dsn", ""); len(dsn) > 0 {
+		return this.runStandalone(dsn, r, h)
+	}
+
+	return this.runCluster(r, h)
+}
+
+func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper) error {
+	return nil
+}
+
+func (this *MysqlbinlogInput) runCluster(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
 
