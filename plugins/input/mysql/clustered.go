@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -100,8 +101,8 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 	return nil
 }
 
-func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name string, ex engine.Exchange, wg *sync.WaitGroup,
-	slavesStopper <-chan struct{}, replicationErrs chan<- error) {
+func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name string, ex engine.Exchange,
+	wg *sync.WaitGroup, slavesStopper <-chan struct{}, replicationErrs chan<- error) {
 	defer func() {
 		log.Trace("[%s] stopping replication from %s", name, slave.DSN())
 
@@ -109,17 +110,13 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 		wg.Done()
 	}()
 
-	log.Trace("[%s] starting replication from %s", name, slave.DSN())
-	if err := slave.AssertValidRowFormat(); err != nil {
-		// err might be: read initial handshake error
-		panic(err)
-	}
-
 	if img, err := slave.BinlogRowImage(); err != nil {
 		log.Error("[%s] %v", name, err)
 	} else {
 		log.Trace("[%s] binlog row image=%s", name, img)
 	}
+
+	log.Trace("[%s] starting replication from %s", name, slave.DSN())
 
 	ready := make(chan struct{})
 	go slave.StartReplication(ready)
@@ -154,13 +151,17 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 
 			case err, ok := <-errors:
 				if ok {
+					log.Error("[%s] %v, stop from %s", name, err, slave.DSN())
 					replicationErrs <- err
+				} else {
+					log.Error("[%s] error stream closed from %s", name, slave.DSN())
+					replicationErrs <- fmt.Errorf("[%s] error stream closed from %s", name, slave.DSN())
 				}
 				return
 
 			case row, ok := <-rows:
 				if !ok {
-					log.Info("[%s] event stream closed from %s", name, slave.DSN())
+					log.Error("[%s] event stream closed from %s", name, slave.DSN())
 					return
 				}
 
@@ -169,10 +170,9 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 					ex.Inject(pack)
 				} else {
 					// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
-					log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())
+					log.Warn("[%s] %s ignored len=%d %s", name, slave.DSN(), row.Length(), row.MetaInfo())
 					pack.Recycle()
 				}
-
 			}
 		}
 	}
