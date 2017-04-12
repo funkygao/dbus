@@ -46,6 +46,7 @@ func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	// FIXME
+	// race condition: in cluster mode, when ACK, the slave might have be gone
 	return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
