@@ -38,6 +38,7 @@ func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
+	ex := r.Exchange()
 
 	var myResources []cluster.Resource
 	resourcesCh := r.Resources()
@@ -99,7 +100,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				}
 				goto RESTART_CONSUME
 
-			case pack, ok := <-r.InChan():
+			case pack, ok := <-ex.InChan():
 				if !ok {
 					log.Debug("[%s] yes sir!", name)
 					return nil
@@ -122,7 +123,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 					}
 
 					pack.Payload = model.ConsumerMessage{msg}
-					r.Inject(pack)
+					ex.Inject(pack)
 				}
 			}
 		}
