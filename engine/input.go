@@ -31,15 +31,8 @@ type Input interface {
 type InputRunner interface {
 	PluginRunner
 
-	// InChan returns input channel from which Inputs can get fresh Packets.
-	InChan() chan *Packet
-
 	// Input returns the associated Input plugin object.
 	Input() Input
-
-	// Injects Packet into the Router's input channel for delivery
-	// to all Filter and Output plugins with corresponding matcher.
-	Inject(pack *Packet)
 
 	// Resources returns a channel that notifies Input plugin of the newly assigned resources in a cluster.
 	// The newly assigned resource might be empty, which means the Input plugin should stop consuming the resource.
@@ -64,6 +57,10 @@ func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan erro
 		panicCh:     panicCh,
 		resourcesCh: make(chan []cluster.Resource), // FIXME how to close it
 	}
+}
+
+func (ir *iRunner) Exchange() Exchange {
+	return ir
 }
 
 func (ir *iRunner) Inject(pack *Packet) {

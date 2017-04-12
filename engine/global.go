@@ -26,6 +26,7 @@ var (
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
 	// Globals returns the global configurations of dbus.
+	// We export func instead of var to prevent the global var from being overwritten.
 	Globals func() *GlobalConfig
 )
 
