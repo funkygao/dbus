@@ -14,7 +14,4 @@ type FilterRunner interface {
 
 	// Filter returns the underlying Filter plugin.
 	Filter() Filter
-
-	// Injects Packet into the Router's input channel for delivery.
-	Inject(pack *Packet)
 }
