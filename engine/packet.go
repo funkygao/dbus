@@ -48,7 +48,7 @@ type Packet struct {
 	Metadata interface{}
 
 	_padding4 [sys.CacheLineSize / 8]uint64
-	input     Acker
+	acker     Acker
 
 	_padding5 [sys.CacheLineSize / 8]uint64
 	Payload   Payloader
@@ -70,13 +70,13 @@ func (p *Packet) incRef() *Packet {
 }
 
 func (p *Packet) String() string {
-	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.input, atomic.LoadInt32(&p.refCount), p.Payload)
+	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.acker, atomic.LoadInt32(&p.refCount), p.Payload)
 }
 
 // copyTo will copy itself to another Packet.
 func (p *Packet) copyTo(other *Packet) {
 	other.Ident = p.Ident
-	other.input = p.input
+	other.acker = p.acker
 	other.Payload = p.Payload // FIXME clone deep copy
 }
 
@@ -84,13 +84,13 @@ func (p *Packet) Reset() {
 	p.refCount = int32(1)
 	p.Ident = ""
 	p.Payload = nil
-	p.input = nil
+	p.acker = nil
 }
 
 // Ack notifies the Packet's source Input that it is successfully processed.
 // Ack is called by Output plugin.
 func (p *Packet) Ack() error {
-	return p.input.OnAck(p)
+	return p.acker.OnAck(p)
 }
 
 // Recycle decrement packet reference count and place it back

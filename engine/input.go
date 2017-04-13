@@ -45,10 +45,10 @@ type iRunner struct {
 	inChan chan *Packet
 
 	resourcesCh chan []cluster.Resource
-	panicCh     chan error
+	panicCh     chan<- error
 }
 
-func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan error) (r *iRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan<- error) (r *iRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        input.(Plugin),
@@ -68,7 +68,7 @@ func (ir *iRunner) Inject(pack *Packet) {
 		pack.Ident = ir.Name()
 	}
 
-	pack.input = ir.Input()
+	pack.acker = ir.Input()
 	ir.engine.router.hub <- pack
 }
 

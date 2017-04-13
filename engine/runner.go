@@ -74,10 +74,10 @@ type foRunner struct {
 	matcher *matcher
 
 	inChan  chan *Packet
-	panicCh chan error
+	panicCh chan<- error
 }
 
-func newFORunner(plugin Plugin, pluginCommons *pluginCommons, panicCh chan error) *foRunner {
+func newFORunner(plugin Plugin, pluginCommons *pluginCommons, panicCh chan<- error) *foRunner {
 	return &foRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        plugin,
@@ -93,7 +93,7 @@ func (fo *foRunner) getMatcher() *matcher {
 }
 
 func (fo *foRunner) Ack(pack *Packet) error {
-	return pack.input.OnAck(pack)
+	return pack.acker.OnAck(pack)
 }
 
 func (fo *foRunner) Inject(pack *Packet) {
