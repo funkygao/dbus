@@ -93,7 +93,7 @@ func (fo *foRunner) getMatcher() *matcher {
 }
 
 func (fo *foRunner) Ack(pack *Packet) error {
-	return pack.acker.OnAck(pack)
+	return pack.ack()
 }
 
 func (fo *foRunner) Inject(pack *Packet) {
