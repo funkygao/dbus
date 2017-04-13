@@ -41,7 +41,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough?
+		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough? TODO
 		Flavor:          m.c.String("flavor", mysql.MySQLFlavor),
 		Host:            m.host,
 		Port:            m.port,
