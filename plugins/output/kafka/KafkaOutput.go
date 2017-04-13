@@ -36,7 +36,7 @@ func (this *KafkaOutput) CleanupForRestart() bool {
 	return true // yes, restart allowed
 }
 
-func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	cf := kafka.DefaultConfig()
 	cf.Sarama.Producer.Flush.Messages = r.Conf().Int("batch_size", 1024)
 	cf.Sarama.Producer.RequiredAcks = sarama.RequiredAcks(r.Conf().Int("ack", int(sarama.WaitForAll)))

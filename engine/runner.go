@@ -34,7 +34,7 @@ type PluginRunner interface {
 	// Conf returns the underlying plugin specific configuration.
 	Conf() *conf.Conf
 
-	start(e *Engine, wg *sync.WaitGroup) (err error)
+	start(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) (err error)
 }
 
 // FilterOutputRunner is the common interface shared by FilterRunner and OutputRunner.
@@ -116,14 +116,14 @@ func (fo *foRunner) Filter() Filter {
 	return fo.plugin.(Filter)
 }
 
-func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup) error {
+func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) error {
 	fo.engine = e
 
-	go fo.runMainloop(wg)
+	go fo.runMainloop(wg, stopper)
 	return nil
 }
 
-func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
+func (fo *foRunner) runMainloop(wg *sync.WaitGroup, stopper <-chan struct{}) {
 	defer func() {
 		wg.Done()
 
@@ -152,7 +152,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			log.Info("Filter[%s] started", fo.Name())
 
 			pluginType = "filter"
-			if err := filter.Run(fo, fo.engine); err != nil {
+			if err := filter.Run(fo, fo.engine, stopper); err != nil {
 				log.Error("Filter[%s] stopped: %v", fo.Name(), err)
 			} else {
 				log.Info("Filter[%s] stopped", fo.Name())
@@ -161,7 +161,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			log.Info("Output[%s] started", fo.Name())
 
 			pluginType = "output"
-			if err := output.Run(fo, fo.engine); err != nil {
+			if err := output.Run(fo, fo.engine, stopper); err != nil {
 				log.Error("Output[%s] stopped: %v", fo.Name(), err)
 			} else {
 				log.Info("Output[%s] stopped", fo.Name())

@@ -5,7 +5,7 @@ type Filter interface {
 	Plugin
 
 	// Run starts the main loop of the Filter plugin.
-	Run(r FilterRunner, h PluginHelper) (err error)
+	Run(r FilterRunner, h PluginHelper, stopper <-chan struct{}) (err error)
 }
 
 // FilterRunner is a helper for Filter plugin to access some context data.

@@ -11,7 +11,7 @@ type ESOutput struct {
 func (this *ESOutput) Init(config *conf.Conf) {
 }
 
-func (this *ESOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
+func (this *ESOutput) Run(r engine.OutputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	for {
 		select {
 		case pack, ok := <-r.Exchange().InChan():

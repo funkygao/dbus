@@ -11,12 +11,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.PluginHelper) error {
-	defer func() {
-		close(this.stopped)
-	}()
-
-	this.stopped = make(chan struct{})
+func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
@@ -43,7 +38,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 			log.Trace("[%s] awaiting resources", name)
 
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 			case myResources = <-resourcesCh:
@@ -70,7 +65,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 
 		for {
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				reapSlaves(&wg, slavesStopper)
 				return nil
 
@@ -89,7 +84,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 
 				select {
 				case <-time.After(backoff):
-				case <-this.stopChan:
+				case <-stopper:
 					reapSlaves(&wg, slavesStopper)
 					return nil
 				}

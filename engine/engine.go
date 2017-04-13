@@ -306,11 +306,12 @@ func (e *Engine) ServeForever() (ret error) {
 		}()
 	}
 
+	pluginsStopper := make(chan struct{})
 	for _, outputRunner := range e.OutputRunners {
 		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = outputRunner.start(e, outputsWg); err != nil {
+		if err = outputRunner.start(e, outputsWg, pluginsStopper); err != nil {
 			panic(err)
 		}
 	}
@@ -319,7 +320,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = filterRunner.start(e, filtersWg); err != nil {
+		if err = filterRunner.start(e, filtersWg, pluginsStopper); err != nil {
 			panic(err)
 		}
 	}
@@ -345,7 +346,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = inputRunner.start(e, inputsWg); err != nil {
+		if err = inputRunner.start(e, inputsWg, pluginsStopper); err != nil {
 			panic(err)
 		}
 	}
@@ -395,6 +396,7 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
+	close(pluginsStopper)
 	close(e.stopper)
 
 	if telemetry.Default != nil {
@@ -429,6 +431,8 @@ func (e *Engine) ServeForever() (ret error) {
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
+
+	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	e.router.Stop()
 	routerWg.Wait()
