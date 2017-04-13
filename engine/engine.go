@@ -306,22 +306,19 @@ func (e *Engine) ServeForever() (ret error) {
 		}()
 	}
 
+	pluginsStopper := make(chan struct{})
 	for _, outputRunner := range e.OutputRunners {
 		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = outputRunner.start(e, outputsWg); err != nil {
-			panic(err)
-		}
+		outputRunner.forkAndRun(e, outputsWg, pluginsStopper)
 	}
 
 	for _, filterRunner := range e.FilterRunners {
 		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = filterRunner.start(e, filtersWg); err != nil {
-			panic(err)
-		}
+		filterRunner.forkAndRun(e, filtersWg, pluginsStopper)
 	}
 
 	for inputName := range e.inputRecycleChans {
@@ -345,9 +342,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = inputRunner.start(e, inputsWg); err != nil {
-			panic(err)
-		}
+		inputRunner.forkAndRun(e, inputsWg, pluginsStopper)
 	}
 
 	if globals.ClusterEnabled {
@@ -395,6 +390,7 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
+	close(pluginsStopper)
 	close(e.stopper)
 
 	if telemetry.Default != nil {
@@ -429,6 +425,8 @@ func (e *Engine) ServeForever() (ret error) {
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
 	outputsWg.Wait()
+
+	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	e.router.Stop()
 	routerWg.Wait()

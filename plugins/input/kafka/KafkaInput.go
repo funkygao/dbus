@@ -13,18 +13,14 @@ import (
 
 // KafkaInput is an input plugin that consumes data stream from a single specified kafka topic.
 type KafkaInput struct {
-	stopChan chan struct{}
-
 	c *kafka.Consumer
 }
 
 func (this *KafkaInput) Init(config *conf.Conf) {
-	this.stopChan = make(chan struct{})
 }
 
 func (this *KafkaInput) Stop(r engine.InputRunner) {
 	log.Debug("[%s] stopping...", r.Name())
-	close(this.stopChan)
 	if this.c != nil {
 		this.c.Stop()
 	}
@@ -35,7 +31,7 @@ func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	return nil
 }
 
-func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
@@ -57,7 +53,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 			log.Trace("[%s] awaiting resources", name)
 
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 			case myResources = <-resourcesCh:
@@ -80,7 +76,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 		kafkaErrors := this.c.Errors()
 		for {
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 
@@ -95,7 +91,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 
 				select {
 				case <-time.After(backoff):
-				case <-this.stopChan:
+				case <-stopper:
 					return nil
 				}
 				goto RESTART_CONSUME
@@ -107,7 +103,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				}
 
 				select {
-				case <-this.stopChan:
+				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
 					return nil
 

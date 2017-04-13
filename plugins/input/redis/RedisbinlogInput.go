@@ -8,13 +8,10 @@ import (
 )
 
 type RedisbinlogInput struct {
-	stopChan chan struct{}
 }
 
 func (this *RedisbinlogInput) Init(config *conf.Conf) {
 	panic("Not implemented")
-
-	this.stopChan = make(chan struct{})
 }
 
 func (this *RedisbinlogInput) OnAck(pack *engine.Packet) error {
@@ -23,14 +20,13 @@ func (this *RedisbinlogInput) OnAck(pack *engine.Packet) error {
 
 func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
 	log.Debug("[%s] stopping...", r.Name())
-	close(this.stopChan)
 }
 
-func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	ex := r.Exchange()
 	for {
 		select {
-		case <-this.stopChan:
+		case <-stopper:
 			return nil
 
 		case pack, ok := <-ex.InChan():

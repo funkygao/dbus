@@ -87,9 +87,9 @@ func (p *Packet) Reset() {
 	p.acker = nil
 }
 
-// Ack notifies the Packet's source Input that it is successfully processed.
-// Ack is called by Output plugin.
-func (p *Packet) Ack() error {
+// ack notifies the Packet's source Input that it is successfully processed.
+// ack is called by Output plugin.
+func (p *Packet) ack() error {
 	return p.acker.OnAck(p)
 }
 

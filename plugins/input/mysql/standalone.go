@@ -8,7 +8,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper) error {
+func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	defer func() {
 		this.mu.RLock()
 		slave := this.slaves[0]
@@ -49,7 +49,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 		go theSlave.StartReplication(ready)
 		select {
 		case <-ready:
-		case <-this.stopChan:
+		case <-stopper:
 			log.Debug("[%s] yes sir!", name)
 			return nil
 		}
@@ -58,7 +58,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 		errors := theSlave.Errors()
 		for {
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 
@@ -71,7 +71,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 				select {
 				case <-time.After(backoff):
-				case <-this.stopChan:
+				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
 					return nil
 				}
@@ -90,7 +90,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 					select {
 					case <-time.After(backoff):
-					case <-this.stopChan:
+					case <-stopper:
 						log.Debug("[%s] yes sir!", name)
 						return nil
 					}
@@ -111,7 +111,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 						pack.Recycle()
 					}
 
-				case <-this.stopChan:
+				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
 					return nil
 				}

@@ -14,8 +14,6 @@ import (
 // slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
 	maxEventLength int
-	stopChan       chan struct{}
-	stopped        chan struct{}
 	cf             *conf.Conf
 
 	mu     sync.RWMutex
@@ -33,15 +31,11 @@ func (this *MysqlbinlogInput) shouldRunInCluster() bool {
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.cf = config
-	this.stopChan = make(chan struct{})
 	this.slaves = make([]*myslave.MySlave, 0)
 }
 
 func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
 	log.Debug("[%s] stopping...", r.Name())
-
-	close(this.stopChan)
-	<-this.stopped
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
@@ -50,10 +44,10 @@ func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
-func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	if this.shouldRunInCluster() {
-		return this.runClustered(r, h)
+		return this.runClustered(r, h, stopper)
 	}
 
-	return this.runStandalone(this.cf.String("dsn", ""), r, h)
+	return this.runStandalone(this.cf.String("dsn", ""), r, h, stopper)
 }
