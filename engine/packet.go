@@ -17,6 +17,16 @@ type Payloader interface {
 	Encode() ([]byte, error)
 }
 
+// KeyValuer is an interface that can be applied on Payloader.
+type KeyValuer interface {
+
+	// Get returns value of the key.
+	Get(k string) (v interface{}, ok bool)
+
+	// Set stores a value for the key.
+	Set(k string, v interface{})
+}
+
 // Packet is the pipeline data structure that is transferred between plugins.
 //
 // TODO hide it to private.
@@ -75,6 +85,12 @@ func (p *Packet) Reset() {
 	p.Ident = ""
 	p.Payload = nil
 	p.input = nil
+}
+
+// Ack notifies the Packet's source Input that it is successfully processed.
+// Ack is called by Output plugin.
+func (p *Packet) Ack() error {
+	return p.input.OnAck(p)
 }
 
 // Recycle decrement packet reference count and place it back

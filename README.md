@@ -13,7 +13,7 @@
 
 dbus = distributed data bus
 
-It is yet another versatile databus system that transfer/transform pipeline data between plugins.
+It is yet another lightweight versatile databus system that transfer/transform pipeline data between plugins.
 
 dbus works by building a DAG of structured data out of the different plugins: from data input, via filter, to the output.
 
@@ -27,6 +27,7 @@ Similar projects
 - zapier
 - google cloud dataflow
 - canal
+- storm
 - yahoo pipes (dead)
 
 ### Status
