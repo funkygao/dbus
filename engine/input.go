@@ -21,7 +21,7 @@ type Input interface {
 	Acker
 
 	// Run starts the main loop of the Input plugin.
-	Run(r InputRunner, h PluginHelper, stopper <-chan struct{}) (err error)
+	Run(r InputRunner, h PluginHelper) (err error)
 
 	// Stop is the callback which stops the Input plugin.
 	Stop(InputRunner)
@@ -88,14 +88,14 @@ func (ir *iRunner) Resources() <-chan []cluster.Resource {
 	return ir.resourcesCh
 }
 
-func (ir *iRunner) forkAndRun(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) {
+func (ir *iRunner) forkAndRun(e *Engine, wg *sync.WaitGroup) {
 	ir.engine = e
 	ir.inChan = e.inputRecycleChans[ir.Name()]
 
-	go ir.runMainloop(e, wg, stopper)
+	go ir.runMainloop(e, wg)
 }
 
-func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) {
+func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 
@@ -116,7 +116,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup, stopper <-chan str
 	globals := Globals()
 	for {
 		log.Trace("Input[%s] started", ir.Name())
-		if err := ir.Input().Run(ir, e, stopper); err == nil {
+		if err := ir.Input().Run(ir, e); err == nil {
 			log.Trace("Input[%s] stopped", ir.Name())
 		} else {
 			log.Error("Input[%s] stopped: %v", ir.Name(), err)

@@ -69,11 +69,12 @@ type Engine struct {
 	inputRecycleChans map[string]chan *Packet
 	filterRecycleChan chan *Packet
 
-	hostname      string
-	pid           int
-	stopper       chan struct{}
-	shutdown      chan struct{}
-	pluginPanicCh chan error
+	hostname       string
+	pid            int
+	upgradeStopper chan struct{}
+	pluginsStopper chan struct{}
+	shutdown       chan struct{}
+	pluginPanicCh  chan error
 }
 
 // New creates an engine.
@@ -97,11 +98,12 @@ func New(globals *GlobalConfig) *Engine {
 	}
 
 	return &Engine{
-		pid:           os.Getpid(),
-		hostname:      hostname,
-		stopper:       make(chan struct{}),
-		shutdown:      make(chan struct{}),
-		pluginPanicCh: make(chan error),
+		pid:            os.Getpid(),
+		hostname:       hostname,
+		upgradeStopper: make(chan struct{}),
+		pluginsStopper: make(chan struct{}),
+		shutdown:       make(chan struct{}),
+		pluginPanicCh:  make(chan error),
 
 		router: newRouter(),
 
@@ -129,6 +131,10 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Lock()
 	e.InputRunners[name] = nil
 	e.Unlock()
+}
+
+func (e *Engine) Stopper() <-chan struct{} {
+	return e.upgradeStopper
 }
 
 // ClonePacket is used for plugin Filter to generate new Packet: copy on write.
@@ -306,19 +312,18 @@ func (e *Engine) ServeForever() (ret error) {
 		}()
 	}
 
-	pluginsStopper := make(chan struct{})
 	for _, outputRunner := range e.OutputRunners {
 		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		outputRunner.forkAndRun(e, outputsWg, pluginsStopper)
+		outputRunner.forkAndRun(e, outputsWg)
 	}
 
 	for _, filterRunner := range e.FilterRunners {
 		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		filterRunner.forkAndRun(e, filtersWg, pluginsStopper)
+		filterRunner.forkAndRun(e, filtersWg)
 	}
 
 	for inputName := range e.inputRecycleChans {
@@ -342,7 +347,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		inputRunner.forkAndRun(e, inputsWg, pluginsStopper)
+		inputRunner.forkAndRun(e, inputsWg)
 	}
 
 	if globals.ClusterEnabled {
@@ -360,7 +365,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	configChanged := make(chan *conf.Conf)
-	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
+	go e.Conf.Watch(time.Second*10, e.upgradeStopper, configChanged)
 
 	log.Info("engine started")
 	for !globals.Stopping {
@@ -390,8 +395,8 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	close(pluginsStopper)
-	close(e.stopper)
+	close(e.pluginsStopper)
+	close(e.upgradeStopper)
 
 	if telemetry.Default != nil {
 		telemetry.Default.Stop()

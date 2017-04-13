@@ -5,7 +5,7 @@ type Output interface {
 	Plugin
 
 	// Run starts the main loop of the Output plugin.
-	Run(r OutputRunner, h PluginHelper, stopper <-chan struct{}) (err error)
+	Run(r OutputRunner, h PluginHelper) (err error)
 }
 
 // OutputRunner is a helper for Output plugin to access some context data.

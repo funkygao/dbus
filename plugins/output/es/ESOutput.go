@@ -14,6 +14,9 @@ func (this *ESOutput) Init(config *conf.Conf) {
 func (this *ESOutput) Run(r engine.OutputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
 	for {
 		select {
+		case <-stopper:
+			return nil
+
 		case pack, ok := <-r.Exchange().InChan():
 			if !ok {
 				return nil

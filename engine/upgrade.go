@@ -23,7 +23,7 @@ func (e *Engine) watchUpgrade(evts <-chan struct{}) {
 				log.Error("upgrade: %v", err)
 			}
 
-		case <-e.stopper:
+		case <-e.upgradeStopper:
 			return
 		}
 	}
