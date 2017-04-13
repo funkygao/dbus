@@ -311,18 +311,14 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = outputRunner.start(e, outputsWg, pluginsStopper); err != nil {
-			panic(err)
-		}
+		outputRunner.forkAndRun(e, outputsWg, pluginsStopper)
 	}
 
 	for _, filterRunner := range e.FilterRunners {
 		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = filterRunner.start(e, filtersWg, pluginsStopper); err != nil {
-			panic(err)
-		}
+		filterRunner.forkAndRun(e, filtersWg, pluginsStopper)
 	}
 
 	for inputName := range e.inputRecycleChans {
@@ -346,9 +342,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = inputRunner.start(e, inputsWg, pluginsStopper); err != nil {
-			panic(err)
-		}
+		inputRunner.forkAndRun(e, inputsWg, pluginsStopper)
 	}
 
 	if globals.ClusterEnabled {

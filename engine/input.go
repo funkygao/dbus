@@ -88,12 +88,11 @@ func (ir *iRunner) Resources() <-chan []cluster.Resource {
 	return ir.resourcesCh
 }
 
-func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) error {
+func (ir *iRunner) forkAndRun(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) {
 	ir.engine = e
 	ir.inChan = e.inputRecycleChans[ir.Name()]
 
 	go ir.runMainloop(e, wg, stopper)
-	return nil
 }
 
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) {

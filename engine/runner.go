@@ -34,7 +34,7 @@ type PluginRunner interface {
 	// Conf returns the underlying plugin specific configuration.
 	Conf() *conf.Conf
 
-	start(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) (err error)
+	forkAndRun(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{})
 }
 
 // FilterOutputRunner is the common interface shared by FilterRunner and OutputRunner.
@@ -116,11 +116,9 @@ func (fo *foRunner) Filter() Filter {
 	return fo.plugin.(Filter)
 }
 
-func (fo *foRunner) start(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) error {
+func (fo *foRunner) forkAndRun(e *Engine, wg *sync.WaitGroup, stopper <-chan struct{}) {
 	fo.engine = e
-
 	go fo.runMainloop(wg, stopper)
-	return nil
 }
 
 func (fo *foRunner) runMainloop(wg *sync.WaitGroup, stopper <-chan struct{}) {
