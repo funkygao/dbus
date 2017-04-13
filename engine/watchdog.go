@@ -26,7 +26,7 @@ func (e *Engine) runWatchdog(interval time.Duration) {
 				log.Warn("Recycle pool reservation: [filter]%d, inputs %v", filterPoolSize, inputs)
 			}
 
-		case <-e.upgradeStopper:
+		case <-e.stopper:
 			return
 		}
 	}

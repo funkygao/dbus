@@ -69,12 +69,11 @@ type Engine struct {
 	inputRecycleChans map[string]chan *Packet
 	filterRecycleChan chan *Packet
 
-	hostname       string
-	pid            int
-	upgradeStopper chan struct{}
-	pluginsStopper chan struct{}
-	shutdown       chan struct{}
-	pluginPanicCh  chan error
+	hostname      string
+	pid           int
+	stopper       chan struct{}
+	shutdown      chan struct{}
+	pluginPanicCh chan error
 }
 
 // New creates an engine.
@@ -98,12 +97,11 @@ func New(globals *GlobalConfig) *Engine {
 	}
 
 	return &Engine{
-		pid:            os.Getpid(),
-		hostname:       hostname,
-		upgradeStopper: make(chan struct{}),
-		pluginsStopper: make(chan struct{}),
-		shutdown:       make(chan struct{}),
-		pluginPanicCh:  make(chan error),
+		pid:           os.Getpid(),
+		hostname:      hostname,
+		stopper:       make(chan struct{}),
+		shutdown:      make(chan struct{}),
+		pluginPanicCh: make(chan error),
 
 		router: newRouter(),
 
@@ -134,7 +132,7 @@ func (e *Engine) stopInputRunner(name string) {
 }
 
 func (e *Engine) Stopper() <-chan struct{} {
-	return e.upgradeStopper
+	return e.stopper
 }
 
 // ClonePacket is used for plugin Filter to generate new Packet: copy on write.
@@ -365,7 +363,7 @@ func (e *Engine) ServeForever() (ret error) {
 	}
 
 	configChanged := make(chan *conf.Conf)
-	go e.Conf.Watch(time.Second*10, e.upgradeStopper, configChanged)
+	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
 	log.Info("engine started")
 	for !globals.Stopping {
@@ -395,8 +393,7 @@ func (e *Engine) ServeForever() (ret error) {
 		}
 	}
 
-	close(e.pluginsStopper)
-	close(e.upgradeStopper)
+	close(e.stopper)
 
 	if telemetry.Default != nil {
 		telemetry.Default.Stop()
