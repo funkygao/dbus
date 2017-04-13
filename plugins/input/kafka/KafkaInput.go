@@ -31,10 +31,11 @@ func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	return nil
 }
 
-func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
+func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
+	stopper := h.Stopper()
 
 	var myResources []cluster.Resource
 	resourcesCh := r.Resources()

@@ -8,7 +8,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
+func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper) error {
 	defer func() {
 		this.mu.RLock()
 		slave := this.slaves[0]
@@ -23,6 +23,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 	ex := r.Exchange()
 	name := r.Name()
 	backoff := time.Second * 5
+	stopper := h.Stopper()
 
 	this.mu.Lock()
 	this.slaves = this.slaves[:0]

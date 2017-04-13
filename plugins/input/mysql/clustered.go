@@ -11,10 +11,11 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
+func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
+	stopper := h.Stopper()
 
 	globals := engine.Globals()
 	var myResources []cluster.Resource

@@ -44,10 +44,10 @@ func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
-func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
+func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	if this.shouldRunInCluster() {
-		return this.runClustered(r, h, stopper)
+		return this.runClustered(r, h)
 	}
 
-	return this.runStandalone(this.cf.String("dsn", ""), r, h, stopper)
+	return this.runStandalone(this.cf.String("dsn", ""), r, h)
 }

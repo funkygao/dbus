@@ -22,8 +22,9 @@ func (this *RedisbinlogInput) Stop(r engine.InputRunner) {
 	log.Debug("[%s] stopping...", r.Name())
 }
 
-func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper, stopper <-chan struct{}) error {
+func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	ex := r.Exchange()
+	stopper := h.Stopper()
 	for {
 		select {
 		case <-stopper:
