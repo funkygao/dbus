@@ -136,11 +136,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 			}
 			return
 
-		case pack, ok := <-ex.InChan():
-			if !ok {
-				return
-			}
-
+		case pack := <-ex.InChan():
 			select {
 			case <-slavesStopper:
 				return

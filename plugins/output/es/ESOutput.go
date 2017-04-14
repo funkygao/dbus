@@ -17,11 +17,7 @@ func (this *ESOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error {
 		case <-h.Stopper():
 			return nil
 
-		case pack, ok := <-r.Exchange().InChan():
-			if !ok {
-				return nil
-			}
-
+		case pack := <-r.Exchange().InChan():
 			pack.Recycle()
 
 		}

@@ -30,12 +30,7 @@ func (this *RedisbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) e
 		case <-stopper:
 			return nil
 
-		case pack, ok := <-ex.InChan():
-			if !ok {
-				log.Debug("[%s] yes sir!", r.Name())
-				break
-			}
-
+		case pack := <-ex.InChan():
 			pack.Payload = model.Bytes("hello world")
 			ex.Inject(pack)
 		}

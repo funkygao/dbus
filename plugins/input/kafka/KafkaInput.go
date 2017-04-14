@@ -97,12 +97,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 				}
 				goto RESTART_CONSUME
 
-			case pack, ok := <-ex.InChan():
-				if !ok {
-					log.Debug("[%s] yes sir!", name)
-					return nil
-				}
-
+			case pack := <-ex.InChan():
 				select {
 				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
