@@ -173,7 +173,6 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 
 		name := e.loadPluginSection(section)
 		if _, duplicated := pluginNames[name]; duplicated {
-			// router.metrics will be bad with dup name
 			panic("duplicated plugin name: " + name)
 		}
 		pluginNames[name] = struct{}{}
@@ -369,7 +368,7 @@ func (e *Engine) ServeForever() (ret error) {
 	for !globals.Stopping {
 		select {
 		case <-configChanged:
-			log.Info("%s changed, closing...", e.Conf.ConfPath())
+			log.Info("%s changed, shutdown...", e.Conf.ConfPath())
 			globals.Stopping = true
 
 		case <-e.shutdown:
@@ -386,9 +385,8 @@ func (e *Engine) ServeForever() (ret error) {
 				ret = ErrQuitingSigal
 			}
 
-		case err := <-e.pluginPanicCh:
+		case ret = <-e.pluginPanicCh:
 			log.Info("plugin panic, stopping...")
-			ret = err
 			globals.Stopping = true
 		}
 	}
@@ -410,23 +408,27 @@ func (e *Engine) ServeForever() (ret error) {
 		inputRunner.Input().Stop(inputRunner)
 	}
 	e.Unlock()
-	inputsWg.Wait() // wait for all inputs done
+	inputsWg.Wait()
+	for _, c := range e.inputRecycleChans {
+		close(c)
+	}
 
-	// ok, now we are sure no more inputs, but in route.inChan there
-	// still may be filter injected packs and output not consumed packs
+	// ok, now we are sure no more inputs, but there might still be
+	// in-flight packets in filter and output plugins
 	// we must wait for all the packs to be consumed before shutdown
 
+	filtersWg.Wait()
 	for _, filterRunner := range e.FilterRunners {
 		log.Debug("Stop message sent to %s", filterRunner.Name())
 		e.router.removeFilterMatcher <- filterRunner.getMatcher()
 	}
-	filtersWg.Wait()
+	close(e.filterRecycleChan)
 
+	outputsWg.Wait()
 	for _, outputRunner := range e.OutputRunners {
 		log.Debug("Stop message sent to %s", outputRunner.Name())
 		e.router.removeOutputMatcher <- outputRunner.getMatcher()
 	}
-	outputsWg.Wait()
 
 	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 

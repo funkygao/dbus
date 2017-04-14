@@ -201,6 +201,8 @@ func (r *Router) Stop() {
 	log.Debug("Router stopping...")
 	close(r.hub)
 	close(r.stopper)
+	close(r.removeFilterMatcher)
+	close(r.removeOutputMatcher)
 
 	if Globals().RouterTrack {
 		for ident, m := range r.metrics.m {
@@ -228,9 +230,13 @@ func (r *Router) runReporter(wg *sync.WaitGroup) {
 }
 
 func (r *Router) removeMatcher(matcher *matcher, matchers []*matcher) {
+	if matcher == nil {
+		return
+	}
+
 	for idx, m := range matchers {
 		if m == matcher {
-			log.Debug("closing matcher for %s", m.runner.Name())
+			log.Debug("closing matcher for %s %+v", m.runner.Name(), m.InChan())
 
 			close(m.InChan())
 			matchers[idx] = nil

@@ -123,7 +123,6 @@ func (fo *foRunner) forkAndRun(e *Engine, wg *sync.WaitGroup) {
 
 func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	defer func() {
-		wg.Done()
 
 		if err := recover(); err != nil {
 			log.Critical("[%s] shutdown completely for: %v\n%s", fo.Name(), err, string(debug.Stack()))
@@ -135,8 +134,13 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			case error:
 				reason = panicErr
 			}
-			fo.panicCh <- reason
+			select {
+			case fo.panicCh <- reason:
+			default:
+			}
 		}
+
+		wg.Done()
 	}()
 
 	var (
