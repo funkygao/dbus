@@ -132,8 +132,6 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 
 	var (
 		globals    = Globals()
-		ok         = true
-		pack       *Packet
 		matcher    *matcher
 		foundMatch bool
 	)
@@ -143,19 +141,20 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 
 	log.Info("Router started with hub pool=%d", cap(r.hub))
 
-LOOP:
-	for ok {
+	for {
 		select {
+		case <-r.stopper:
+			return
+
 		case matcher = <-r.removeOutputMatcher:
 			r.removeMatcher(matcher, r.outputMatchers)
 
 		case matcher = <-r.removeFilterMatcher:
 			r.removeMatcher(matcher, r.filterMatchers)
 
-		case pack, ok = <-r.hub:
+		case pack, ok := <-r.hub:
 			if !ok {
-				globals.Stopping = true
-				break LOOP
+				return
 			}
 
 			if globals.RouterTrack {
