@@ -78,12 +78,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 				}
 				goto RESTART_REPLICATION
 
-			case pack, ok := <-ex.InChan():
-				if !ok {
-					log.Debug("[%s] yes sir!", name)
-					return nil
-				}
-
+			case pack := <-ex.InChan():
 				select {
 				case err := <-errors:
 					log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
