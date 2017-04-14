@@ -109,7 +109,11 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			case error:
 				reason = panicErr
 			}
-			ir.panicCh <- reason
+			select {
+			case ir.panicCh <- reason:
+			default:
+				log.Warn("[%s] %s", ir.Name(), reason)
+			}
 		}
 	}()
 

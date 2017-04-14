@@ -137,6 +137,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			select {
 			case fo.panicCh <- reason:
 			default:
+				log.Warn("[%s] %s", fo.Name(), reason)
 			}
 		}
 
