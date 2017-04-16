@@ -157,6 +157,8 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 				return
 			}
 
+			// the packet can be from: Input|Filter|Output
+
 			if globals.RouterTrack {
 				r.metrics.Update(pack) // dryrun throughput 1.8M/s -> 1.3M/s
 			}
