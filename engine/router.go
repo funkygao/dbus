@@ -125,18 +125,53 @@ func (r *Router) reportMatcherQueues() {
 func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var (
-		globals = Globals()
-		pack    *Packet
-	)
-
 	wg.Add(1)
 	go r.runReporter(wg)
 
 	log.Info("Router started with hub pool=%d", cap(r.hub))
 
+	var (
+		globals = Globals()
+		pack    *Packet
+	)
 	for {
 		select {
+		case pack = <-r.hub:
+			// the packet can be from: Input|Filter|Output
+			if globals.RouterTrack {
+				r.metrics.Update(pack) // dryrun throughput 2.1M/s -> 1.6M/s
+			}
+
+			foundMatch := false
+			// dispatch pack to output plugins, 1 to many
+			for _, matcher := range r.outputMatchers {
+				if matcher != nil && matcher.Match(pack) {
+					foundMatch = true
+
+					matcher.InChan() <- pack.incRef()
+				}
+			}
+
+			// dispatch pack to filter plugins, 1 to many
+			for _, matcher := range r.filterMatchers {
+				if matcher != nil && matcher.Match(pack) {
+					foundMatch = true
+
+					matcher.InChan() <- pack.incRef()
+				}
+			}
+
+			if !foundMatch {
+				// Maybe we closed all filter/output inChan, but there
+				// still exits some remnant packs in router.hub.
+				// To handle r issue, Input/Output should be stateful.
+				log.Debug("no match: %+v", pack)
+			}
+
+			// never forget this!
+			// if no sink found, this packet is recycled directly for latter use
+			pack.Recycle()
+
 		case <-r.stopper:
 			// now Input has all stopped
 			// start to drain in-flight packets from Filter|Output plugins
@@ -185,41 +220,6 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 				}
 			}
 
-		case pack = <-r.hub:
-			// the packet can be from: Input|Filter|Output
-			if globals.RouterTrack {
-				r.metrics.Update(pack) // dryrun throughput 2.1M/s -> 1.6M/s
-			}
-
-			foundMatch := false
-			// dispatch pack to output plugins, 1 to many
-			for _, matcher := range r.outputMatchers {
-				if matcher != nil && matcher.Match(pack) {
-					foundMatch = true
-
-					matcher.InChan() <- pack.incRef()
-				}
-			}
-
-			// dispatch pack to filter plugins, 1 to many
-			for _, matcher := range r.filterMatchers {
-				if matcher != nil && matcher.Match(pack) {
-					foundMatch = true
-
-					matcher.InChan() <- pack.incRef()
-				}
-			}
-
-			if !foundMatch {
-				// Maybe we closed all filter/output inChan, but there
-				// still exits some remnant packs in router.hub.
-				// To handle r issue, Input/Output should be stateful.
-				log.Debug("no match: %+v", pack)
-			}
-
-			// never forget this!
-			// if no sink found, this packet is recycled directly for latter use
-			pack.Recycle()
 		}
 	}
 
