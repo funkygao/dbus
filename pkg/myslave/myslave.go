@@ -99,7 +99,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 
 	m.m = newMetrics(m.name)
 	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
-		m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+		m.dsn, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }
@@ -154,4 +154,9 @@ func (m *MySlave) Events() <-chan *model.RowsEvent {
 // Errors returns the iterator of unexpected errors.
 func (m *MySlave) Errors() <-chan error {
 	return m.errors
+}
+
+// DSN returns the data source name of the mysql connection.
+func (m *MySlave) DSN() string {
+	return m.dsn
 }

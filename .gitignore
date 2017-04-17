@@ -33,6 +33,7 @@ _testmain.go
 hh/
 .target/
 var/
+engine.png
 
 cmd/dbusd/dbusd
 pkg/kafka/kpub/kpub

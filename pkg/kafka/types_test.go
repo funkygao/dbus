@@ -8,10 +8,10 @@ import (
 
 func TestParseDSNs(t *testing.T) {
 	dsns := []string{
-		"test://trade/orders#0",
-		"prod://user/teacher#2",
-		"prod://user/teacher#3",
-		"prod://user/foobar#1",
+		"kafka:test://trade/orders#0",
+		"kafka:prod://user/teacher#2",
+		"kafka:prod://user/teacher#3",
+		"kafka:prod://user/foobar#1",
 	}
 
 	tps, err := parseDSNs(dsns)

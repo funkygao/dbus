@@ -44,6 +44,8 @@ func (e *Engine) launchAPIServer() {
 func (e *Engine) stopAPIServer() {
 	if e.apiListener != nil {
 		e.apiListener.Close()
+		e.apiListener = nil
+
 		log.Info("API server stopped")
 	}
 }

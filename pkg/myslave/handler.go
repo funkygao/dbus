@@ -10,7 +10,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 	schema := string(e.Table.Schema)
 	table := string(e.Table.Table)
 	if !m.Predicate(schema, table) {
-		log.Debug("[%s] ignored[%s.%s]: %+v %+v", m.masterAddr, schema, table, h, e)
+		log.Debug("[%s] ignored[%s.%s]: %+v %+v", m.dsn, schema, table, h, e)
 		m.commitPosition(f, h.LogPos) // FIXME batcher partial failure?
 		return
 	}
@@ -27,7 +27,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		action = "U"
 
 	default:
-		log.Warn("[%s] %s not supported: %+v", m.masterAddr, h.EventType, e)
+		log.Warn("[%s] %s not supported: %+v", m.dsn, h.EventType, e)
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 	"os"
 	"regexp"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/funkygao/gafka/ctx"
@@ -14,31 +13,26 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-const (
-	RELOAD  = "reload"
-	STOP    = "stop"
-	SIGUSR1 = "user1"
-	SIGUSR2 = "user2"
-)
-
 var (
 	availablePlugins = make(map[string]func() Plugin) // name:factory
 	pluginTypeRegex  = regexp.MustCompile("^.*(Filter|Input|Output)$")
 
 	// Globals returns the global configurations of dbus.
+	// We export func instead of var to prevent the global var from being overwritten.
 	Globals func() *GlobalConfig
 )
 
 // GlobalConfig is the struct for holding global config values.
 type GlobalConfig struct {
 	*conf.Conf
+	stopping bool
 
 	StartedAt      time.Time
-	Stopping       bool
 	Debug          bool
 	ClusterEnabled bool
 	Zone           string // used to locate kguard
 	RouterTrack    bool
+	WatchdogTick   time.Duration
 
 	RPCPort int
 	APIPort int
@@ -52,21 +46,11 @@ type GlobalConfig struct {
 	HubChanSize           int
 	PluginChanSize        int
 
-	WatchdogTick time.Duration
-
 	// registry is used to hold the global object shared between plugins.
 	registry map[string]interface{}
 	regMu    sync.RWMutex
 
 	sigChan chan os.Signal
-}
-
-func (g *GlobalConfig) Shutdown() {
-	g.Kill(syscall.SIGINT)
-}
-
-func (g *GlobalConfig) Kill(sig os.Signal) {
-	g.sigChan <- sig
 }
 
 func (g *GlobalConfig) GetOrRegisterZkzone(zone string) *zk.ZkZone {

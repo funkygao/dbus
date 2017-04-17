@@ -11,8 +11,7 @@ type Plugin interface {
 	Init(config *conf.Conf)
 }
 
-// Restarter is used for Filter or Output plugin for callback
-// when the plugin restarts.
+// Restarter is used for plugin for callback when the plugin restarts.
 // Return value determines whether restart it or run once.
 type Restarter interface {
 	CleanupForRestart() bool
@@ -32,6 +31,7 @@ type Acker interface {
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.
+// If duplicated name found, panic!
 func RegisterPlugin(name string, factory func() Plugin) {
 	if _, present := availablePlugins[name]; present {
 		panic(fmt.Sprintf("plugin[%s] cannot register twice", name))
@@ -58,9 +58,11 @@ func (pw *pluginWrapper) Create() (plugin Plugin) {
 type pluginCommons struct {
 	name  string
 	class string
+	cf    *conf.Conf
 }
 
 func (pc *pluginCommons) loadConfig(section *conf.Conf) {
+	pc.cf = section
 	if pc.name = section.String("name", ""); pc.name == "" {
 		panic(fmt.Sprintf("name is required"))
 	}

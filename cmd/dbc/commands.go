@@ -38,6 +38,13 @@ func init() {
 			}, nil
 		},
 
+		"config": func() (cli.Command, error) {
+			return &command.Config{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"upgrade": func() (cli.Command, error) {
 			return &command.Upgrade{
 				Ui:  ui,
@@ -75,13 +82,6 @@ func init() {
 
 		"participants": func() (cli.Command, error) {
 			return &command.Participants{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
-		"binlog": func() (cli.Command, error) {
-			return &command.Binlog{
 				Ui:  ui,
 				Cmd: cmd,
 			}, nil

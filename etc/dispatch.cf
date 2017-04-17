@@ -5,7 +5,7 @@
         {
             name: "binlog"
             class: "MysqlbinlogInput"
-            dsn: "local://root:@localhost:3306"
+            dsn: "mysql:local://root:@localhost:3306"
             pos_commit_interval: "1s"
             event_buffer_len: 100
             // 2 databases: db1, db2

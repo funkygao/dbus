@@ -4,11 +4,11 @@ package engine
 
 // matcher belongs to the singleton router, it requires no lock.
 type matcher struct {
-	runner  FilterOutputRunner
+	runner  *foRunner
 	matches map[string]bool
 }
 
-func newMatcher(matches []string, r FilterOutputRunner) *matcher {
+func newMatcher(matches []string, r *foRunner) *matcher {
 	m := new(matcher)
 	m.matches = make(map[string]bool)
 	for _, match := range matches {
@@ -19,7 +19,7 @@ func newMatcher(matches []string, r FilterOutputRunner) *matcher {
 }
 
 func (m *matcher) InChan() chan *Packet {
-	return m.runner.InChan()
+	return m.runner.inChan
 }
 
 func (m *matcher) Match(pack *Packet) bool {

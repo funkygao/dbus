@@ -21,6 +21,7 @@ type Config struct {
 	consumeChanBufSize int
 
 	Sarama *sarama.Config
+	QoS    QoS
 }
 
 // DefaultConfig creates a default Config as async producer.
@@ -67,6 +68,7 @@ func DefaultConfig() *Config {
 		async:              true,
 		dryrun:             false,
 		consumeChanBufSize: 1 << 8,
+		QoS:                LossTolerant,
 	}
 }
 
@@ -84,6 +86,16 @@ func (c *Config) SyncMode() *Config {
 	c.Sarama.Producer.Flush.Frequency = 0
 	c.Sarama.Producer.Flush.Bytes = 0
 	c.Sarama.Producer.Flush.Messages = 0
+	return c
+}
+
+func (c *Config) LossTolerant() *Config {
+	c.QoS = LossTolerant
+	return c
+}
+
+func (c *Config) ThroughputFirst() *Config {
+	c.QoS = ThroughputFirst
 	return c
 }
 

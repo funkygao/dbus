@@ -2,7 +2,6 @@ package zk
 
 import (
 	"path"
-	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
@@ -26,10 +25,6 @@ type checkpointZK struct {
 }
 
 func New(zkzone *zk.ZkZone, state checkpoint.State, zroot string, zpath string, interval time.Duration) checkpoint.Checkpoint {
-	if strings.Contains(zpath, "/") {
-		panic("zpath illegal")
-	}
-
 	if len(zroot) > 0 {
 		root = zroot
 	}

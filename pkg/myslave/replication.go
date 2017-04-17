@@ -41,7 +41,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 	m.errors = make(chan error, 1)
 
 	m.r = replication.NewBinlogSyncer(&replication.BinlogSyncerConfig{
-		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough?
+		ServerID:        uint32(m.c.Int("server_id", 137)), // 137 unique enough? TODO
 		Flavor:          m.c.String("flavor", mysql.MySQLFlavor),
 		Host:            m.host,
 		Port:            m.port,
@@ -159,7 +159,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
 			// e.Position is End_log_pos(i,e. next log position)
-			log.Trace("[%s] rotate to (%s, %d)", m.name, file, e.Position)
+			log.Trace("[%s] events rotate to (%s, %d)", m.name, file, e.Position)
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)

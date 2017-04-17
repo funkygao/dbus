@@ -31,15 +31,15 @@ func (this *Plugins) Run(args []string) (exitCode int) {
 	}
 
 	e := engine.New(nil).LoadFrom(this.fn)
-	lines := []string{"Plugin|Name|Class"}
+	lines := []string{"Plugin|Name|Class|Configuration"}
 	for _, ir := range e.InputRunners {
-		lines = append(lines, fmt.Sprintf("Input|%s|%s", ir.Name(), ir.Class()))
+		lines = append(lines, fmt.Sprintf("Input|%s|%s|%v", ir.Name(), ir.Class(), ir.Conf().Content()))
 	}
 	for _, fr := range e.FilterRunners {
-		lines = append(lines, fmt.Sprintf("Filter|%s|%s", fr.Name(), fr.Class()))
+		lines = append(lines, fmt.Sprintf("Filter|%s|%s|%v", fr.Name(), fr.Class(), fr.Conf().Content()))
 	}
 	for _, or := range e.OutputRunners {
-		lines = append(lines, fmt.Sprintf("Output|%s|%s", or.Name(), or.Class()))
+		lines = append(lines, fmt.Sprintf("Output|%s|%s|%v", or.Name(), or.Class(), or.Conf().Content()))
 	}
 
 	if len(lines) > 1 {

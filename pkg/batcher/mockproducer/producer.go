@@ -26,7 +26,7 @@ var (
 type producer struct {
 	wg sync.WaitGroup
 
-	batcher *batcher.Batcher
+	batcher batcher.Batcher
 
 	kafkaOutDatas []int
 	kafkaOut      chan int
@@ -39,7 +39,7 @@ type producer struct {
 
 func newProducer() *producer {
 	p := &producer{
-		batcher:       batcher.New(batchSize),
+		batcher:       batcher.NewDisruptor(batchSize),
 		kafkaOutDatas: []int{},
 		kafkaOut:      make(chan int, 25),
 		kafkaSentOk:   sequence.New(),

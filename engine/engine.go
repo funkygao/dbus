@@ -21,7 +21,6 @@ import (
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/go-metrics"
-	"github.com/funkygao/golib/observer"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
@@ -126,12 +125,6 @@ func New(globals *GlobalConfig) *Engine {
 	}
 }
 
-func (e *Engine) stopInputRunner(name string) {
-	e.Lock()
-	e.InputRunners[name] = nil
-	e.Unlock()
-}
-
 // ClonePacket is used for plugin Filter to generate new Packet: copy on write.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
@@ -170,7 +163,6 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 
 		name := e.loadPluginSection(section)
 		if _, duplicated := pluginNames[name]; duplicated {
-			// router.metrics will be bad with dup name
 			panic("duplicated plugin name: " + name)
 		}
 		pluginNames[name] = struct{}{}
@@ -295,7 +287,7 @@ func (e *Engine) ServeForever() (ret error) {
 	// setup signal handler first to avoid race condition
 	// if Input terminates very fast, global.Shutdown will not be able to trap it
 	globals.sigChan = make(chan os.Signal)
-	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(globals.sigChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 
 	e.launchAPIServer()
 
@@ -311,18 +303,14 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Output[%s]...", outputRunner.Name())
 
 		outputsWg.Add(1)
-		if err = outputRunner.start(e, outputsWg); err != nil {
-			panic(err)
-		}
+		outputRunner.forkAndRun(e, outputsWg)
 	}
 
 	for _, filterRunner := range e.FilterRunners {
 		log.Debug("launching Filter[%s]...", filterRunner.Name())
 
 		filtersWg.Add(1)
-		if err = filterRunner.start(e, filtersWg); err != nil {
-			panic(err)
-		}
+		filterRunner.forkAndRun(e, filtersWg)
 	}
 
 	for inputName := range e.inputRecycleChans {
@@ -346,9 +334,7 @@ func (e *Engine) ServeForever() (ret error) {
 		log.Debug("launching Input[%s]...", inputRunner.Name())
 
 		inputsWg.Add(1)
-		if err = inputRunner.start(e, inputsWg); err != nil {
-			panic(err)
-		}
+		inputRunner.forkAndRun(e, inputsWg)
 	}
 
 	if globals.ClusterEnabled {
@@ -369,15 +355,16 @@ func (e *Engine) ServeForever() (ret error) {
 	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
 	log.Info("engine started")
-	for !globals.Stopping {
+	globals.stopping = false
+	for !globals.stopping {
 		select {
 		case <-configChanged:
-			log.Info("%s changed, closing...", e.Conf.ConfPath())
-			globals.Stopping = true
+			log.Info("%s changed, shutdown...", e.Conf.ConfPath())
+			globals.stopping = true
 
 		case <-e.shutdown:
 			log.Info("shutdown...")
-			globals.Stopping = true
+			globals.stopping = true
 
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
@@ -385,61 +372,45 @@ func (e *Engine) ServeForever() (ret error) {
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP:
 				log.Info("shutdown...")
-				globals.Stopping = true
+				globals.stopping = true
 				ret = ErrQuitingSigal
-
-			case syscall.SIGUSR1:
-				observer.Publish(SIGUSR1, nil)
-
-			case syscall.SIGUSR2:
-				observer.Publish(SIGUSR2, nil)
 			}
 
-		case err := <-e.pluginPanicCh:
+		case ret = <-e.pluginPanicCh:
 			log.Info("plugin panic, stopping...")
-			ret = err
-			globals.Stopping = true
+			globals.stopping = true
 		}
 	}
 
 	close(e.stopper)
 
-	if telemetry.Default != nil {
-		telemetry.Default.Stop()
-	}
-
-	e.Lock()
-	for _, inputRunner := range e.InputRunners {
-		if inputRunner == nil {
-			// the Input plugin already exit
-			continue
-		}
-
-		log.Debug("Stop message sent to %s", inputRunner.Name())
-		inputRunner.Input().Stop(inputRunner)
-	}
-	e.Unlock()
-	inputsWg.Wait() // wait for all inputs done
-
-	// ok, now we are sure no more inputs, but in route.inChan there
-	// still may be filter injected packs and output not consumed packs
-	// we must wait for all the packs to be consumed before shutdown
-
-	for _, filterRunner := range e.FilterRunners {
-		log.Debug("Stop message sent to %s", filterRunner.Name())
-		e.router.removeFilterMatcher <- filterRunner.getMatcher()
-	}
-	filtersWg.Wait()
-
-	for _, outputRunner := range e.OutputRunners {
-		log.Debug("Stop message sent to %s", outputRunner.Name())
-		e.router.removeOutputMatcher <- outputRunner.getMatcher()
-	}
-	outputsWg.Wait()
+	inputsWg.Wait()
 
 	e.router.Stop()
 	routerWg.Wait()
 	log.Info("Router stopped")
+
+	filtersWg.Wait()
+	outputsWg.Wait()
+
+	for _, inputRunner := range e.InputRunners {
+		log.Trace("[%s] StopAcker", inputRunner.Name())
+		inputRunner.Input().StopAcker(inputRunner)
+	}
+
+	log.Info("all %d plugins fully stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
+
+	// now more packet flow, safe to close
+	close(e.filterRecycleChan)
+	for _, c := range e.inputRecycleChans {
+		close(c)
+	}
+
+	// needn't close registered zkzones, they will not raise leakage
+
+	if telemetry.Default != nil {
+		telemetry.Default.Stop()
+	}
 
 	e.stopAPIServer()
 

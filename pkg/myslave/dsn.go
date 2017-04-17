@@ -5,12 +5,22 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	parser "github.com/funkygao/dbus/pkg/dsn"
 )
 
 // ParseDSN parse mysql DSN(data source name).
-// The DSN is in the form of zone://user:pass@host:port/db1,db2,...,dbn
+// The DSN is in the form of mysql:zone://user:pass@host:port/db1,db2,...,dbn
 // The zone is used for zk checkpoint.
 func ParseDSN(dsn string) (zone, host string, port uint16, username, passwd string, dbs []string, err error) {
+	var scheme string
+	if scheme, dsn, err = parser.Parse(dsn); err != nil {
+		return
+	} else if scheme != "mysql" {
+		err = parser.ErrIllegalDSN
+		return
+	}
+
 	var u *url.URL
 	if u, err = url.Parse(dsn); err != nil {
 		return

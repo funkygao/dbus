@@ -17,6 +17,16 @@ type Payloader interface {
 	Encode() ([]byte, error)
 }
 
+// KeyValuer is an interface that can be applied on Payloader.
+type KeyValuer interface {
+
+	// Get returns value of the key.
+	Get(k string) (v interface{}, ok bool)
+
+	// Set stores a value for the key.
+	Set(k string, v interface{})
+}
+
 // Packet is the pipeline data structure that is transferred between plugins.
 //
 // TODO hide it to private.
@@ -38,7 +48,7 @@ type Packet struct {
 	Metadata interface{}
 
 	_padding4 [sys.CacheLineSize / 8]uint64
-	input     Acker
+	acker     Acker
 
 	_padding5 [sys.CacheLineSize / 8]uint64
 	Payload   Payloader
@@ -60,13 +70,13 @@ func (p *Packet) incRef() *Packet {
 }
 
 func (p *Packet) String() string {
-	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.input, atomic.LoadInt32(&p.refCount), p.Payload)
+	return fmt.Sprintf("{%s, %+v, %d, %+v}", p.Ident, p.acker, atomic.LoadInt32(&p.refCount), p.Payload)
 }
 
 // copyTo will copy itself to another Packet.
 func (p *Packet) copyTo(other *Packet) {
 	other.Ident = p.Ident
-	other.input = p.input
+	other.acker = p.acker
 	other.Payload = p.Payload // FIXME clone deep copy
 }
 
@@ -74,7 +84,13 @@ func (p *Packet) Reset() {
 	p.refCount = int32(1)
 	p.Ident = ""
 	p.Payload = nil
-	p.input = nil
+	p.acker = nil
+}
+
+// ack notifies the Packet's source Input that it is successfully processed.
+// ack is called by Output plugin.
+func (p *Packet) ack() error {
+	return p.acker.OnAck(p)
 }
 
 // Recycle decrement packet reference count and place it back
