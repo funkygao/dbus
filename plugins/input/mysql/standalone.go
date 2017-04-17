@@ -9,10 +9,17 @@ import (
 )
 
 func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper) error {
+	defer func() {
+		if this.slave != nil {
+			this.slave.StopReplication()
+		}
+	}()
+
 	globals := engine.Globals()
 	ex := r.Exchange()
 	name := r.Name()
 	backoff := time.Second * 5
+	stopper := r.Stopper()
 
 	this.slave = myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
 	if err := this.slave.AssertValidRowFormat(); err != nil {
@@ -27,14 +34,14 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 		if img, err := this.slave.BinlogRowImage(); err != nil {
 			log.Error("[%s] %v", name, err)
 		} else {
-			log.Trace("[%s] binlog row image=%s", name, img)
+			log.Debug("[%s] binlog row image=%s", name, img)
 		}
 
 		ready := make(chan struct{})
 		go this.slave.StartReplication(ready)
 		select {
 		case <-ready:
-		case <-this.stopChan:
+		case <-stopper:
 			log.Debug("[%s] yes sir!", name)
 			return nil
 		}
@@ -43,7 +50,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 		errors := this.slave.Errors()
 		for {
 			select {
-			case <-this.stopChan:
+			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 
@@ -56,18 +63,13 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 				select {
 				case <-time.After(backoff):
-				case <-this.stopChan:
+				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
 					return nil
 				}
 				goto RESTART_REPLICATION
 
-			case pack, ok := <-ex.InChan():
-				if !ok {
-					log.Debug("[%s] yes sir!", name)
-					return nil
-				}
-
+			case pack := <-ex.InChan():
 				select {
 				case err := <-errors:
 					log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
@@ -75,7 +77,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 					select {
 					case <-time.After(backoff):
-					case <-this.stopChan:
+					case <-stopper:
 						log.Debug("[%s] yes sir!", name)
 						return nil
 					}
@@ -96,7 +98,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 						pack.Recycle()
 					}
 
-				case <-this.stopChan:
+				case <-stopper:
 					log.Debug("[%s] yes sir!", name)
 					return nil
 				}

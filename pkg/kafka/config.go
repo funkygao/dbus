@@ -89,6 +89,16 @@ func (c *Config) SyncMode() *Config {
 	return c
 }
 
+func (c *Config) LossTolerant() *Config {
+	c.QoS = LossTolerant
+	return c
+}
+
+func (c *Config) ThroughputFirst() *Config {
+	c.QoS = ThroughputFirst
+	return c
+}
+
 // SyncMode will switch the kafka producer to async mode.
 func (c *Config) AsyncMode() *Config {
 	c.async = true

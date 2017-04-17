@@ -5,10 +5,20 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	parser "github.com/funkygao/dbus/pkg/dsn"
 )
 
-// ParseDSN parse the kafka DSN which is in the form of: zone://cluster/topic#partition.
+// ParseDSN parse the kafka DSN which is in the form of: kafka:zone://cluster/topic#partition.
 func ParseDSN(dsn string) (zone, cluster, topic string, partitionID int32, err error) {
+	var scheme string
+	if scheme, dsn, err = parser.Parse(dsn); err != nil {
+		return
+	} else if scheme != "kafka" {
+		err = parser.ErrIllegalDSN
+		return
+	}
+
 	var u *url.URL
 	if u, err = url.Parse(dsn); err != nil {
 		return

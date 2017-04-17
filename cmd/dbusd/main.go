@@ -14,6 +14,7 @@ import (
 	"github.com/funkygao/log4go"
 
 	// bootstrap plugins
+	_ "github.com/funkygao/dbus/plugins"
 	_ "github.com/funkygao/dbus/plugins/filter"
 	_ "github.com/funkygao/dbus/plugins/input"
 	_ "github.com/funkygao/dbus/plugins/output"
@@ -92,8 +93,6 @@ func main() {
 			// e,g. SIGTERM received
 			break
 		}
-
-		globals.Stopping = false
 	}
 
 	log4go.Info("dbus[%s@%s] %s, bye!", dbus.Revision, dbus.Version, time.Since(t0))

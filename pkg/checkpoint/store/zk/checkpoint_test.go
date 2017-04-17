@@ -22,7 +22,7 @@ func init() {
 
 func TestRealPath(t *testing.T) {
 	s := binlog.New("", "")
-	assert.Equal(t, "/dbus/checkpoint/myslave/12.12.1.2:3334", realPath(s, "12.12.1.2:3334"))
+	assert.Equal(t, "/dbus/checkpoint/myslave/12.12.1.2%3A3334", realPath(s, "12.12.1.2:3334"))
 }
 
 func TestCheckpointZKBinlog(t *testing.T) {

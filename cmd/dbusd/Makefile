@@ -29,22 +29,22 @@ complex:buildrace
 	./dbusd -conf ../../etc/complex.cf
 
 resource:
-	dbc resources -add in.binlog-local://root@localhost:3306
+	dbc resources -add in.binlog-mysql:local://root@localhost:3306
 
 resources:
-	dbc resources -add in.test-local://root@localhost:3306/test
-	dbc resources -add in.mysql-local://root@localhost:3306/mysql
+	dbc resources -add in.test-mysql:local://root@localhost:3306/test
+	dbc resources -add in.mysql-mysql:local://root@localhost:3306/mysql
 
 zkconf:
 	@cat ../../etc/canal_many.cf | zk set -p /dbus/conf
 
 sub:build
 	@cat ../../etc/sub.cf | zk set -p /dbus/conf
-	-dbc resources -add in.kafka-local://me/foobar#0
+	-dbc resources -add in.kafka-kafka:local://me/foobar#0
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 canal:build zkconf resources
-	-dbc resources -add in.binlog-local://root@localhost:3306
+	-dbc resources -add in.binlog-mysql:local://root@localhost:3306
 	UPGRADE_ENDPOINT=http://localhost/dbusd ./dbusd -cluster
 
 c1:build zkconf

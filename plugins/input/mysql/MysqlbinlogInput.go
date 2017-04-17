@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"sync"
+
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
@@ -12,44 +14,50 @@ import (
 // slave and consumes mysql binlog events.
 type MysqlbinlogInput struct {
 	maxEventLength int
-	stopChan       chan struct{}
+	cf             *conf.Conf
+	clusterMode    bool
 
-	slave *myslave.MySlave
-	cf    *conf.Conf
+	mu     sync.RWMutex
+	slaves map[string]*myslave.MySlave // cluster mode, key is DSN
+	slave  *myslave.MySlave            // standalone mode
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.cf = config
-	this.stopChan = make(chan struct{})
-}
-
-func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
-	log.Debug("[%s] stopping...", r.Name())
-
-	close(this.stopChan)
-	if this.slave != nil {
-		this.slave.StopReplication()
+	if dsn := this.cf.String("dsn", ""); len(dsn) == 0 {
+		this.clusterMode = true
+		this.slaves = make(map[string]*myslave.MySlave)
 	}
-}
-
-func (this *MysqlbinlogInput) MySlave() *myslave.MySlave {
-	return this.slave
-}
-
-// used only for dbc: ugly design
-func (this *MysqlbinlogInput) ConnectMyslave(dsn string) {
-	this.slave = myslave.New("", dsn, engine.Globals().ZrootCheckpoint).LoadConfig(this.cf)
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
-	return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
-}
-
-func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
-	if dsn := r.Conf().String("dsn", ""); len(dsn) > 0 {
-		return this.runStandalone(dsn, r, h)
+	if !this.clusterMode {
+		return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 	}
 
-	return this.runClustered(r, h)
+	dsn := pack.Metadata.(string)
+	this.mu.RLock()
+	slave := this.slaves[dsn]
+	this.mu.RUnlock()
+
+	if slave == nil {
+		log.Warn("unrecognized DSN: %s", dsn)
+		return nil
+	}
+
+	// cluster mode
+	// FIXME
+	// race condition: in cluster mode, when ACK, the slave might have been gone
+	return slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
+}
+
+func (this *MysqlbinlogInput) StopAcker(r engine.InputRunner) {}
+
+func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
+	if this.clusterMode {
+		return this.runClustered(r, h)
+	}
+
+	return this.runStandalone(this.cf.String("dsn", ""), r, h)
 }

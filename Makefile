@@ -44,6 +44,7 @@ help:
 	@echo "    make misspell    : Detect commonly misspelled words in source files"
 	@echo "    make astscan     : GO AST scanner"
 	@echo "    make loc         : Line of code"
+	@echo "    make vis         : Visualize package dependencies"
 	@echo "    make generate    : Recursively invoke go generate"
 	@echo "    make escape      : Escape analysis"
 	@echo ""
@@ -147,6 +148,7 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/HewlettPackard/gas
 	GOPATH=$(GOPATH) go get github.com/dominikh/go-tools
 	GOPATH=$(GOPATH) go get github.com/pquerna/ffjson
+	GOPATH=$(GOPATH) go get github.com/hirokidaichi/goviz
 	GOPATH=$(GOPATH) go get github.com/wgliang/goreporter
 
 # Remove any build artifact
@@ -164,6 +166,10 @@ generate:
 # Report the golang line of code
 loc:
 	@find . -name "*.go" | xargs wc -l | tail -1
+
+vis:
+	goviz -i github.com/funkygao/dbus/engine | dot -Tpng -o engine.png
+	open engine.png
 
 # Install dbsud to $GOPATH/bin
 dbusd:generate

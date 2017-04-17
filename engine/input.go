@@ -20,11 +20,13 @@ type Input interface {
 
 	Acker
 
+	// StopAcker notifies Input plugin it is safe to close the Acker.
+	// When Input stops, Filter|Output might still depend on Input ack, that is what
+	// StopAcker for.
+	StopAcker(r InputRunner)
+
 	// Run starts the main loop of the Input plugin.
 	Run(r InputRunner, h PluginHelper) (err error)
-
-	// Stop is the callback which stops the Input plugin.
-	Stop(InputRunner)
 }
 
 // InputRunner is a helper for Input plugin to access some context data.
@@ -33,6 +35,9 @@ type InputRunner interface {
 
 	// Input returns the associated Input plugin object.
 	Input() Input
+
+	// Stopper returns a channel for plugins to get notified when engine stops.
+	Stopper() <-chan struct{}
 
 	// Resources returns a channel that notifies Input plugin of the newly assigned resources in a cluster.
 	// The newly assigned resource might be empty, which means the Input plugin should stop consuming the resource.
@@ -45,10 +50,10 @@ type iRunner struct {
 	inChan chan *Packet
 
 	resourcesCh chan []cluster.Resource
-	panicCh     chan error
+	panicCh     chan<- error
 }
 
-func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan error) (r *iRunner) {
+func newInputRunner(input Input, pluginCommons *pluginCommons, panicCh chan<- error) (r *iRunner) {
 	return &iRunner{
 		pRunnerBase: pRunnerBase{
 			plugin:        input.(Plugin),
@@ -68,16 +73,20 @@ func (ir *iRunner) Inject(pack *Packet) {
 		pack.Ident = ir.Name()
 	}
 
-	pack.input = ir.Input()
+	pack.acker = ir.Input()
 	ir.engine.router.hub <- pack
 }
 
-func (ir *iRunner) InChan() chan *Packet {
+func (ir *iRunner) InChan() <-chan *Packet {
 	return ir.inChan
 }
 
 func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
+}
+
+func (ir *iRunner) Stopper() <-chan struct{} {
+	return ir.engine.stopper
 }
 
 func (ir *iRunner) feedResources(resources []cluster.Resource) {
@@ -88,12 +97,11 @@ func (ir *iRunner) Resources() <-chan []cluster.Resource {
 	return ir.resourcesCh
 }
 
-func (ir *iRunner) start(e *Engine, wg *sync.WaitGroup) error {
+func (ir *iRunner) forkAndRun(e *Engine, wg *sync.WaitGroup) {
 	ir.engine = e
 	ir.inChan = e.inputRecycleChans[ir.Name()]
 
 	go ir.runMainloop(e, wg)
-	return nil
 }
 
 func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
@@ -110,7 +118,11 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			case error:
 				reason = panicErr
 			}
-			ir.panicCh <- reason
+			select {
+			case ir.panicCh <- reason:
+			default:
+				log.Warn("[%s] %s", ir.Name(), reason)
+			}
 		}
 	}()
 
@@ -123,17 +135,13 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			log.Error("Input[%s] stopped: %v", ir.Name(), err)
 		}
 
-		if globals.Stopping {
-			e.stopInputRunner(ir.Name())
-
+		if globals.stopping {
 			return
 		}
 
 		if restart, ok := ir.plugin.(Restarter); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
-				e.stopInputRunner(ir.Name())
-
 				return
 			}
 		}

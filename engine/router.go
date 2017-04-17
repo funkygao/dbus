@@ -28,19 +28,19 @@ A normal packet lifecycle:
     |          +-------------------------------+
     |                          |
     |                   +-------------+
-    |                   | | | | | | | | Hub(hpool)
-    |                   +-------------+
-    |                          |
-    |          |-------------------------------------+
-    |          |                                     |
-    |   +-------------+                       +-------------+
-    |   | | | | | | | | Output/Filter(ppool)  | | | | | | | | Output/Filter(ppool)
-    |   +-------------+                       +-------------+
-    |          |                                     |
-    |          +-------------------------------------+
-    |                        |
-	+-------<----------------+
-	     Recycle
+    |                   | | | | | | | | Hub(hpool) <------------------------------------+
+    |                   +-------------+													|
+    |                          |														|
+    |          |-------------------------------------+									|
+    |          |                                     |									|
+    |   +-------------+                       +-------------+							|
+    |   | | | | | | | | Output/Filter(ppool)  | | | | | | | | Output/Filter(ppool)		|
+    |   +-------------+                       +-------------+							|
+    |          |                                     |									|
+    |          +-------------------------------------+									|
+    |                        |    |														|
+	+-------<----------------+	  +------------->---------------------------------------+
+	     Recycle                             Inject
 
 
 A normal cloned packet lifecycle:
@@ -65,13 +65,10 @@ A normal cloned packet lifecycle:
 
 */
 type Router struct {
-	hub     chan *Packet
 	stopper chan struct{}
-
 	metrics *routerMetrics
 
-	removeFilterMatcher chan *matcher
-	removeOutputMatcher chan *matcher
+	hub chan *Packet
 
 	filterMatchers []*matcher
 	outputMatchers []*matcher
@@ -79,13 +76,11 @@ type Router struct {
 
 func newRouter() *Router {
 	return &Router{
-		hub:                 make(chan *Packet, Globals().HubChanSize),
-		stopper:             make(chan struct{}),
-		metrics:             newMetrics(),
-		removeFilterMatcher: make(chan *matcher),
-		removeOutputMatcher: make(chan *matcher),
-		filterMatchers:      make([]*matcher, 0, 10),
-		outputMatchers:      make([]*matcher, 0, 10),
+		hub:            make(chan *Packet, Globals().HubChanSize),
+		stopper:        make(chan struct{}),
+		metrics:        newMetrics(),
+		filterMatchers: make([]*matcher, 0, 10),
+		outputMatchers: make([]*matcher, 0, 10),
 	}
 }
 
@@ -95,6 +90,139 @@ func (r *Router) addFilterMatcher(matcher *matcher) {
 
 func (r *Router) addOutputMatcher(matcher *matcher) {
 	r.outputMatchers = append(r.outputMatchers, matcher)
+}
+
+// Start starts the router: dispatch pack from Input to MatchRunners.
+func (r *Router) Start(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	wg.Add(1)
+	go r.runReporter(wg)
+
+	log.Info("Router started with hub pool=%d", cap(r.hub))
+
+	var (
+		globals = Globals()
+		pack    *Packet
+	)
+	for {
+		select {
+		case pack = <-r.hub:
+			// the packet can be from: Input|Filter|Output
+			if globals.RouterTrack {
+				r.metrics.Update(pack) // dryrun throughput 2.1M/s -> 1.6M/s
+			}
+
+			foundMatch := false
+			// dispatch pack to output plugins, 1 to many
+			for _, matcher := range r.outputMatchers {
+				if matcher != nil && matcher.Match(pack) {
+					foundMatch = true
+
+					matcher.InChan() <- pack.incRef()
+				}
+			}
+
+			// dispatch pack to filter plugins, 1 to many
+			for _, matcher := range r.filterMatchers {
+				if matcher != nil && matcher.Match(pack) {
+					foundMatch = true
+
+					matcher.InChan() <- pack.incRef()
+				}
+			}
+
+			if !foundMatch {
+				// Maybe we closed all filter/output inChan, but there
+				// still exits some remnant packs in router.hub.
+				// To handle r issue, Input/Output should be stateful.
+				log.Debug("no match: %+v", pack)
+			}
+
+			// never forget this!
+			// if no sink found, this packet is recycled directly for latter use
+			pack.Recycle()
+
+		case <-r.stopper:
+			// now Input has all stopped
+			// start to drain in-flight packets from Filter|Output plugins
+			for {
+				select {
+				case pack = <-r.hub:
+					if globals.RouterTrack {
+						r.metrics.Update(pack)
+					}
+
+					foundMatch := false
+					for _, matcher := range r.outputMatchers {
+						if matcher != nil && matcher.Match(pack) {
+							foundMatch = true
+
+							matcher.InChan() <- pack.incRef()
+						}
+					}
+					for _, matcher := range r.filterMatchers {
+						if matcher != nil && matcher.Match(pack) {
+							foundMatch = true
+
+							matcher.InChan() <- pack.incRef()
+						}
+					}
+					if !foundMatch {
+						log.Debug("no match: %+v", pack)
+					}
+
+					pack.Recycle()
+
+				default:
+					log.Trace("Router fully drained, stopping Filter|Output plugins...")
+
+					// async notify Filter|Output plugins to stop
+					for _, fm := range r.filterMatchers {
+						close(fm.InChan())
+					}
+					r.filterMatchers = nil
+					for _, om := range r.outputMatchers {
+						close(om.InChan())
+					}
+					r.outputMatchers = nil
+					close(r.hub)
+					return
+				}
+			}
+
+		}
+	}
+
+}
+
+func (r *Router) Stop() {
+	log.Debug("Router stopping...")
+	close(r.stopper)
+
+	if Globals().RouterTrack {
+		for ident, m := range r.metrics.m {
+			log.Trace("routed from [%s] %d", ident, m.Count())
+		}
+	}
+}
+
+func (r *Router) runReporter(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	t := time.NewTicker(Globals().WatchdogTick)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-t.C:
+			r.reportMatcherQueues()
+
+		case <-r.stopper:
+			r.reportMatcherQueues()
+			return
+		}
+	}
 }
 
 func (r *Router) reportMatcherQueues() {
@@ -123,118 +251,5 @@ func (r *Router) reportMatcherQueues() {
 
 	if full {
 		log.Trace(s)
-	}
-}
-
-// Start starts the router: dispatch pack from Input to MatchRunners.
-func (r *Router) Start(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	var (
-		globals    = Globals()
-		ok         = true
-		pack       *Packet
-		matcher    *matcher
-		foundMatch bool
-	)
-
-	wg.Add(1)
-	go r.runReporter(wg)
-
-	log.Info("Router started with hub pool=%d", cap(r.hub))
-
-LOOP:
-	for ok {
-		select {
-		case matcher = <-r.removeOutputMatcher:
-			r.removeMatcher(matcher, r.outputMatchers)
-
-		case matcher = <-r.removeFilterMatcher:
-			r.removeMatcher(matcher, r.filterMatchers)
-
-		case pack, ok = <-r.hub:
-			if !ok {
-				globals.Stopping = true
-				break LOOP
-			}
-
-			if globals.RouterTrack {
-				r.metrics.Update(pack) // dryrun throughput 1.8M/s -> 1.3M/s
-			}
-
-			foundMatch = false
-
-			// dispatch pack to output plugins, 1 to many
-			for _, matcher = range r.outputMatchers {
-				if matcher != nil && matcher.Match(pack) {
-					foundMatch = true
-
-					matcher.InChan() <- pack.incRef()
-				}
-			}
-
-			// dispatch pack to filter plugins, 1 to many
-			for _, matcher = range r.filterMatchers {
-				if matcher != nil && matcher.Match(pack) {
-					foundMatch = true
-
-					matcher.InChan() <- pack.incRef()
-				}
-			}
-
-			if !foundMatch {
-				// Maybe we closed all filter/output inChan, but there
-				// still exits some remnant packs in router.hub.
-				// To handle r issue, Input/Output should be stateful.
-				log.Debug("no match: %+v", pack)
-			}
-
-			// never forget this!
-			// if no sink found, this packet is recycled directly for latter use
-			pack.Recycle()
-		}
-	}
-
-}
-
-func (r *Router) Stop() {
-	log.Debug("Router stopping...")
-	close(r.hub)
-	close(r.stopper)
-
-	if Globals().RouterTrack {
-		for ident, m := range r.metrics.m {
-			log.Trace("routed to [%s] %d", ident, m.Count())
-		}
-	}
-}
-
-func (r *Router) runReporter(wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	t := time.NewTicker(Globals().WatchdogTick)
-	defer t.Stop()
-
-	for {
-		select {
-		case <-t.C:
-			r.reportMatcherQueues()
-
-		case <-r.stopper:
-			return
-		}
-	}
-
-}
-
-func (r *Router) removeMatcher(matcher *matcher, matchers []*matcher) {
-	for idx, m := range matchers {
-		if m == matcher {
-			log.Debug("closing matcher for %s", m.runner.Name())
-
-			close(m.InChan())
-			matchers[idx] = nil
-			return
-		}
 	}
 }

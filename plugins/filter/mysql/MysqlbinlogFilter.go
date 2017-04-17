@@ -31,7 +31,7 @@ type MysqlbinlogFilter struct {
 func (this *MysqlbinlogFilter) Init(config *conf.Conf) {}
 
 func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error {
-	for pack := range r.InChan() {
+	for pack := range r.Exchange().InChan() {
 		row, ok := pack.Payload.(*model.RowsEvent)
 		if !ok {
 			pack.Recycle()
@@ -42,7 +42,7 @@ func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper)
 
 		p := h.ClonePacket(pack)
 		p.Ident = row.Schema
-		r.Inject(p)
+		r.Exchange().Inject(p)
 
 		pack.Recycle()
 	}

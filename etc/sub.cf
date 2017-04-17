@@ -12,7 +12,7 @@
             name: "out.kafka"
             class: "KafkaOutput"
             reporter: true
-            dsn: "local://me/foobar"
+            dsn: "kafka:local://me/foobar"
             match: ["MockInput", ]
         }
 

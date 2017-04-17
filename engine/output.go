@@ -15,6 +15,6 @@ type OutputRunner interface {
 	// Output returns the underlying Output plugin.
 	Output() Output
 
-	// Ack notifies the packet's Input plugin that it is processed successfully.
+	// Ack notifies the packet's source Input plugin that it is processed successfully.
 	Ack(*Packet) error
 }

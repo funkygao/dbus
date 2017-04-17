@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseDSN(t *testing.T) {
-	dsn := "prod://user1:pass1@1.1.1.1:3306/"
+	dsn := "mysql:prod://user1:pass1@1.1.1.1:3306/"
 	zone, host, port, user, pass, dbs, err := ParseDSN(dsn)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "user1", user)
@@ -23,7 +23,7 @@ func TestParseDSN(t *testing.T) {
 	assert.Equal(t, false, err == nil)
 
 	// ParseDSN auto fill the schema
-	dsn = "prod://user1:pass1@1.1.1.1:3306"
+	dsn = "mysql:prod://user1:pass1@1.1.1.1:3306"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "user1", user)
@@ -33,12 +33,12 @@ func TestParseDSN(t *testing.T) {
 	assert.Equal(t, 0, len(dbs))
 
 	// missing port: error
-	dsn = "test://user1:pass1@1.1.1.1"
+	dsn = "mysql:test://user1:pass1@1.1.1.1"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, false, err == nil)
 
 	// empty password: ok
-	dsn = "prod://user1:@1.1.1.1:3306"
+	dsn = "mysql:prod://user1:@1.1.1.1:3306"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "user1", user)
@@ -48,20 +48,20 @@ func TestParseDSN(t *testing.T) {
 	assert.Equal(t, 0, len(dbs))
 
 	// 1 db in DSN
-	dsn = "uat://user1:@1.1.1.1:3306/db1"
+	dsn = "mysql:uat://user1:@1.1.1.1:3306/db1"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, 1, len(dbs))
 	assert.Equal(t, "db1", dbs[0])
 
 	// 2 dbs in DSN
-	dsn = "prod://user1:@1.1.1.1:3306/db1,db2"
+	dsn = "mysql:prod://user1:@1.1.1.1:3306/db1,db2"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, 2, len(dbs))
 	assert.Equal(t, "db1", dbs[0])
 	assert.Equal(t, "db2", dbs[1])
 
 	// 3 dbs in DSN, and auto trim space
-	dsn = "prod://user1:@1.1.1.1:3306/db1, db2,db3"
+	dsn = "mysql:prod://user1:@1.1.1.1:3306/db1, db2,db3"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, 3, len(dbs))
 	assert.Equal(t, "db1", dbs[0])
@@ -69,7 +69,7 @@ func TestParseDSN(t *testing.T) {
 	assert.Equal(t, "db3", dbs[2])
 
 	// 4 dbs in DSN, and 1 empty slot
-	dsn = "prod://user1:@1.1.1.1:3306/db1, db2,db3,,db4"
+	dsn = "mysql:prod://user1:@1.1.1.1:3306/db1, db2,db3,,db4"
 	zone, host, port, user, pass, dbs, err = ParseDSN(dsn)
 	assert.Equal(t, 4, len(dbs))
 	assert.Equal(t, "db1", dbs[0])
