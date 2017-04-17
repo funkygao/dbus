@@ -11,8 +11,7 @@ type Plugin interface {
 	Init(config *conf.Conf)
 }
 
-// Restarter is used for Filter or Output plugin for callback
-// when the plugin restarts.
+// Restarter is used for plugin for callback when the plugin restarts.
 // Return value determines whether restart it or run once.
 type Restarter interface {
 	CleanupForRestart() bool

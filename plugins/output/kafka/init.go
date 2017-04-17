@@ -5,7 +5,8 @@ import (
 )
 
 var (
-	_ engine.Output = &KafkaOutput{}
+	_ engine.Output    = &KafkaOutput{}
+	_ engine.Restarter = &KafkaOutput{}
 )
 
 func init() {
