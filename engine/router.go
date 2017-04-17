@@ -92,35 +92,6 @@ func (r *Router) addOutputMatcher(matcher *matcher) {
 	r.outputMatchers = append(r.outputMatchers, matcher)
 }
 
-func (r *Router) reportMatcherQueues() {
-	globals := Globals()
-	full := false
-	s := fmt.Sprintf("Queued hub=%d/%d", len(r.hub), globals.HubChanSize)
-	if len(r.hub) == globals.HubChanSize {
-		s = fmt.Sprintf("%s(F)", s)
-		full = true
-	}
-
-	for _, fm := range r.filterMatchers {
-		s = fmt.Sprintf("%s %s=%d/%d", s, fm.runner.Name(), len(fm.InChan()), globals.FilterRecyclePoolSize)
-		if len(fm.InChan()) == globals.PluginChanSize {
-			s = fmt.Sprintf("%s(F)", s)
-			full = true
-		}
-	}
-	for _, om := range r.outputMatchers {
-		s = fmt.Sprintf("%s %s=%d/%d", s, om.runner.Name(), len(om.InChan()), globals.PluginChanSize)
-		if len(om.InChan()) == globals.PluginChanSize {
-			s = fmt.Sprintf("%s(F)", s)
-			full = true
-		}
-	}
-
-	if full {
-		log.Trace(s)
-	}
-}
-
 // Start starts the router: dispatch pack from Input to MatchRunners.
 func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -251,5 +222,34 @@ func (r *Router) runReporter(wg *sync.WaitGroup) {
 			r.reportMatcherQueues()
 			return
 		}
+	}
+}
+
+func (r *Router) reportMatcherQueues() {
+	globals := Globals()
+	full := false
+	s := fmt.Sprintf("Queued hub=%d/%d", len(r.hub), globals.HubChanSize)
+	if len(r.hub) == globals.HubChanSize {
+		s = fmt.Sprintf("%s(F)", s)
+		full = true
+	}
+
+	for _, fm := range r.filterMatchers {
+		s = fmt.Sprintf("%s %s=%d/%d", s, fm.runner.Name(), len(fm.InChan()), globals.FilterRecyclePoolSize)
+		if len(fm.InChan()) == globals.PluginChanSize {
+			s = fmt.Sprintf("%s(F)", s)
+			full = true
+		}
+	}
+	for _, om := range r.outputMatchers {
+		s = fmt.Sprintf("%s %s=%d/%d", s, om.runner.Name(), len(om.InChan()), globals.PluginChanSize)
+		if len(om.InChan()) == globals.PluginChanSize {
+			s = fmt.Sprintf("%s(F)", s)
+			full = true
+		}
+	}
+
+	if full {
+		log.Trace(s)
 	}
 }

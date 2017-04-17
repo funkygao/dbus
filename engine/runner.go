@@ -173,7 +173,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			panic("unknown plugin type")
 		}
 
-		if globals.Stopping {
+		if globals.stopping {
 			return
 		}
 

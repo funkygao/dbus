@@ -361,15 +361,16 @@ func (e *Engine) ServeForever() (ret error) {
 	go e.Conf.Watch(time.Second*10, e.stopper, configChanged)
 
 	log.Info("engine started")
-	for !globals.Stopping {
+	globals.stopping = false
+	for !globals.stopping {
 		select {
 		case <-configChanged:
 			log.Info("%s changed, shutdown...", e.Conf.ConfPath())
-			globals.Stopping = true
+			globals.stopping = true
 
 		case <-e.shutdown:
 			log.Info("shutdown...")
-			globals.Stopping = true
+			globals.stopping = true
 
 		case sig := <-globals.sigChan:
 			log.Info("Got signal %s", strings.ToUpper(sig.String()))
@@ -377,13 +378,13 @@ func (e *Engine) ServeForever() (ret error) {
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP:
 				log.Info("shutdown...")
-				globals.Stopping = true
+				globals.stopping = true
 				ret = ErrQuitingSigal
 			}
 
 		case ret = <-e.pluginPanicCh:
 			log.Info("plugin panic, stopping...")
-			globals.Stopping = true
+			globals.stopping = true
 		}
 	}
 
@@ -398,18 +399,17 @@ func (e *Engine) ServeForever() (ret error) {
 	filtersWg.Wait()
 	outputsWg.Wait()
 
-	// now no filter will recycle packets, safe to close this channel
+	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
+
+	// now more packet flow, safe to close
 	close(e.filterRecycleChan)
 	for _, c := range e.inputRecycleChans {
 		close(c)
 	}
 
 	if telemetry.Default != nil {
-		// TODO flush
 		telemetry.Default.Stop()
 	}
-
-	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	e.stopAPIServer()
 

@@ -93,8 +93,6 @@ func main() {
 			// e,g. SIGTERM received
 			break
 		}
-
-		globals.Stopping = false
 	}
 
 	log4go.Info("dbus[%s@%s] %s, bye!", dbus.Revision, dbus.Version, time.Since(t0))

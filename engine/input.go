@@ -130,7 +130,7 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			log.Error("Input[%s] stopped: %v", ir.Name(), err)
 		}
 
-		if globals.Stopping {
+		if globals.stopping {
 			e.stopInputRunner(ir.Name())
 
 			return
