@@ -123,7 +123,13 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 			log.Trace("[%s] throughput %s/s", r.Name(), gofmt.Comma((n-lastN)/10))
 			lastN = n
 
-		case pack := <-r.Exchange().InChan():
+		case pack, ok := <-r.Exchange().InChan():
+			if !ok {
+				// engine stops
+				log.Info("[%s] %d packets received", r.Name(), n)
+				return nil
+			}
+
 			if this.rowsEventOnly {
 				if _, ok := pack.Payload.(*model.RowsEvent); !ok {
 					pack.Recycle()
