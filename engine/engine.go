@@ -125,12 +125,6 @@ func New(globals *GlobalConfig) *Engine {
 	}
 }
 
-func (e *Engine) stopInputRunner(name string) {
-	e.Lock()
-	e.InputRunners[name] = nil
-	e.Unlock()
-}
-
 // ClonePacket is used for plugin Filter to generate new Packet: copy on write.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
@@ -399,7 +393,11 @@ func (e *Engine) ServeForever() (ret error) {
 	filtersWg.Wait()
 	outputsWg.Wait()
 
-	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
+	for _, inputRunner := range e.InputRunners {
+		inputRunner.Input().StopAcker(inputRunner)
+	}
+
+	log.Info("all %d plugins fully stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	// now more packet flow, safe to close
 	close(e.filterRecycleChan)

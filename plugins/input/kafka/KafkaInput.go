@@ -24,6 +24,8 @@ func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	return nil
 }
 
+func (this *KafkaInput) StopAcker(r engine.InputRunner) {}
+
 func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5

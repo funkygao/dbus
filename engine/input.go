@@ -20,6 +20,11 @@ type Input interface {
 
 	Acker
 
+	// StopAcker notifies Input plugin it is safe to close the Acker.
+	// When Input stops, Filter|Output might still depend on Input ack, that is what
+	// StopAcker for.
+	StopAcker(r InputRunner)
+
 	// Run starts the main loop of the Input plugin.
 	Run(r InputRunner, h PluginHelper) (err error)
 }
@@ -131,16 +136,12 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 		}
 
 		if globals.stopping {
-			e.stopInputRunner(ir.Name())
-
 			return
 		}
 
 		if restart, ok := ir.plugin.(Restarter); ok {
 			if !restart.CleanupForRestart() {
 				// when we found all Input stopped, shutdown engine
-				e.stopInputRunner(ir.Name())
-
 				return
 			}
 		}

@@ -102,7 +102,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
 #### Input
 
 - MysqlbinlogInput
-- RedisbinlogInput
 - KafkaInput
 - MockInput
 - StreamInput
@@ -178,9 +177,7 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
-- [ ] when Input stops, Output might still need its OnAck
 - [ ] resource group
-- [ ] kafka producer qos
 - [ ] myslave should have no checkpoint, placed in Input
 - [ ] enhance Decision.Equals to avoid thundering herd
 - [ ] myslave server_id uniq across the cluster
@@ -188,8 +185,6 @@ dbus uses epoch to solve this issue.
 - [ ] add Operator for Filter
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
-- [ ] use scheme to distinguish type of DSN
-- [ ] KafkaConsumer might not be able to Stop
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
   - [X] 2 phase rebalance: close participants then notify new resources
@@ -207,13 +202,17 @@ dbus uses epoch to solve this issue.
     - [X] zk dies or kill -9, use cache to continue work
     - [X] kill -9 participant/leader, and reschedule
     - [X] cluster chaos monkey
+- [ ] kafka producer qos
 - [ ] batcher only retries after full batch ack'ed, add timer?
+- [ ] KafkaConsumer might not be able to Stop
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [X] kguard integration
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
 - [X] each Input have its own recycle chan, one block will not block others
+- [X] when Input stops, Output might still need its OnAck
 - [X] KafkaInput plugin
+- [X] use scheme to distinguish type of DSN
 - [X] plugins Run has no way of panic
 - [X] (replication.go:117) [zabbix] invalid table id 2968, no correspond table map event
 - [X] make canal, high cpu usage

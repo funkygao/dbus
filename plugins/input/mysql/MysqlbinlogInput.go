@@ -40,6 +40,8 @@ func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
+func (this *MysqlbinlogInput) StopAcker(r engine.InputRunner) {}
+
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	if this.clusterMode {
 		return this.runClustered(r, h)
