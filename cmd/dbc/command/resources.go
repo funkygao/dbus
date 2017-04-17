@@ -113,6 +113,9 @@ Options:
       resource DSN
       mysql zone://user:pass@host:port/db1,db2,...,dbn
       kafka zone://cluster/topic#partition
+      e,g.
+        dbc resources -add in.test-mysql:local://root@localhost:3306/test
+        dbc resources -add in.kafka-kafka:local://me/foobar#0
 
     -del resource
 
