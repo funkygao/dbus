@@ -14,6 +14,7 @@ import (
 	"github.com/funkygao/log4go"
 
 	// bootstrap plugins
+	_ "github.com/funkygao/dbus/plugins"
 	_ "github.com/funkygao/dbus/plugins/filter"
 	_ "github.com/funkygao/dbus/plugins/input"
 	_ "github.com/funkygao/dbus/plugins/output"
