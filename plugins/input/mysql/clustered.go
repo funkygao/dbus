@@ -159,6 +159,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 
 				if row.Length() < this.maxEventLength {
 					pack.Payload = row
+					pack.Metadata = slave.DSN()
 					ex.Inject(pack)
 				} else {
 					// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
