@@ -19,13 +19,6 @@ type KafkaInput struct {
 func (this *KafkaInput) Init(config *conf.Conf) {
 }
 
-func (this *KafkaInput) Stop(r engine.InputRunner) {
-	log.Debug("[%s] stopping...", r.Name())
-	if this.c != nil {
-		this.c.Stop()
-	}
-}
-
 func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	// TODO checkpoint
 	return nil
@@ -35,7 +28,13 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
-	stopper := h.Stopper()
+	stopper := r.Stopper()
+
+	defer func() {
+		if this.c != nil {
+			this.c.Stop()
+		}
+	}()
 
 	var myResources []cluster.Resource
 	resourcesCh := r.Resources()

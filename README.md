@@ -292,5 +292,5 @@ dbus uses epoch to solve this issue.
   - it takes 2h25m to zero lag for platform of 2d lag
 
 - dryrun MockInput -> MockOutput
-  - 1.8M packet/s
+  - 2.1M packet/s
 

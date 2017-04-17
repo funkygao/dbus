@@ -137,6 +137,7 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 			select {
 			case fo.panicCh <- reason:
 			default:
+				log.Warn("[%s] %s", fo.Name(), reason)
 			}
 		}
 
@@ -151,22 +152,22 @@ func (fo *foRunner) runMainloop(wg *sync.WaitGroup) {
 	globals := Globals()
 	for {
 		if filter, ok := fo.plugin.(Filter); ok {
-			log.Info("Filter[%s] started", fo.Name())
+			log.Trace("Filter[%s] started", fo.Name())
 
 			pluginType = "filter"
 			if err := filter.Run(fo, fo.engine); err != nil {
 				log.Error("Filter[%s] stopped: %v", fo.Name(), err)
 			} else {
-				log.Info("Filter[%s] stopped", fo.Name())
+				log.Trace("Filter[%s] stopped", fo.Name())
 			}
 		} else if output, ok := fo.plugin.(Output); ok {
-			log.Info("Output[%s] started", fo.Name())
+			log.Trace("Output[%s] started", fo.Name())
 
 			pluginType = "output"
 			if err := output.Run(fo, fo.engine); err != nil {
 				log.Error("Output[%s] stopped: %v", fo.Name(), err)
 			} else {
-				log.Info("Output[%s] stopped", fo.Name())
+				log.Trace("Output[%s] stopped", fo.Name())
 			}
 		} else {
 			panic("unknown plugin type")

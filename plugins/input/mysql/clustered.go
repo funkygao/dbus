@@ -15,7 +15,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 	name := r.Name()
 	backoff := time.Second * 5
 	ex := r.Exchange()
-	stopper := h.Stopper()
+	stopper := r.Stopper()
 
 	globals := engine.Globals()
 	var myResources []cluster.Resource

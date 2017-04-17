@@ -22,9 +22,6 @@ type Input interface {
 
 	// Run starts the main loop of the Input plugin.
 	Run(r InputRunner, h PluginHelper) (err error)
-
-	// Stop is the callback which stops the Input plugin.
-	Stop(InputRunner)
 }
 
 // InputRunner is a helper for Input plugin to access some context data.
@@ -33,6 +30,9 @@ type InputRunner interface {
 
 	// Input returns the associated Input plugin object.
 	Input() Input
+
+	// Stopper returns a channel for plugins to get notified when engine stops.
+	Stopper() <-chan struct{}
 
 	// Resources returns a channel that notifies Input plugin of the newly assigned resources in a cluster.
 	// The newly assigned resource might be empty, which means the Input plugin should stop consuming the resource.
@@ -80,6 +80,10 @@ func (ir *iRunner) Input() Input {
 	return ir.plugin.(Input)
 }
 
+func (ir *iRunner) Stopper() <-chan struct{} {
+	return ir.engine.stopper
+}
+
 func (ir *iRunner) feedResources(resources []cluster.Resource) {
 	ir.resourcesCh <- resources
 }
@@ -109,7 +113,11 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 			case error:
 				reason = panicErr
 			}
-			ir.panicCh <- reason
+			select {
+			case ir.panicCh <- reason:
+			default:
+				log.Warn("[%s] %s", ir.Name(), reason)
+			}
 		}
 	}()
 

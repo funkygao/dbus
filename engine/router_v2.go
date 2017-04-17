@@ -75,7 +75,6 @@ LOOP:
 		select {
 		case pack, ok = <-r.hub:
 			if !ok {
-				globals.Stopping = true
 				// TODO Unsubscribe each
 				break LOOP
 			}
