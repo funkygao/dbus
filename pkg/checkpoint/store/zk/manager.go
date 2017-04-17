@@ -4,7 +4,7 @@ import (
 	"path"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
-	"github.com/funkygao/dbus/pkg/checkpoint/state/binlog"
+	"github.com/funkygao/dbus/pkg/checkpoint/state"
 	"github.com/funkygao/gafka/zk"
 )
 
@@ -37,23 +37,12 @@ func (m *manager) AllStates() ([]checkpoint.State, error) {
 				return nil, err
 			}
 
-			// FIXME ugly design
-			switch scheme {
-			case "myslave":
-				dsn, err = decodeDSN(dsn)
-				if err != nil {
-					return nil, err
-				}
-				s := binlog.New(dsn, "") // empty name is ok, wait for Unmarshal
-				s.Unmarshal(data)
-				r = append(r, s)
-
-			case "kafka":
-				// TODO
-
-			default:
-				panic("unknown scheme: " + scheme)
+			s, err := state.Load(scheme, dsn, data)
+			if err != nil {
+				return nil, err
 			}
+
+			r = append(r, s)
 		}
 	}
 
