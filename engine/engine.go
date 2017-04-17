@@ -389,10 +389,6 @@ func (e *Engine) ServeForever() (ret error) {
 
 	close(e.stopper)
 
-	if telemetry.Default != nil {
-		telemetry.Default.Stop()
-	}
-
 	inputsWg.Wait()
 
 	e.router.Stop()
@@ -406,6 +402,11 @@ func (e *Engine) ServeForever() (ret error) {
 	close(e.filterRecycleChan)
 	for _, c := range e.inputRecycleChans {
 		close(c)
+	}
+
+	if telemetry.Default != nil {
+		// TODO flush
+		telemetry.Default.Stop()
 	}
 
 	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
