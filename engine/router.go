@@ -126,9 +126,8 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var (
-		globals    = Globals()
-		matcher    *matcher
-		foundMatch bool
+		globals = Globals()
+		pack    *Packet
 	)
 
 	wg.Add(1)
@@ -143,20 +142,20 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 			// start to drain in-flight packets from Filter|Output plugins
 			for {
 				select {
-				case pack := <-r.hub:
+				case pack = <-r.hub:
 					if globals.RouterTrack {
 						r.metrics.Update(pack)
 					}
 
-					foundMatch = false
-					for _, matcher = range r.outputMatchers {
+					foundMatch := false
+					for _, matcher := range r.outputMatchers {
 						if matcher != nil && matcher.Match(pack) {
 							foundMatch = true
 
 							matcher.InChan() <- pack.incRef()
 						}
 					}
-					for _, matcher = range r.filterMatchers {
+					for _, matcher := range r.filterMatchers {
 						if matcher != nil && matcher.Match(pack) {
 							foundMatch = true
 
@@ -186,17 +185,15 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 				}
 			}
 
-		case pack := <-r.hub:
+		case pack = <-r.hub:
 			// the packet can be from: Input|Filter|Output
-
 			if globals.RouterTrack {
 				r.metrics.Update(pack) // dryrun throughput 2.1M/s -> 1.6M/s
 			}
 
-			foundMatch = false
-
+			foundMatch := false
 			// dispatch pack to output plugins, 1 to many
-			for _, matcher = range r.outputMatchers {
+			for _, matcher := range r.outputMatchers {
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
@@ -205,7 +202,7 @@ func (r *Router) Start(wg *sync.WaitGroup) {
 			}
 
 			// dispatch pack to filter plugins, 1 to many
-			for _, matcher = range r.filterMatchers {
+			for _, matcher := range r.filterMatchers {
 				if matcher != nil && matcher.Match(pack) {
 					foundMatch = true
 
