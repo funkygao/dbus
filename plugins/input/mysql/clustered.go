@@ -53,14 +53,13 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 		// got new resources assignment!
 
 		this.mu.Lock()
-		this.slaves = this.slaves[:0]
 		for _, resource := range myResources {
 			dsn := resource.DSN()
-			theSlave := myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
-			this.slaves = append(this.slaves, theSlave)
+			slave := myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
+			this.slaves[dsn] = slave
 
 			wg.Add(1)
-			go this.runSlaveReplication(theSlave, name, ex, &wg, slavesStopper, replicationErrs)
+			go this.runSlaveReplication(slave, name, ex, &wg, slavesStopper, replicationErrs)
 		}
 		this.mu.Unlock()
 
@@ -109,7 +108,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 	if img, err := slave.BinlogRowImage(); err != nil {
 		log.Error("[%s] %v", name, err)
 	} else {
-		log.Trace("[%s] binlog row image=%s", name, img)
+		log.Debug("[%s] binlog row image=%s", name, img)
 	}
 
 	log.Trace("[%s] starting replication from %s", name, slave.DSN())
@@ -124,6 +123,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 
 	rows := slave.Events()
 	errors := slave.Errors()
+	dsn := slave.DSN()
 	for {
 		select {
 		case <-slavesStopper:
@@ -131,7 +131,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 
 		case err, ok := <-errors:
 			if ok {
-				log.Error("[%s] %v, stop from %s", name, err, slave.DSN())
+				log.Error("[%s] %v, stop from %s", name, err, dsn)
 				replicationErrs <- err
 			}
 			return
@@ -143,27 +143,27 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 
 			case err, ok := <-errors:
 				if ok {
-					log.Error("[%s] %v, stop from %s", name, err, slave.DSN())
+					log.Error("[%s] %v, stop from %s", name, err, dsn)
 					replicationErrs <- err
 				} else {
-					log.Error("[%s] error stream closed from %s", name, slave.DSN())
+					log.Error("[%s] error stream closed from %s", name, dsn)
 					replicationErrs <- fmt.Errorf("[%s] error stream closed from %s", name, slave.DSN())
 				}
 				return
 
 			case row, ok := <-rows:
 				if !ok {
-					log.Error("[%s] event stream closed from %s", name, slave.DSN())
+					log.Error("[%s] event stream closed from %s", name, dsn)
 					return
 				}
 
 				if row.Length() < this.maxEventLength {
 					pack.Payload = row
-					pack.Metadata = slave.DSN()
+					pack.Metadata = dsn
 					ex.Inject(pack)
 				} else {
 					// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
-					log.Warn("[%s] %s ignored len=%d %s", name, slave.DSN(), row.Length(), row.MetaInfo())
+					log.Warn("[%s] %s ignored len=%d %s", name, dsn, row.Length(), row.MetaInfo())
 					pack.Recycle()
 				}
 			}

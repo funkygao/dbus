@@ -10,12 +10,8 @@ import (
 
 func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h engine.PluginHelper) error {
 	defer func() {
-		this.mu.RLock()
-		slave := this.slaves[0]
-		this.mu.RUnlock()
-
-		if slave != nil {
-			slave.StopReplication()
+		if this.slave != nil {
+			this.slave.StopReplication()
 		}
 	}()
 
@@ -25,13 +21,8 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 	backoff := time.Second * 5
 	stopper := r.Stopper()
 
-	this.mu.Lock()
-	this.slaves = this.slaves[:0]
-	this.slaves = append(this.slaves, myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf))
-	theSlave := this.slaves[0]
-	this.mu.Unlock()
-
-	if err := theSlave.AssertValidRowFormat(); err != nil {
+	this.slave = myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
+	if err := this.slave.AssertValidRowFormat(); err != nil {
 		panic(err)
 	}
 
@@ -40,14 +31,14 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 		log.Trace("[%s] starting replication from %s...", name, dsn)
 
-		if img, err := theSlave.BinlogRowImage(); err != nil {
+		if img, err := this.slave.BinlogRowImage(); err != nil {
 			log.Error("[%s] %v", name, err)
 		} else {
-			log.Trace("[%s] binlog row image=%s", name, img)
+			log.Debug("[%s] binlog row image=%s", name, img)
 		}
 
 		ready := make(chan struct{})
-		go theSlave.StartReplication(ready)
+		go this.slave.StartReplication(ready)
 		select {
 		case <-ready:
 		case <-stopper:
@@ -55,8 +46,8 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 			return nil
 		}
 
-		rows := theSlave.Events()
-		errors := theSlave.Errors()
+		rows := this.slave.Events()
+		errors := this.slave.Errors()
 		for {
 			select {
 			case <-stopper:
@@ -68,7 +59,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
 				log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
-				theSlave.StopReplication()
+				this.slave.StopReplication()
 
 				select {
 				case <-time.After(backoff):
@@ -82,7 +73,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 				select {
 				case err := <-errors:
 					log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
-					theSlave.StopReplication()
+					this.slave.StopReplication()
 
 					select {
 					case <-time.After(backoff):

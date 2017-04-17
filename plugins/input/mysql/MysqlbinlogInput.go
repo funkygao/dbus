@@ -7,6 +7,7 @@ import (
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
+	log "github.com/funkygao/log4go"
 )
 
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
@@ -17,7 +18,8 @@ type MysqlbinlogInput struct {
 	clusterMode    bool
 
 	mu     sync.RWMutex
-	slaves []*myslave.MySlave
+	slaves map[string]*myslave.MySlave // cluster mode, key is DSN
+	slave  *myslave.MySlave            // standalone mode
 }
 
 func (this *MysqlbinlogInput) Init(config *conf.Conf) {
@@ -25,19 +27,29 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.cf = config
 	if dsn := this.cf.String("dsn", ""); len(dsn) == 0 {
 		this.clusterMode = true
+		this.slaves = make(map[string]*myslave.MySlave)
 	}
-	this.slaves = make([]*myslave.MySlave, 0)
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	if !this.clusterMode {
-		return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
+		return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
+	}
+
+	dsn := pack.Metadata.(string)
+	this.mu.RLock()
+	slave := this.slaves[dsn]
+	this.mu.RUnlock()
+
+	if slave == nil {
+		log.Warn("unrecognized DSN: %s", dsn)
+		return nil
 	}
 
 	// cluster mode
 	// FIXME
 	// race condition: in cluster mode, when ACK, the slave might have been gone
-	return this.slaves[0].MarkAsProcessed(pack.Payload.(*model.RowsEvent))
+	return slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
 func (this *MysqlbinlogInput) StopAcker(r engine.InputRunner) {}

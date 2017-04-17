@@ -394,6 +394,7 @@ func (e *Engine) ServeForever() (ret error) {
 	outputsWg.Wait()
 
 	for _, inputRunner := range e.InputRunners {
+		log.Trace("[%s] StopAcker", inputRunner.Name())
 		inputRunner.Input().StopAcker(inputRunner)
 	}
 

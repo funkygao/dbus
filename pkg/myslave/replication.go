@@ -159,7 +159,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// Next log name: mysql.000002
 			file = string(e.NextLogName)
 			// e.Position is End_log_pos(i,e. next log position)
-			log.Trace("[%s] rotate to (%s, %d)", m.name, file, e.Position)
+			log.Trace("[%s] events rotate to (%s, %d)", m.name, file, e.Position)
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)

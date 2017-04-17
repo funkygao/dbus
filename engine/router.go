@@ -202,7 +202,7 @@ func (r *Router) Stop() {
 
 	if Globals().RouterTrack {
 		for ident, m := range r.metrics.m {
-			log.Trace("routed to [%s] %d", ident, m.Count())
+			log.Trace("routed from [%s] %d", ident, m.Count())
 		}
 	}
 }

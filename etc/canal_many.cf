@@ -12,7 +12,7 @@
         }
 
         {
-            name: "out.mock"
+            name: "out.kafka"
             class: "KafkaOutput"
             metrics: false
             dsn: "kafka:local://me/foobar"
