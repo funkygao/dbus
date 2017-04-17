@@ -12,7 +12,4 @@ type PluginHelper interface {
 
 	// RegisterAPI allows plugins to register handlers on the global API server.
 	RegisterAPI(path string, handlerFunc APIHandler) *mux.Route
-
-	// Stopper returns a channel for plugins to get notified when engine stops.
-	Stopper() <-chan struct{}
 }

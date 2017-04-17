@@ -131,10 +131,6 @@ func (e *Engine) stopInputRunner(name string) {
 	e.Unlock()
 }
 
-func (e *Engine) Stopper() <-chan struct{} {
-	return e.stopper
-}
-
 // ClonePacket is used for plugin Filter to generate new Packet: copy on write.
 // The generated Packet will use dedicated filter recycle chan.
 func (e *Engine) ClonePacket(p *Packet) *Packet {
@@ -397,44 +393,22 @@ func (e *Engine) ServeForever() (ret error) {
 		telemetry.Default.Stop()
 	}
 
-	e.Lock()
-	for _, inputRunner := range e.InputRunners {
-		if inputRunner == nil {
-			// the Input plugin already exit
-			continue
-		}
-
-		log.Debug("Stop message sent to %s", inputRunner.Name())
-		inputRunner.Input().Stop(inputRunner)
-	}
-	e.Unlock()
 	inputsWg.Wait()
-	for _, c := range e.inputRecycleChans {
-		close(c)
-	}
-
-	// ok, now we are sure no more inputs, but there might still be
-	// in-flight packets in filter and output plugins
-	// we must wait for all the packs to be consumed before shutdown
-
-	filtersWg.Wait()
-	for _, filterRunner := range e.FilterRunners {
-		log.Debug("Stop message sent to %s", filterRunner.Name())
-		e.router.removeFilterMatcher <- filterRunner.getMatcher()
-	}
-	close(e.filterRecycleChan)
-
-	outputsWg.Wait()
-	for _, outputRunner := range e.OutputRunners {
-		log.Debug("Stop message sent to %s", outputRunner.Name())
-		e.router.removeOutputMatcher <- outputRunner.getMatcher()
-	}
-
-	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	e.router.Stop()
 	routerWg.Wait()
 	log.Info("Router stopped")
+
+	filtersWg.Wait()
+	outputsWg.Wait()
+
+	// now no filter will recycle packets, safe to close this channel
+	close(e.filterRecycleChan)
+	for _, c := range e.inputRecycleChans {
+		close(c)
+	}
+
+	log.Info("all %d plugins stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
 
 	e.stopAPIServer()
 

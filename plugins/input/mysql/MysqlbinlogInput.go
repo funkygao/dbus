@@ -7,7 +7,6 @@ import (
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	conf "github.com/funkygao/jsconf"
-	log "github.com/funkygao/log4go"
 )
 
 // MysqlbinlogInput is an input plugin that pretends to be a mysql instance's
@@ -32,10 +31,6 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	this.maxEventLength = config.Int("max_event_length", (1<<20)-100)
 	this.cf = config
 	this.slaves = make([]*myslave.MySlave, 0)
-}
-
-func (this *MysqlbinlogInput) Stop(r engine.InputRunner) {
-	log.Debug("[%s] stopping...", r.Name())
 }
 
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {

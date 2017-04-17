@@ -23,7 +23,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 	ex := r.Exchange()
 	name := r.Name()
 	backoff := time.Second * 5
-	stopper := h.Stopper()
+	stopper := r.Stopper()
 
 	this.mu.Lock()
 	this.slaves = this.slaves[:0]
