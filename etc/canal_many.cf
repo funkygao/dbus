@@ -13,8 +13,9 @@
 
         {
             name: "out.mock"
-            class: "MockOutput"
+            class: "KafkaOutput"
             metrics: false
+            dsn: "kafka:local://me/foobar"
             match: ["in.test", "in.mysql", ]
         }
     ]

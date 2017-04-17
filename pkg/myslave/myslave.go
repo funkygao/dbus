@@ -99,7 +99,7 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 
 	m.m = newMetrics(m.name)
 	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
-		m.masterAddr, m.c.Duration("pos_commit_interval", time.Second))
+		m.dsn, m.c.Duration("pos_commit_interval", time.Second))
 
 	return m
 }

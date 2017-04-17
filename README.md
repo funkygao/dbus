@@ -178,6 +178,7 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] when Input stops, Output might still need its OnAck
 - [ ] resource group
 - [ ] kafka producer qos
 - [ ] myslave should have no checkpoint, placed in Input

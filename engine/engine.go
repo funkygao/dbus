@@ -407,6 +407,8 @@ func (e *Engine) ServeForever() (ret error) {
 		close(c)
 	}
 
+	// needn't close registered zkzones, they will not raise leakage
+
 	if telemetry.Default != nil {
 		telemetry.Default.Stop()
 	}

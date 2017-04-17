@@ -40,6 +40,10 @@ func (m *manager) AllStates() ([]checkpoint.State, error) {
 			// FIXME ugly design
 			switch scheme {
 			case "myslave":
+				dsn, err = decodeDSN(dsn)
+				if err != nil {
+					return nil, err
+				}
 				s := binlog.New(dsn, "") // empty name is ok, wait for Unmarshal
 				s.Unmarshal(data)
 				r = append(r, s)
