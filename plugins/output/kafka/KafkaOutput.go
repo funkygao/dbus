@@ -51,12 +51,12 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 	}
 
 	defer func() {
-		log.Trace("[%s.%s.%s] draining...", this.zone, this.cluster, this.topic)
+		log.Trace("[%s] draining...", r.Name())
 
 		if err := producer.Close(); err != nil {
-			log.Error("[%s.%s.%s] drain: %s", this.zone, this.cluster, this.topic, err)
+			log.Error("[%s] drain: %s", r.Name(), err)
 		} else {
-			log.Trace("[%s.%s.%s] drained ok", this.zone, this.cluster, this.topic)
+			log.Trace("[%s] drained ok", r.Name())
 		}
 	}()
 
@@ -93,7 +93,7 @@ func (this *KafkaOutput) Run(r engine.OutputRunner, h engine.PluginHelper) error
 				}); err == nil {
 					break
 				} else {
-					log.Error("[%s.%s.%s] %+v", this.zone, this.cluster, this.topic, err)
+					log.Error("[%s] %v", r.Name(), err)
 
 					time.Sleep(time.Millisecond * 500)
 				}
