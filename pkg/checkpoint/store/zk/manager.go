@@ -2,6 +2,7 @@ package zk
 
 import (
 	"path"
+	"sort"
 
 	"github.com/funkygao/dbus/pkg/checkpoint"
 	"github.com/funkygao/dbus/pkg/checkpoint/state"
@@ -24,12 +25,16 @@ func (m *manager) AllStates() ([]checkpoint.State, error) {
 		return nil, err
 	}
 
+	sort.Strings(schemes)
+
 	var r []checkpoint.State
 	for _, scheme := range schemes {
 		dsns, _, err := m.zkzone.Conn().Children(path.Join(root, scheme))
 		if err != nil {
 			return nil, err
 		}
+
+		sort.Strings(dsns)
 
 		for _, dsn := range dsns {
 			data, _, err := m.zkzone.Conn().Get(path.Join(root, scheme, dsn))
