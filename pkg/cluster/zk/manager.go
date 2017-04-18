@@ -127,18 +127,18 @@ func (c *controller) CallParticipants(method string, q string) (err error) {
 	for _, p := range ps {
 		wg.Add(1)
 
-		targetUri := fmt.Sprintf("%s/%s", p.APIEndpoint(), strings.TrimLeft(q, "/"))
-		go func(wg *sync.WaitGroup, targetUri string) {
+		targetURI := fmt.Sprintf("%s/%s", p.APIEndpoint(), strings.TrimLeft(q, "/"))
+		go func(wg *sync.WaitGroup, p cluster.Participant, targetURI string) {
 			defer wg.Done()
 
 			r := gorequest.New()
 			switch strings.ToUpper(method) {
 			case "PUT":
-				r = r.Put(targetUri)
+				r = r.Put(targetURI)
 			case "POST":
-				r = r.Post(targetUri)
+				r = r.Post(targetURI)
 			case "GET":
-				r = r.Get(targetUri)
+				r = r.Get(targetURI)
 			}
 
 			resp, _, errs := r.Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).End()
@@ -148,7 +148,7 @@ func (c *controller) CallParticipants(method string, q string) (err error) {
 				err = fmt.Errorf("%s %s", p, http.StatusText(resp.StatusCode))
 			}
 
-		}(&wg, targetUri)
+		}(&wg, p, targetURI)
 	}
 	wg.Wait()
 

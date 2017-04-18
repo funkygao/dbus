@@ -13,12 +13,14 @@ var (
 
 type KafkaState struct {
 	dsn  string
-	name string
+	name string // who updates this state
 
-	PartitionID int32
-	Offset      int64
+	PartitionID int32 `json:"pid"`
+	Offset      int64 `json:"offset"`
 }
 
+// New creates a kafka state.
+// dsn is the DSN of kafka conumer, name is the Input plugin name.
 func New(dsn string, name string) *KafkaState {
 	return &KafkaState{dsn: dsn, name: name}
 }
@@ -50,5 +52,5 @@ func (s *KafkaState) DSN() string {
 }
 
 func (s *KafkaState) Scheme() string {
-	return "kafka"
+	return checkpoint.SchemeKafka
 }

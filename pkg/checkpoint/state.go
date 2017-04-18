@@ -1,5 +1,11 @@
 package checkpoint
 
+// All valid State scheme.
+const (
+	SchemeKafka  = "kafka"
+	SchemeBinlog = "myslave"
+)
+
 // State is an interface for all event state information.
 type State interface {
 

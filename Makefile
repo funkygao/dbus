@@ -87,7 +87,7 @@ vet:
 
 # Check for style errors
 lint:
-	-GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./...
+	-GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./... | grep -v self | grep -v 'have comment'
 
 simple:
 	-gosimple ./...

@@ -60,13 +60,13 @@ func (r *RowsEvent) MetaInfo() string {
 	return fmt.Sprintf("{%s %d %d %s %s/%s}", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table)
 }
 
-// Implements engine.Payloader and sarama.Encoder.
+// Encode implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Encode() (b []byte, err error) {
 	r.ensureEncoded()
 	return r.encoded, r.err
 }
 
-// Implements engine.Payloader and sarama.Encoder.
+// Length implements engine.Payloader and sarama.Encoder.
 func (r *RowsEvent) Length() int {
 	r.ensureEncoded()
 	return len(r.encoded)

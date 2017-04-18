@@ -31,7 +31,7 @@ type controller struct {
 	onRebalance cluster.RebalanceCallback
 }
 
-// New creates a Controller with zookeeper as underlying storage.
+// NewController creates a Controller with zookeeper as underlying storage.
 func NewController(zkSvr string, zroot string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")

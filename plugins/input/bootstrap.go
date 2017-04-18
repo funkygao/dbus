@@ -2,9 +2,10 @@
 package input
 
 import (
+	// bootstrap internal input pulugins
 	_ "github.com/funkygao/dbus/plugins/input/kafka"
 	_ "github.com/funkygao/dbus/plugins/input/mysql"
 
-	// external plugins
+	// bootstrap external plugins
 	_ "github.com/dbus-plugin/stream-input"
 )

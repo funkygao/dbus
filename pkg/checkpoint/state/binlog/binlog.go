@@ -14,11 +14,13 @@ var (
 type BinlogState struct {
 	dsn string
 
-	Ident  string `json:"ident,omitempty"`
+	Ident  string `json:"ident,omitempty"` // who updates this state
 	File   string `json:"file"`
 	Offset uint32 `json:"offset"`
 }
 
+// New creates a mysql binlog state.
+// dsn is the DSN of mysql connection, name is the Input plugin name.
 func New(dsn string, name string) *BinlogState {
 	return &BinlogState{dsn: dsn, Ident: name}
 }
@@ -50,5 +52,5 @@ func (s *BinlogState) DSN() string {
 }
 
 func (s *BinlogState) Scheme() string {
-	return "myslave"
+	return checkpoint.SchemeBinlog
 }

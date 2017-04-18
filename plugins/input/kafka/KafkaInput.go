@@ -19,6 +19,10 @@ type KafkaInput struct {
 func (this *KafkaInput) Init(config *conf.Conf) {
 }
 
+func (*KafkaInput) SampleConfig() string {
+	return ``
+}
+
 func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	// TODO checkpoint
 	return nil
@@ -115,7 +119,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 						return nil
 					}
 
-					pack.Payload = model.ConsumerMessage{msg}
+					pack.Payload = model.ConsumerMessage{ConsumerMessage: msg}
 					ex.Inject(pack)
 				}
 			}

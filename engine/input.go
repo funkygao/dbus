@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/funkygao/dbus/pkg/cluster"
@@ -87,6 +88,18 @@ func (ir *iRunner) Input() Input {
 
 func (ir *iRunner) Stopper() <-chan struct{} {
 	return ir.engine.stopper
+}
+
+func (ir *iRunner) SampleConfigItems() []string {
+	var r []string
+	for _, line := range strings.Split(ir.plugin.SampleConfig(), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) > 0 {
+			r = append(r, line)
+		}
+	}
+
+	return r
 }
 
 func (ir *iRunner) feedResources(resources []cluster.Resource) {
