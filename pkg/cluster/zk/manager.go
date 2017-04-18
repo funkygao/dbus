@@ -128,7 +128,7 @@ func (c *controller) CallParticipants(method string, q string) (err error) {
 		wg.Add(1)
 
 		targetURI := fmt.Sprintf("%s/%s", p.APIEndpoint(), strings.TrimLeft(q, "/"))
-		go func(wg *sync.WaitGroup, targetURI string) {
+		go func(wg *sync.WaitGroup, p cluster.Participant, targetURI string) {
 			defer wg.Done()
 
 			r := gorequest.New()
@@ -148,7 +148,7 @@ func (c *controller) CallParticipants(method string, q string) (err error) {
 				err = fmt.Errorf("%s %s", p, http.StatusText(resp.StatusCode))
 			}
 
-		}(&wg, targetURI)
+		}(&wg, p, targetURI)
 	}
 	wg.Wait()
 
