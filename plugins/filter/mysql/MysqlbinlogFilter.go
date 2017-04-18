@@ -30,6 +30,10 @@ type MysqlbinlogFilter struct {
 
 func (this *MysqlbinlogFilter) Init(config *conf.Conf) {}
 
+func (*MysqlbinlogFilter) SampleConfig() string {
+	return ``
+}
+
 func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper) error {
 	for pack := range r.Exchange().InChan() {
 		row, ok := pack.Payload.(*model.RowsEvent)

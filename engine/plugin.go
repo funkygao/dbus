@@ -8,7 +8,12 @@ import (
 
 // Plugin is the base interface for all plugins.
 type Plugin interface {
+
+	// Init is called when engine is initializing the plugin.
 	Init(config *conf.Conf)
+
+	// SampleConfig returns a sample config section for this plugin.
+	SampleConfig() string
 }
 
 // Restarter is used for plugin for callback when the plugin restarts.
