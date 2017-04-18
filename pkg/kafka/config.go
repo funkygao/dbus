@@ -89,27 +89,31 @@ func (c *Config) SyncMode() *Config {
 	return c
 }
 
+// LossTolerant set the QoS to loss tolerant.
 func (c *Config) LossTolerant() *Config {
 	c.QoS = LossTolerant
 	return c
 }
 
+// ThroughputFirst set the QoS to throughput first.
 func (c *Config) ThroughputFirst() *Config {
 	c.QoS = ThroughputFirst
 	return c
 }
 
-// SyncMode will switch the kafka producer to async mode.
+// AsyncMode will switch the kafka producer to async mode.
 func (c *Config) AsyncMode() *Config {
 	c.async = true
 	return c
 }
 
+// DryrunMode switch kafka to dryrun mode.
 func (c *Config) DryrunMode() *Config {
 	c.dryrun = true
 	return c
 }
 
+// SetConsumerChanBuffer set the channel buffer size of consumer.
 func (c *Config) SetConsumerChanBuffer(size int) *Config {
 	c.consumeChanBufSize = size
 	return c

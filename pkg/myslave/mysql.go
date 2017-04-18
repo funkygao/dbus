@@ -13,12 +13,13 @@ func (m *MySlave) BinlogRowImage() (string, error) {
 		return "", nil
 	}
 
-	if res, err := m.execute(`SHOW GLOBAL VARIABLES LIKE "binlog_row_image"`); err != nil {
+	res, err := m.execute(`SHOW GLOBAL VARIABLES LIKE "binlog_row_image"`)
+	if err != nil {
 		return "", err
-	} else {
-		// MySQL has binlog row image from 5.6, so older will return empty
-		return res.GetString(0, 1)
 	}
+
+	// MySQL has binlog row image from 5.6, so older will return empty
+	return res.GetString(0, 1)
 }
 
 // AssertValidRowFormat asserts the mysql master binlog format is ROW.

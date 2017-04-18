@@ -115,7 +115,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 						return nil
 					}
 
-					pack.Payload = model.ConsumerMessage{msg}
+					pack.Payload = model.ConsumerMessage{ConsumerMessage: msg}
 					ex.Inject(pack)
 				}
 			}

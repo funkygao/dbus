@@ -1,6 +1,6 @@
 package plugins
 
 import (
-	// external plugins
+	// bootstrap external plugins
 	_ "github.com/dbus-plugin/mock"
 )
