@@ -29,6 +29,17 @@ func (this *KafkaOutput) Init(config *conf.Conf) {
 	this.reporter = config.Bool("reporter", false)
 }
 
+func (*KafkaOutput) SampleConfig() string {
+	return `
+	batch_size: 1024
+	ack: -1
+	mode: "async" // async|sync|dryrun
+	qos: "LossTolerant" // LossTolerant|ThroughputFirst
+	dsn: "kafka:local://me/foobar"
+	reporter: true
+	`
+}
+
 func (this *KafkaOutput) CleanupForRestart() bool {
 	return true // yes, restart allowed
 }

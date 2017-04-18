@@ -31,6 +31,12 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 	}
 }
 
+func (*MysqlbinlogInput) SampleConfig() string {
+	return `
+	max_event_length: 1048476
+	`
+}
+
 func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	if !this.clusterMode {
 		return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))

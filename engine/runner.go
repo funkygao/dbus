@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	conf "github.com/funkygao/jsconf"
@@ -33,6 +34,9 @@ type PluginRunner interface {
 
 	// Conf returns the underlying plugin specific configuration.
 	Conf() *conf.Conf
+
+	// SampleConfigItems returns a list of sample config items for the underlying plugin.
+	SampleConfigItems() []string
 
 	forkAndRun(e *Engine, wg *sync.WaitGroup)
 }
@@ -102,6 +106,18 @@ func (fo *foRunner) Inject(pack *Packet) {
 
 func (fo *foRunner) Exchange() Exchange {
 	return fo
+}
+
+func (fo *foRunner) SampleConfigItems() []string {
+	var r []string
+	for _, line := range strings.Split(fo.plugin.SampleConfig(), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) > 0 {
+			r = append(r, line)
+		}
+	}
+
+	return r
 }
 
 func (fo *foRunner) InChan() <-chan *Packet {

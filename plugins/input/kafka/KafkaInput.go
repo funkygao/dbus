@@ -19,6 +19,10 @@ type KafkaInput struct {
 func (this *KafkaInput) Init(config *conf.Conf) {
 }
 
+func (*KafkaInput) SampleConfig() string {
+	return ``
+}
+
 func (this *KafkaInput) OnAck(pack *engine.Packet) error {
 	// TODO checkpoint
 	return nil
