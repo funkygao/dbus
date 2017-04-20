@@ -15,7 +15,7 @@ dbus = distributed data bus
 
 It is yet another lightweight versatile databus system that transfer/transform pipeline data between plugins.
 
-dbus works by building a DAG of structured data out of the different plugins: from data input, via filter, to the output.
+dbus works by building a DAG of structured data out of the different plugins: from data input, via filter(optional), to the output.
 
 Similar projects
 
@@ -23,6 +23,7 @@ Similar projects
 - flume
 - nifi
 - camel
+- beats
 - kettle
 - zapier
 - google cloud dataflow
@@ -34,6 +35,11 @@ Similar projects
 
 dbus is not yet a 1.0.
 We're writing more tests, fixing bugs, working on TODOs.
+
+### Use Case
+
+- mysql binlog dispatcher
+- multiple DC kafka mirror
 
 ### Features
 
