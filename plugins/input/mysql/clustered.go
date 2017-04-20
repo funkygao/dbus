@@ -74,14 +74,17 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 				reapSlaves(&wg, slavesStopper)
 				goto RESTART_REPLICATION
 
-			case <-replicationErrs:
+			case err := <-replicationErrs:
 				// e,g.
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
+				// ERROR 1045 (28000): Access denied for user 'test'@'10.1.1.1'
 				// read initial handshake error, caused by Too many connections
 
 				// myResources not changed, so next round still consume the same resources
 
+				// FIXME if err is 'Access denied', this resource will be de facto orphan: it will never succeed
+				log.Error("[%s] backoff %s and restart replication: %s", name, backoff, err)
 				select {
 				case <-time.After(backoff):
 				case <-stopper:
@@ -106,6 +109,8 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 	}()
 
 	if img, err := slave.BinlogRowImage(); err != nil {
+		// e,g.
+		// ERROR 1045 (28000): Access denied for user 'test'@'10.1.1.1'
 		log.Error("[%s] %v", name, err)
 	} else {
 		log.Debug("[%s] binlog row image=%s", name, img)
@@ -130,6 +135,8 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 			return
 
 		case err, ok := <-errors:
+			// e,g.
+			// ERROR 1045 (28000): Access denied for user 'test'@'10.1.1.1'
 			if ok {
 				log.Error("[%s] %v, stop from %s", name, err, dsn)
 				replicationErrs <- err

@@ -89,6 +89,7 @@ func (p *Producer) Start() error {
 // Close will drain and close the Producer.
 func (p *Producer) Close() error {
 	close(p.stopper)
+	p.m.Close()
 
 	if p.cf.dryrun {
 		return nil
