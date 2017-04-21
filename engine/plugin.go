@@ -32,7 +32,7 @@ type Pauser interface {
 // Acker is a callback interface that is called when a packet
 // is processed successfully.
 type Acker interface {
-	OnAck(*Packet) error
+	Ack(*Packet) error
 }
 
 // RegisterPlugin allows plugin to register itself to the engine.
