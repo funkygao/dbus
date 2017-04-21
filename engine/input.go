@@ -21,10 +21,10 @@ type Input interface {
 
 	Acker
 
-	// StopAcker notifies Input plugin it is safe to close the Acker.
+	// End notifies Input plugin it is safe to close the Acker.
 	// When Input stops, Filter|Output might still depend on Input ack, that is what
-	// StopAcker for.
-	StopAcker(r InputRunner)
+	// End for.
+	End(r InputRunner)
 
 	// Run starts the main loop of the Input plugin.
 	Run(r InputRunner, h PluginHelper) (err error)

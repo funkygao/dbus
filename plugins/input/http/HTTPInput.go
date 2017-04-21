@@ -28,11 +28,11 @@ func (*HTTPInput) SampleConfig() string {
 	`
 }
 
-func (this *HTTPInput) OnAck(pack *engine.Packet) error {
+func (this *HTTPInput) Ack(pack *engine.Packet) error {
 	return nil
 }
 
-func (this *HTTPInput) StopAcker(r engine.InputRunner) {}
+func (this *HTTPInput) End(r engine.InputRunner) {}
 
 func (this *HTTPInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	addr := r.Conf().String("listen", "")

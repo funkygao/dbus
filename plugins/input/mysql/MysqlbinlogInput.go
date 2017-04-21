@@ -37,7 +37,7 @@ func (*MysqlbinlogInput) SampleConfig() string {
 	`
 }
 
-func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
+func (this *MysqlbinlogInput) Ack(pack *engine.Packet) error {
 	if !this.clusterMode {
 		return this.slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 	}
@@ -58,7 +58,7 @@ func (this *MysqlbinlogInput) OnAck(pack *engine.Packet) error {
 	return slave.MarkAsProcessed(pack.Payload.(*model.RowsEvent))
 }
 
-func (this *MysqlbinlogInput) StopAcker(r engine.InputRunner) {}
+func (this *MysqlbinlogInput) End(r engine.InputRunner) {}
 
 func (this *MysqlbinlogInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	if this.clusterMode {
