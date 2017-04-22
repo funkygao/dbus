@@ -23,12 +23,12 @@ func (*KafkaInput) SampleConfig() string {
 	return ``
 }
 
-func (this *KafkaInput) OnAck(pack *engine.Packet) error {
+func (this *KafkaInput) Ack(pack *engine.Packet) error {
 	// TODO checkpoint
 	return nil
 }
 
-func (this *KafkaInput) StopAcker(r engine.InputRunner) {}
+func (this *KafkaInput) End(r engine.InputRunner) {}
 
 func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 	name := r.Name()
@@ -120,7 +120,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 					}
 
 					pack.Payload = model.ConsumerMessage{ConsumerMessage: msg}
-					ex.Inject(pack)
+					ex.Emit(pack)
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-package engine
+package middleware
 
 import (
 	"net/http"
@@ -7,7 +7,8 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func recoverWrap(h http.Handler) http.Handler {
+// WrapWithRecover is a middleware that recovers from handler panic and log the reason.
+func WrapWithRecover(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -23,13 +24,6 @@ func recoverWrap(h http.Handler) http.Handler {
 			}
 		}()
 
-		h.ServeHTTP(w, r)
-	})
-}
-
-func accessLogWrap(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO
 		h.ServeHTTP(w, r)
 	})
 }

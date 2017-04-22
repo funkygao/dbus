@@ -90,7 +90,7 @@ func (p *Packet) Reset() {
 // ack notifies the Packet's source Input that it is successfully processed.
 // ack is called by Output plugin.
 func (p *Packet) ack() error {
-	return p.acker.OnAck(p)
+	return p.acker.Ack(p)
 }
 
 // Recycle decrement packet reference count and place it back

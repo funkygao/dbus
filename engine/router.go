@@ -40,7 +40,7 @@ A normal packet lifecycle:
     |          +-------------------------------------+									|
     |                        |    |														|
 	+-------<----------------+	  +------------->---------------------------------------+
-	     Recycle                             Inject
+	     Recycle                             Emit
 
 
 A normal cloned packet lifecycle:

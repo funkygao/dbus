@@ -91,7 +91,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 					if row.Length() < this.maxEventLength {
 						pack.Payload = row
-						ex.Inject(pack)
+						ex.Emit(pack)
 					} else {
 						// TODO this.slave.MarkAsProcessed(r), also consider batcher partial failure
 						log.Warn("[%s] ignored len=%d %s", name, row.Length(), row.MetaInfo())

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/funkygao/dbus/pkg/middleware"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
 )
@@ -38,6 +39,8 @@ func (e *Engine) stopRPCServer() {
 
 func (e *Engine) setupRPCRoutings() {
 	e.rpcRouter.Handle("/v1/rebalance",
-		accessLogWrap(recoverWrap(http.HandlerFunc(e.doLocalRebalanceV1)))).
+		middleware.WrapAccesslog(
+			middleware.WrapWithRecover(
+				http.HandlerFunc(e.doLocalRebalanceV1)))).
 		Methods("POST")
 }

@@ -100,7 +100,7 @@ func (fo *foRunner) Ack(pack *Packet) error {
 	return pack.ack()
 }
 
-func (fo *foRunner) Inject(pack *Packet) {
+func (fo *foRunner) Emit(pack *Packet) {
 	fo.engine.router.hub <- pack
 }
 
