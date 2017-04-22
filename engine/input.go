@@ -69,7 +69,7 @@ func (ir *iRunner) Exchange() Exchange {
 	return ir
 }
 
-func (ir *iRunner) Inject(pack *Packet) {
+func (ir *iRunner) Emit(pack *Packet) {
 	if len(pack.Ident) == 0 {
 		pack.Ident = ir.Name()
 	}

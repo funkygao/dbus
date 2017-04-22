@@ -120,7 +120,7 @@ func (this *KafkaInput) Run(r engine.InputRunner, h engine.PluginHelper) error {
 					}
 
 					pack.Payload = model.ConsumerMessage{ConsumerMessage: msg}
-					ex.Inject(pack)
+					ex.Emit(pack)
 				}
 			}
 		}

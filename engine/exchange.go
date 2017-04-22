@@ -8,6 +8,6 @@ type Exchange interface {
 	// The returned channel will be closed when engine stops.
 	InChan() <-chan *Packet
 
-	// Inject injects Packet into engine for consumers.
-	Inject(pack *Packet)
+	// Emit emits Packet into engine for consumers.
+	Emit(pack *Packet)
 }

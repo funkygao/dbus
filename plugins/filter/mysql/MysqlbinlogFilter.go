@@ -46,7 +46,7 @@ func (this *MysqlbinlogFilter) Run(r engine.FilterRunner, h engine.PluginHelper)
 
 		p := h.ClonePacket(pack)
 		p.Ident = row.Schema
-		r.Exchange().Inject(p)
+		r.Exchange().Emit(p)
 
 		pack.Recycle()
 	}
