@@ -183,6 +183,9 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] cluster
+  - [ ] monitor resources cost and rebalance
+  - [ ] support multiple projects
 - [ ] resource group
 - [ ] FIXME access denied leads to orphan resource
 - [ ] myslave should have no checkpoint, placed in Input
