@@ -19,4 +19,11 @@ func TestBinlogState(t *testing.T) {
 	s.Unmarshal([]byte(`{"file":"f1","offset":5}`))
 	assert.Equal(t, "f1", s.File)
 	assert.Equal(t, uint32(5), s.Offset)
+
+	s1 := New("", "")
+	s1.File = "f1"
+	s1.Offset = 15
+	assert.Equal(t, "10", s1.Delta(s))
+	s1.File = "f2"
+	assert.Equal(t, "", s1.Delta(s))
 }

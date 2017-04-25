@@ -26,4 +26,7 @@ type State interface {
 
 	// Name returns name of the state.
 	Name() string
+
+	// Delta returns difference of two state.
+	Delta(that State) string
 }

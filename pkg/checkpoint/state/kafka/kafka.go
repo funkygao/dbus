@@ -54,3 +54,16 @@ func (s *KafkaState) DSN() string {
 func (s *KafkaState) Scheme() string {
 	return checkpoint.SchemeKafka
 }
+
+func (s *KafkaState) Delta(that checkpoint.State) string {
+	s1, ok := that.(*KafkaState)
+	if !ok {
+		return ""
+	}
+
+	if s1.PartitionID != s.PartitionID {
+		return ""
+	}
+
+	return fmt.Sprintf("%d", s.Offset-s1.Offset)
+}
