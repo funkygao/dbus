@@ -1,6 +1,8 @@
 package myslave
 
 import (
+	"time"
+
 	"github.com/funkygao/dbus/pkg/model"
 	log "github.com/funkygao/log4go"
 	"github.com/siddontang/go-mysql/replication"
@@ -32,13 +34,14 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 	}
 
 	rowsEvent := &model.RowsEvent{
-		Log:       f,
-		Position:  h.LogPos, // next binlog pos
-		Schema:    schema,
-		Table:     table,
-		Action:    action,
-		Timestamp: h.Timestamp,
-		Rows:      e.Rows,
+		Log:           f,
+		Position:      h.LogPos, // next binlog pos
+		Schema:        schema,
+		Table:         table,
+		Action:        action,
+		Timestamp:     h.Timestamp,
+		DbusTimestamp: time.Now().UnixNano(),
+		Rows:          e.Rows,
 	}
 	m.rowsEvent <- rowsEvent.SetFlags(e.Flags)
 }
