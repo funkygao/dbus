@@ -64,7 +64,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 					if pos, _err := this.slave.MasterPosition(); _err == nil {
 						// FIXME the pos might miss 'table id' info.
 						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
-						if er := this.slave.CommitPosition(pos.Name, pos.Pos); er != nil {
+						if er := this.slave.CommitPosition(pos.Name, 4); er != nil {
 							log.Error("[%s] %s: %v", name, dsn, er)
 						}
 					}

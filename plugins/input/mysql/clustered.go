@@ -145,7 +145,7 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 					if pos, _err := slave.MasterPosition(); _err == nil {
 						// FIXME the pos might miss 'table id' info.
 						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
-						if er := slave.CommitPosition(pos.Name, pos.Pos); er != nil {
+						if er := slave.CommitPosition(pos.Name, 4); er != nil {
 							log.Error("[%s] %s: %v", name, dsn, er)
 						}
 					}
