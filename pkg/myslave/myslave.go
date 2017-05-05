@@ -137,10 +137,11 @@ func (m *MySlave) MarkAsProcessed(r *model.RowsEvent) error {
 		return nil
 	}
 
-	return m.commitPosition(r.Log, r.Position)
+	return m.CommitPosition(r.Log, r.Position)
 }
 
-func (m *MySlave) commitPosition(file string, offset uint32) error {
+// CommitPosition persists the binlog position to checkpointer.
+func (m *MySlave) CommitPosition(file string, offset uint32) error {
 	m.state.File = file
 	m.state.Offset = offset
 	return m.p.Commit(m.state)

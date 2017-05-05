@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -139,6 +140,17 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 			// ERROR 1045 (28000): Access denied for user 'test'@'10.1.1.1'
 			if ok {
 				log.Error("[%s] %v, stop from %s", name, err, dsn)
+
+				if strings.Contains(err.Error(), "ERROR 1236 (HY000)") {
+					if pos, _err := slave.MasterPosition(); _err == nil {
+						// FIXME the pos might miss 'table id' info.
+						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
+						if er := slave.CommitPosition(pos.Name, pos.Pos); er != nil {
+							log.Error("[%s] %s: %v", name, dsn, er)
+						}
+					}
+				}
+
 				replicationErrs <- err
 			}
 			return
