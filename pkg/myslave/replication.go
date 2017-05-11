@@ -176,6 +176,16 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 			// e,g. create table y(id int)
 			// e,g. BEGIN
 			// e,g. flush tables
+			// e,g. ALTER TABLE
+			//
+			// only handles alter table query
+			if db, table, yes := isAlterTableQuery(e.Query); yes {
+				if len(db) == 0 {
+					db = string(e.Schema)
+				}
+				log.Trace("[%s] %s.%s table schema changed", m.name, db, table)
+				m.clearTableCache(db, table)
+			}
 
 		case *replication.XIDEvent:
 			// e,g. COMMIT /* xid=403013040 */

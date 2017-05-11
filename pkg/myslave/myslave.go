@@ -44,6 +44,9 @@ type MySlave struct {
 	started   sync2.AtomicBool
 	errors    chan error
 	rowsEvent chan *model.RowsEvent
+
+	tablesLock sync.RWMutex
+	tables     map[string][]string // table:column names
 }
 
 var setupLogger sync.Once
@@ -64,6 +67,7 @@ func New(name, dsn string, zrootCheckpoint string) *MySlave {
 		dbExcluded:      map[string]struct{}{},
 		dbAllowed:       map[string]struct{}{},
 		state:           binlog.New(dsn, name),
+		tables:          make(map[string][]string, 16),
 	}
 }
 
