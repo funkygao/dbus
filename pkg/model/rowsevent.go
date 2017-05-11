@@ -32,6 +32,8 @@ type RowsEvent struct {
 	Timestamp     uint32 `json:"ts"` // timestamp of binlog from master
 	DbusTimestamp int64  `json:"dt"` // timestamp of dbus receiving the binlog
 
+	Columns []string `json:"cols"` // column names
+
 	// binlog has three update event version, v0, v1 and v2.
 	// for v1 and v2, the rows number must be even.
 	// Two rows for one event, format is [before update row, after update row]
@@ -54,7 +56,7 @@ func (r *RowsEvent) ensureEncoded() {
 
 // Used for debugging.
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
+	return fmt.Sprintf("%s %d %d %s %s/%s %+v %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Columns, r.Rows)
 }
 
 func (r *RowsEvent) MetaInfo() string {

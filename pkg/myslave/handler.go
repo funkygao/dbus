@@ -41,6 +41,7 @@ func (m *MySlave) handleRowsEvent(f string, h *replication.EventHeader, e *repli
 		Action:        action,
 		Timestamp:     h.Timestamp,
 		DbusTimestamp: time.Now().UnixNano(),
+		Columns:       m.getTableColumns(schema, table),
 		Rows:          e.Rows,
 	}
 	m.rowsEvent <- rowsEvent.SetFlags(e.Flags)
