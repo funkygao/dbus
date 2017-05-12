@@ -218,6 +218,26 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		case *replication.GTIDEvent:
 			// only GTID mode will recv this event
+			// GTID is for easier failover because each slave pos coordinate is different: SET MASTER_AUTO_POSITION=1
+			// GTID is for strong master/slave W/R split: check if the GTID on master is replicated to slave
+			//
+			// This is how we can see the GTID inside the binary logs:
+			// # at 300
+			// #130221 13:08:58 server id 101 end_log_pos 348 CRC32 0xc18cdbda GTID [commit=yes] SET @@SESSION.GTID_NEXT= '8182213e-7c1e-11e2-a6e2-080027635ef5:2'/*!*/;
+			// # at 348
+			// BEGIN
+			// insert into t values(1)
+			// COMMIT/*!*/;
+			// # at 565
+			// #130221 13:09:03 server id 101 end_log_pos 613 CRC32 0x5b25189e
+			// SET @@SESSION.GTID_NEXT= '8182213e-7c1e-11e2-a6e2-080027635ef5:3'/*!*/;
+			// # at 697
+			// BEGIN
+			//
+			// what is GTID like?
+			// 8182213e-7c1e-11e2-a6e2-080027635ef5:2  SID:GNO
+			// SID is 128 bit server uuid which identifies where the transaction was originated
+			// GNO is txn id which increments with every new transaction
 
 		default:
 			log.Warn("[%s] unexpected event: %+v", m.name, e)
