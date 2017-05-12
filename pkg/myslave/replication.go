@@ -163,6 +163,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 
 		case *replication.RowsEvent:
 			m.m.TPS.Mark(1)
+			// ev.Header.ServerID, where the event originated
 			// depends on ntp to sync clock, but there is sure clock drift
 			lag := time.Now().Unix() - int64(ev.Header.Timestamp)
 			if lag < 0 {
