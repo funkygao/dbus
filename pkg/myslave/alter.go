@@ -9,6 +9,7 @@ var (
 )
 
 func isAlterTableQuery(q []byte) (db, table string, yes bool) {
+	// FIXME some OnlineSchemaChange tool will not apply 'ALTER TABLE' on the table, but 'RENAME'
 	if tuples := expAlterTable.FindSubmatch(q); tuples != nil {
 		db = string(tuples[1])
 		table = string(tuples[2])
