@@ -9,6 +9,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
+	"github.com/funkygao/gafka/diagnostics/agent"
 	"github.com/funkygao/gocli"
 )
 
@@ -29,6 +30,12 @@ func (this *Peek) Run(args []string) (exitCode int) {
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
+
+	agent.HttpAddr = ":10129"
+	this.Ui.Infof("pprof agent ready on %s", agent.Start())
+	go func() {
+		this.Ui.Errorf("%s", <-agent.Errors)
+	}()
 
 	e := engine.New(nil)
 	e.LoadFrom("")
