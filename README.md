@@ -177,6 +177,7 @@ dbus uses epoch to solve this issue.
 - [ ] multiversion config in zk
 - [ ] debug-ability
 - [ ] alert lags
+- [ ] inc replication recv buffer size
 - [ ] 'delete from t' generates a huge binlog event
   It might exceed max event size: 1MB
 - [X] HY000 auto heal
