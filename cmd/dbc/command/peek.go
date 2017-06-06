@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/dbus/pkg/myslave"
 	"github.com/funkygao/gocli"
 )
@@ -42,20 +43,21 @@ func (this *Peek) Run(args []string) (exitCode int) {
 	rows := slave.Events()
 	replErrors := slave.Errors()
 	var n, lastN int64
+	var row *model.RowsEvent
 	for {
 		select {
 		case err := <-replErrors:
 			this.Ui.Error(err.Error())
 			return
 
-		case row := <-rows:
+		case row = <-rows:
 			n++
 			if verbose {
 				this.Ui.Outputf("%+v", row)
 			}
 
 		case <-tick.C:
-			this.Ui.Infof("%d tps", (n-lastN)/5)
+			this.Ui.Infof("%d tps, %s", (n-lastN)/5, time.Unix(int64(row.Timestamp), 0))
 			lastN = n
 		}
 	}
