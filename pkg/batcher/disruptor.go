@@ -63,6 +63,7 @@ func (b *disruptor) Put(item interface{}) error {
 		}
 
 		// tail reached, wait for the current batch successful completion
+		// consumer notification to avoid blind loop TODO
 		yield()
 	}
 

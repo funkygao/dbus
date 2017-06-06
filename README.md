@@ -183,6 +183,14 @@ dbus uses epoch to solve this issue.
 
 ### TODO
 
+- [ ] multiversion config in zk
+- [ ] debug-ability
+- [ ] alert lags
+- [ ] 'delete from t' generates a huge binlog event
+  It might exceed max event size: 1MB
+- [ ] cluster
+  - [ ] monitor resources cost and rebalance
+  - [ ] support multiple projects
 - [ ] resource group
 - [ ] FIXME access denied leads to orphan resource
 - [ ] myslave should have no checkpoint, placed in Input
@@ -192,6 +200,8 @@ dbus uses epoch to solve this issue.
 - [ ] add Operator for Filter
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
+- [X] HY000 auto heal
+- [X] model.RowsEvent add dbus timestamp
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
   - [X] 2 phase rebalance: close participants then notify new resources
