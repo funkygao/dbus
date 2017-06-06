@@ -45,29 +45,8 @@ func init() {
 			}, nil
 		},
 
-		"upgrade": func() (cli.Command, error) {
-			return &command.Upgrade{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
 		"plugins": func() (cli.Command, error) {
 			return &command.Plugins{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
-		"pause": func() (cli.Command, error) {
-			return &command.Pause{
-				Ui:  ui,
-				Cmd: cmd,
-			}, nil
-		},
-
-		"migrate": func() (cli.Command, error) {
-			return &command.Migrate{
 				Ui:  ui,
 				Cmd: cmd,
 			}, nil
@@ -93,6 +72,29 @@ func init() {
 				Cmd: cmd,
 			}, nil
 		},
+
+		/*
+			"migrate": func() (cli.Command, error) {
+				return &command.Migrate{
+					Ui:  ui,
+					Cmd: cmd,
+				}, nil
+			},
+
+			"pause": func() (cli.Command, error) {
+				return &command.Pause{
+					Ui:  ui,
+					Cmd: cmd,
+				}, nil
+			},
+
+			"upgrade": func() (cli.Command, error) {
+				return &command.Upgrade{
+					Ui:  ui,
+					Cmd: cmd,
+				}, nil
+			},
+		*/
 	}
 
 }
