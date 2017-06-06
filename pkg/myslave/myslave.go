@@ -8,6 +8,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/dbus/pkg/checkpoint"
 	"github.com/funkygao/dbus/pkg/checkpoint/state/binlog"
+	"github.com/funkygao/dbus/pkg/checkpoint/store/discard"
 	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
 	"github.com/funkygao/dbus/pkg/model"
 	"github.com/funkygao/golib/sync2"
@@ -102,8 +103,12 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.m = newMetrics(m.name)
-	m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
-		m.dsn, m.c.Duration("pos_commit_interval", time.Second))
+	if len(m.zrootCheckpoint) == 0 {
+		m.p = discard.New()
+	} else {
+		m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
+			m.dsn, m.c.Duration("pos_commit_interval", time.Second))
+	}
 
 	return m
 }

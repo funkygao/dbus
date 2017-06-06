@@ -12,7 +12,7 @@ func (this *MysqlbinlogInput) tryAutoHeal(name string, err error, slave *myslave
 		log.Trace("[%s] auto healing ERROR 1236", name)
 		if pos, _err := slave.MasterPosition(); _err == nil {
 			// FIXME the pos might miss 'table id' info.
-			log.Warn("[%s] reset %s position to: %+v", name, slave.DSN(), pos)
+			log.Warn("[%s] reset %s pos to %s", name, slave.DSN(), pos.Name)
 			if er := slave.CommitPosition(pos.Name, 4); er != nil {
 				log.Error("[%s] %s: %v", name, slave.DSN(), er)
 			}

@@ -73,6 +73,13 @@ func init() {
 			}, nil
 		},
 
+		"peek": func() (cli.Command, error) {
+			return &command.Peek{
+				Ui:  ui,
+				Cmd: cmd,
+			}, nil
+		},
+
 		"resources": func() (cli.Command, error) {
 			return &command.Resources{
 				Ui:  ui,
