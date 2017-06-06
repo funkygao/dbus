@@ -7,6 +7,21 @@ import (
 	"github.com/siddontang/go-mysql/mysql"
 )
 
+// TableColumns returns column names of a table in mysql.
+func (m *MySlave) TableColumns(db, table string) ([]string, error) {
+	res, err := m.execute(fmt.Sprintf("DESCRIBE `%s`.`%s`", db, table))
+	if err != nil {
+		return nil, err
+	}
+
+	cols := make([]string, res.RowNumber())
+	for i := 0; i < res.RowNumber(); i++ {
+		cols[i], _ = res.GetString(i, 0)
+	}
+
+	return cols, nil
+}
+
 // BinlogRowImage checks MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB.
 func (m *MySlave) BinlogRowImage() (string, error) {
 	if m.c.String("flavor", mysql.MySQLFlavor) != mysql.MySQLFlavor {

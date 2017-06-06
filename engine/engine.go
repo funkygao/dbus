@@ -281,7 +281,7 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Trace("engine starting...")
 
 	if globals.ClusterEnabled {
-		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.onControllerRebalance)
+		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.leaderRebalance)
 	}
 
 	// setup signal handler first to avoid race condition

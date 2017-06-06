@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -59,6 +60,16 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
 				log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
+				if strings.Contains(err.Error(), "ERROR 1236 (HY000)") {
+					if pos, _err := this.slave.MasterPosition(); _err == nil {
+						// FIXME the pos might miss 'table id' info.
+						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
+						if er := this.slave.CommitPosition(pos.Name, 4); er != nil {
+							log.Error("[%s] %s: %v", name, dsn, er)
+						}
+					}
+				}
+
 				this.slave.StopReplication()
 
 				select {

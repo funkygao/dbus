@@ -10,7 +10,7 @@ import (
 	log "github.com/funkygao/log4go"
 )
 
-func (e *Engine) onControllerRebalance(epoch int, decision cluster.Decision) {
+func (e *Engine) leaderRebalance(epoch int, decision cluster.Decision) {
 	log.Info("[%s] decision: %+v", e.participant, decision)
 
 	// 2 phase commit

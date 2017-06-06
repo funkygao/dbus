@@ -24,12 +24,15 @@ var (
 // It implements engine.Payloader interface and can be transferred between plugins.
 // It also implements kafka message value interface and can be produced to kafka.
 type RowsEvent struct {
-	Log       string `json:"log"`
-	Position  uint32 `json:"pos"`
-	Schema    string `json:"db"`
-	Table     string `json:"tbl"`
-	Action    string `json:"dml"`
-	Timestamp uint32 `json:"ts"`
+	Log           string `json:"log"`
+	Position      uint32 `json:"pos"`
+	Schema        string `json:"db"`
+	Table         string `json:"tbl"`
+	Action        string `json:"dml"`
+	Timestamp     uint32 `json:"ts"` // timestamp of binlog from master
+	DbusTimestamp int64  `json:"dt"` // timestamp of dbus receiving the binlog
+
+	Columns []string `json:"cols"` // column names
 
 	// binlog has three update event version, v0, v1 and v2.
 	// for v1 and v2, the rows number must be even.
@@ -53,7 +56,7 @@ func (r *RowsEvent) ensureEncoded() {
 
 // Used for debugging.
 func (r *RowsEvent) String() string {
-	return fmt.Sprintf("%s %d %d %s %s/%s %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Rows)
+	return fmt.Sprintf("%s %d %d %s %s/%s %+v %+v", r.Log, r.Position, r.Timestamp, r.Action, r.Schema, r.Table, r.Columns, r.Rows)
 }
 
 func (r *RowsEvent) MetaInfo() string {

@@ -54,3 +54,16 @@ func (s *BinlogState) DSN() string {
 func (s *BinlogState) Scheme() string {
 	return checkpoint.SchemeBinlog
 }
+
+func (s *BinlogState) Delta(that checkpoint.State) string {
+	s1, ok := that.(*BinlogState)
+	if !ok {
+		return ""
+	}
+
+	if s1.File != s.File {
+		return ""
+	}
+
+	return fmt.Sprintf("%d", s.Offset-s1.Offset)
+}

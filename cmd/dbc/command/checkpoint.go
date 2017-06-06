@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/funkygao/columnize"
+	"github.com/funkygao/dbus/pkg/checkpoint"
 	czk "github.com/funkygao/dbus/pkg/checkpoint/store/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
@@ -34,6 +35,7 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
 	mgr := czk.NewManager(zkzone)
 
+	lastStates := make(map[string]checkpoint.State)
 	for {
 		states, err := mgr.AllStates()
 		if err != nil {
@@ -42,8 +44,20 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 		}
 
 		lines := []string{"Input|Scheme|DSN|Position"}
+		if topMode {
+			lines = []string{"Input|Scheme|DSN|Position|Delta"}
+		}
 		for _, state := range states {
-			lines = append(lines, fmt.Sprintf("%s|%s|%s|%s", state.Name(), state.Scheme(), state.DSN(), state.String()))
+			if topMode {
+				if last, present := lastStates[state.DSN()]; present {
+					lines = append(lines, fmt.Sprintf("%s|%s|%s|%s|%s", state.Name(), state.Scheme(), state.DSN(), state.String(), state.Delta(last)))
+				} else {
+					lines = append(lines, fmt.Sprintf("%s|%s|%s|%s|-", state.Name(), state.Scheme(), state.DSN(), state.String()))
+				}
+				lastStates[state.DSN()] = state
+			} else {
+				lines = append(lines, fmt.Sprintf("%s|%s|%s|%s", state.Name(), state.Scheme(), state.DSN(), state.String()))
+			}
 		}
 
 		if len(lines) > 1 {

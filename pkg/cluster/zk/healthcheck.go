@@ -33,7 +33,7 @@ func (h *healthCheck) startup() {
 func (h *healthCheck) close() {}
 
 func (h *healthCheck) register() {
-	if err := h.CreateLiveNode(h.participant(h.p.Endpoint), h.p.Marshal(), 2); err != nil {
+	if err := h.CreateLiveNode(h.participant(h.p.Endpoint), h.p.Marshal(), 3); err != nil {
 		// 2 same participant running?
 		panic(err)
 	}

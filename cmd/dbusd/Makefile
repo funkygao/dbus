@@ -32,7 +32,7 @@ resource:
 	dbc resources -add in.binlog-mysql:local://root@localhost:3306
 
 resources:
-	dbc resources -add in.test-mysql:local://root@localhost:3306/test
+	dbc resources -add in.test-mysql:local://root@localhost:3306
 	dbc resources -add in.mysql-mysql:local://root@localhost:3306/mysql
 
 zkconf:

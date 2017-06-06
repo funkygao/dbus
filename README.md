@@ -138,19 +138,6 @@ More plugins are listed under [dbus-plugin](https://github.com/dbus-plugin).
   
   if the binlog exceeds 1MB, it will be discarded(lost)
 
-- ERROR 1236 (HY000): Could not find first log file name in binary log index file
-
-  the checkpointed binlog position is gone on master, reset the zk znode and replication will 
-  automatically resume
-
-- how to migrate mysql database?
-
-  mysqldump --user=root --master-data --single-transaction --skip-lock-tables --compact --skip-opt --quick --no-create-info --skip-extended-insert --all-databases
-
-  parse CHANGE MASTER TO MASTER_LOG_FILE='mysql.000005', MASTER_LOG_POS=80955497;
-
-  MysqlbinlogInput load position for incremental loading
-
 #### why not canal?
 
 - no Delivery Guarantee
@@ -188,6 +175,8 @@ dbus uses epoch to solve this issue.
 - [ ] alert lags
 - [ ] 'delete from t' generates a huge binlog event
   It might exceed max event size: 1MB
+- [X] HY000 auto heal
+- [ ] model.RowsEvent add dbus timestamp
 - [ ] cluster
   - [ ] monitor resources cost and rebalance
   - [ ] support multiple projects
