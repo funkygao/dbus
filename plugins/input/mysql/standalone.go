@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"strings"
 	"time"
 
 	"github.com/funkygao/dbus/engine"
@@ -48,28 +47,19 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 		}
 
 		rows := this.slave.Events()
-		errors := this.slave.Errors()
+		replErrors := this.slave.Errors()
 		for {
 			select {
 			case <-stopper:
 				log.Debug("[%s] yes sir!", name)
 				return nil
 
-			case err := <-errors:
+			case err := <-replErrors:
 				// e,g.
 				// ERROR 1236 (HY000): Could not find first log file name in binary log index file
 				// ERROR 1236 (HY000): Could not open log file
 				log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
-				if strings.Contains(err.Error(), "ERROR 1236 (HY000)") {
-					if pos, _err := this.slave.MasterPosition(); _err == nil {
-						// FIXME the pos might miss 'table id' info.
-						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
-						if er := this.slave.CommitPosition(pos.Name, 4); er != nil {
-							log.Error("[%s] %s: %v", name, dsn, er)
-						}
-					}
-				}
-
+				this.tryAutoHeal(name, err, this.slave)
 				this.slave.StopReplication()
 
 				select {
@@ -82,7 +72,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 
 			case pack := <-ex.InChan():
 				select {
-				case err := <-errors:
+				case err := <-replErrors:
 					log.Error("[%s] backoff %s: %v, stop from %s", name, backoff, err, dsn)
 					this.slave.StopReplication()
 

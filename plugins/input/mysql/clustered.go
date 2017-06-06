@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -49,7 +48,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 
 		var wg sync.WaitGroup
 		slavesStopper := make(chan struct{})
-		replicationErrs := make(chan error)
+		replicationErrs := make(chan error, 5)
 
 		// got new resources assignment!
 
@@ -128,29 +127,19 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 	}
 
 	rows := slave.Events()
-	errors := slave.Errors()
+	replErrors := slave.Errors()
 	dsn := slave.DSN()
 	for {
 		select {
 		case <-slavesStopper:
 			return
 
-		case err, ok := <-errors:
+		case err, ok := <-replErrors:
 			// e,g.
 			// ERROR 1045 (28000): Access denied for user 'test'@'10.1.1.1'
 			if ok {
 				log.Error("[%s] %v, stop from %s", name, err, dsn)
-
-				if strings.Contains(err.Error(), "ERROR 1236 (HY000)") {
-					if pos, _err := slave.MasterPosition(); _err == nil {
-						// FIXME the pos might miss 'table id' info.
-						log.Warn("[%s] reset %s position to: %+v", name, dsn, pos)
-						if er := slave.CommitPosition(pos.Name, 4); er != nil {
-							log.Error("[%s] %s: %v", name, dsn, er)
-						}
-					}
-				}
-
+				this.tryAutoHeal(name, err, slave)
 				replicationErrs <- err
 			}
 			return
@@ -160,9 +149,10 @@ func (this *MysqlbinlogInput) runSlaveReplication(slave *myslave.MySlave, name s
 			case <-slavesStopper:
 				return
 
-			case err, ok := <-errors:
+			case err, ok := <-replErrors:
 				if ok {
 					log.Error("[%s] %v, stop from %s", name, err, dsn)
+					this.tryAutoHeal(name, err, slave)
 					replicationErrs <- err
 				} else {
 					log.Error("[%s] error stream closed from %s", name, dsn)

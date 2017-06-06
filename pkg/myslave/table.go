@@ -28,6 +28,7 @@ func (m *MySlave) getTableColumns(db, table string) []string {
 		return nil
 	}
 
+	m.tables[key] = cols
 	return cols
 }
 
