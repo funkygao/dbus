@@ -16,6 +16,7 @@ type Resources struct {
 	Cmd string
 
 	zone        string
+	cluster     string
 	addResource string
 	delResource string
 }
@@ -24,6 +25,7 @@ func (this *Resources) Run(args []string) (exitCode int) {
 	cmdFlags := flag.NewFlagSet("resources", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&this.cluster, "c", "", "")
 	cmdFlags.StringVar(&this.addResource, "add", "", "")
 	cmdFlags.StringVar(&this.delResource, "del", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
@@ -108,6 +110,8 @@ Usage: %s resources [options]
 Options:
 
     -z zone
+
+    -c cluster
 
     -add input-resource
       resource DSN

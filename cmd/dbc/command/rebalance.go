@@ -15,10 +15,14 @@ type Rebalance struct {
 }
 
 func (this *Rebalance) Run(args []string) (exitCode int) {
-	var zone string
+	var (
+		zone    string
+		cluster string
+	)
 	cmdFlags := flag.NewFlagSet("rebalance", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&cluster, "c", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -48,6 +52,8 @@ Usage: %s rebalance [options]
 Options:
 
     -z zone
+
+    -c cluster
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

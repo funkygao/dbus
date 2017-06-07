@@ -28,12 +28,14 @@ func (this *Config) Run(args []string) (exitCode int) {
 	var (
 		zone     string
 		fromFile string
+		cluster  string
 		diff     string
 		vers     bool
 	)
 	cmdFlags := flag.NewFlagSet("config", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&cluster, "c", "", "")
 	cmdFlags.StringVar(&fromFile, "from", "", "")
 	cmdFlags.BoolVar(&vers, "vers", false, "")
 	cmdFlags.StringVar(&diff, "diff", "", "")
@@ -159,6 +161,8 @@ Usage: %s config [options]
 Options:
 
     -z zone
+
+    -c cluster
 
     -from filename
       Import to central config from local file.
