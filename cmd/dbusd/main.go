@@ -53,6 +53,7 @@ func main() {
 	globals.PluginChanSize = options.pluginPoolSize
 	globals.ClusterEnabled = options.clusterEnable
 	globals.Zone = options.zone
+	globals.Cluster = options.cluster
 	if len(options.zrootCheckpoint) > 0 {
 		globals.ZrootCheckpoint = options.zrootCheckpoint
 	}

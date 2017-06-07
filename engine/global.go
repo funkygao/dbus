@@ -27,10 +27,12 @@ type GlobalConfig struct {
 	*conf.Conf
 	stopping bool
 
+	Zone    string
+	Cluster string
+
 	StartedAt      time.Time
 	Debug          bool
 	ClusterEnabled bool
-	Zone           string // used to locate kguard
 	RouterTrack    bool
 	WatchdogTick   time.Duration
 
