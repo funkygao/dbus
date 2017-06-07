@@ -7,15 +7,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/gorequest"
 )
 
-func openClusterManager(zone string) cluster.Manager {
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), "")
+func openClusterManager(zone, cluster string) cluster.Manager {
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), cluster)
 	swallow(mgr.Open())
 
 	return mgr
@@ -47,7 +47,7 @@ func callAPI(p cluster.Participant, api string, method string, body string) (str
 	}
 
 	reply, replyBody, errs := r.
-		Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).
+		Set("User-Agent", fmt.Sprintf("dbus-%s", version.Revision)).
 		SendString(body).
 		End()
 	if reply.StatusCode != http.StatusOK {

@@ -19,11 +19,11 @@ BUILD_USER=$(shell echo `whoami`@`hostname`)
 GO_FLAGS=${GO_FLAGS:-} # Extra go flags to use in the build.
 
 ldflags="\
--X github.com/funkygao/dbus.Version=$(VERSION) \
--X github.com/funkygao/dbus.Branch=${GIT_BRANCH} \
--X github.com/funkygao/dbus.Revision=${GIT_ID}${GIT_DIRTY} \
--X github.com/funkygao/dbus.BuildDate=${BUILD_TIME} \
--X github.com/funkygao/dbus.BuildUser=${BUILD_USER} \
+-X github.com/funkygao/golib/version.Version=$(VERSION) \
+-X github.com/funkygao/golib/version.Branch=${GIT_BRANCH} \
+-X github.com/funkygao/golib/version.Revision=${GIT_ID}${GIT_DIRTY} \
+-X github.com/funkygao/golib/version.BuildDate=${BUILD_TIME} \
+-X github.com/funkygao/golib/version.BuildUser=${BUILD_USER} \
 -w"
 
 help:

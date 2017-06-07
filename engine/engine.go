@@ -14,13 +14,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/go-metrics"
+	"github.com/funkygao/golib/version"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
@@ -119,7 +120,7 @@ func New(globals *GlobalConfig) *Engine {
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
 			State:    cluster.StateOnline,
-			Revision: dbus.Revision,
+			Revision: version.Revision,
 			APIPort:  globals.APIPort,
 		},
 	}
@@ -185,7 +186,7 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 func (e *Engine) LoadFrom(loc string) *Engine {
 	if len(loc) == 0 {
 		// if no location provided, use the default zk
-		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), Globals().ZrootConf)
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(Globals().Zone), zk.DbusConfig(Globals().Cluster))
 	}
 
 	zkSvr, realPath := parseConfigPath(loc)
@@ -281,7 +282,7 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Trace("engine starting...")
 
 	if globals.ClusterEnabled {
-		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.leaderRebalance)
+		e.controller = czk.NewController(e.zkSvr, globals.Cluster, e.participant, cluster.StrategyRoundRobin, e.leaderRebalance)
 	}
 
 	// setup signal handler first to avoid race condition
@@ -395,7 +396,7 @@ func (e *Engine) ServeForever() (ret error) {
 
 	for _, inputRunner := range e.InputRunners {
 		inputRunner.Input().End(inputRunner)
-		log.Trace("[%s] ended", inputRunner.Name())
+		log.Trace("Input[%s] stopped", inputRunner.Name())
 	}
 
 	log.Info("all %d plugins fully stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))

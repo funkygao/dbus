@@ -6,17 +6,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/gafka/zk"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/gorequest"
 	"github.com/funkygao/zkclient"
 )
 
 // NewManager creates a Manager with zookeeper as underlying storage.
-func NewManager(zkSvr string, zroot string) cluster.Manager {
-	if len(zroot) > 0 {
-		rootPath = zroot
-	}
+func NewManager(zkSvr string, clusterName string) cluster.Manager {
+	rootPath = zk.DbusClusterRoot(clusterName)
 
 	return &controller{
 		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),
@@ -32,7 +31,7 @@ func (c *controller) Close() {
 }
 
 func (c *controller) TriggerUpgrade() (err error) {
-	data := []byte(dbus.Revision)
+	data := []byte(version.Revision)
 	err = c.zc.Set(c.kb.upgrade(), data)
 	if zkclient.IsErrNoNode(err) {
 		return c.zc.CreatePersistent(c.kb.upgrade(), data)
@@ -141,7 +140,7 @@ func (c *controller) CallParticipants(method string, q string) (err error) {
 				r = r.Get(targetURI)
 			}
 
-			resp, _, errs := r.Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).End()
+			resp, _, errs := r.Set("User-Agent", fmt.Sprintf("dbus-%s", version.Revision)).End()
 			if len(errs) > 0 {
 				err = errs[0]
 			} else if resp.StatusCode != http.StatusOK {

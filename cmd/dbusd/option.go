@@ -6,14 +6,15 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/golib/version"
 )
 
 var (
 	options struct {
-		debug bool
-		zone  string
+		debug   bool
+		zone    string
+		cluster string
 
 		configPath    string
 		validateConf  bool
@@ -69,6 +70,7 @@ func parseFlags() {
 	flag.IntVar(&options.rpcPort, "rpc", 9877, "rpc server port")
 	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
 	flag.StringVar(&options.zone, "z", ctx.DefaultZone(), "zone")
+	flag.StringVar(&options.cluster, "c", "", "")
 	flag.StringVar(&options.zrootCheckpoint, "rootcheckpoint", "", "checkpoint znode root")
 	flag.StringVar(&options.zrootCluster, "rootcluster", "", "cluster znode root")
 	flag.StringVar(&options.zrootConfig, "rootconfig", "", "config znode root")
@@ -78,11 +80,19 @@ func parseFlags() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if options.showversion {
+		showVersionAndExit()
+	}
+
+	if len(options.cluster) == 0 {
+		panic("-c required")
+	}
 }
 
 func showVersionAndExit() {
-	fmt.Fprintf(os.Stderr, "%s %s (%s)\n", os.Args[0], dbus.Version, dbus.Revision)
+	fmt.Fprintf(os.Stderr, "%s %s (%s/%s)\n", os.Args[0], version.Version, version.Revision, version.Branch)
 	fmt.Fprintf(os.Stderr, "Built with %s %s for %s/%s at %s by %s\n",
-		runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH, dbus.BuildDate, dbus.BuildUser)
+		runtime.Compiler, runtime.Version(), runtime.GOOS, runtime.GOARCH, version.BuildDate, version.BuildUser)
 	os.Exit(0)
 }

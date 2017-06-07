@@ -34,7 +34,8 @@ func (this *dbusWatcher) Run() {
 	participantsGauge := metrics.NewRegisteredGauge("dbus.participants", nil)
 	reelectGauge := metrics.NewRegisteredGauge("dbus.reelect", nil)
 
-	mgr := czk.NewManager(this.zkzone.ZkAddrs(), "")
+	// TODO iterate through each cluster
+	mgr := czk.NewManager(this.zkzone.ZkAddrs(), this.zkzone.DefaultDbusCluster())
 	if err := mgr.Open(); err != nil {
 		log.Warn("%s quit: %v", this.ident, err)
 		return

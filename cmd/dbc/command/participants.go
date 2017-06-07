@@ -9,6 +9,7 @@ import (
 	"github.com/funkygao/columnize"
 	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 )
 
@@ -16,18 +17,30 @@ type Participants struct {
 	Ui  cli.Ui
 	Cmd string
 
-	zone string
+	zone       string
+	cluster    string
+	showQueues bool
 }
 
 func (this *Participants) Run(args []string) (exitCode int) {
 	cmdFlags := flag.NewFlagSet("participants", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&this.zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&this.cluster, "c", "", "")
+	cmdFlags.BoolVar(&this.showQueues, "q", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	mgr := openClusterManager(this.zone)
+	zkzone := zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
+	if len(this.cluster) == 0 {
+		if this.cluster = zkzone.DefaultDbusCluster(); this.cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
+
+	mgr := openClusterManager(this.zone, this.cluster)
 	defer mgr.Close()
 
 	leader, err := mgr.Leader()
@@ -40,6 +53,25 @@ func (this *Participants) Run(args []string) (exitCode int) {
 	ps, err := mgr.LiveParticipants()
 	if err != nil {
 		this.Ui.Error(err.Error())
+		return
+	}
+
+	if this.showQueues {
+		for _, p := range ps {
+			queues, errs := callAPI(p, "queues", "GET", "")
+			if len(errs) > 0 {
+				this.Ui.Errorf("%+v %+v", p, errs)
+				return
+			}
+
+			if p.Equals(leader) {
+				this.Ui.Output(p.Endpoint + "*")
+			} else {
+				this.Ui.Output(p.Endpoint)
+			}
+			this.Ui.Output(queues)
+		}
+
 		return
 	}
 
@@ -92,6 +124,11 @@ Usage: %s participants [options]
 Options:
 
     -z zone
+
+    -c cluster
+
+    -q
+     Display each participant's internal dataflow queues.
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

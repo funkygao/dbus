@@ -4,15 +4,15 @@
 
 - [ ] inc replication recv buffer size
 - [ ] tweak of batcher yield
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [ ] metrics isolation by cluster
 - [ ] participant starts slow
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:281) engine starting...
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:343) [10.9.1.1:9877] participant starting...
   - [06/06/17 15:06:41 CST] [INFO] (     engine.go:349) [10.9.1.1:9877] participant started
-- [ ] debug-ability
-- [ ] alert lags
 - [ ] cluster
   - [ ] monitor resources cost and rebalance
-  - [ ] support multiple projects
+  - [X] support multiple projects
 - [ ] resource group
 - [ ] FIXME access denied leads to orphan resource
 - [ ] myslave should have no checkpoint, placed in Input
@@ -21,6 +21,8 @@
 - [ ] add Operator for Filter
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
+- [X] alert mysql binlog lags
+- [X] dbc participants -i // show internal buffers
 - [X] model.RowsEvent add dbus timestamp
 - [X] HY000 auto heal
 - [X] multiversion config in zk
@@ -45,7 +47,6 @@
 - [ ] kafka producer qos
 - [ ] batcher only retries after full batch ack, add timer?
 - [ ] KafkaConsumer might not be able to Stop
-- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [X] kguard integration
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
@@ -126,5 +127,6 @@
 
 - a big DELETE statement might kill dbusd
   - It might exceed max event size: 1MB
+    mysql seems to auto-chunk the big event into chunks of small events
   - It might malloc a very big memory in RowsEvent struct
 - OSC tools will make 'ALTER' very complex, whence dbusd not able to clear table columns cache

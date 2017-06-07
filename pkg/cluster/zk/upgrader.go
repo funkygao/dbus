@@ -1,7 +1,7 @@
 package zk
 
 import (
-	"github.com/funkygao/dbus"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/zkclient"
 )
 
@@ -41,7 +41,7 @@ func (u *upgrader) HandleDataChange(dataPath string, lastData []byte) error {
 	}
 
 	newRevision := string(b)
-	if newRevision != dbus.Revision {
+	if newRevision != version.Revision {
 		// trigger upgrade
 		// if client does not receive this event, will block forever, ok
 		u.evtCh <- struct{}{}

@@ -2,6 +2,7 @@ package zk
 
 import (
 	"github.com/funkygao/dbus/pkg/cluster"
+	kzk "github.com/funkygao/gafka/zk"
 	"github.com/funkygao/go-zookeeper/zk"
 	log "github.com/funkygao/log4go"
 	"github.com/funkygao/zkclient"
@@ -32,7 +33,7 @@ type controller struct {
 }
 
 // NewController creates a Controller with zookeeper as underlying storage.
-func NewController(zkSvr string, zroot string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
+func NewController(zkSvr string, clusterName string, participant cluster.Participant, strategy cluster.Strategy, onRebalance cluster.RebalanceCallback) cluster.Controller {
 	if onRebalance == nil {
 		panic("onRebalance nil not allowed")
 	}
@@ -47,9 +48,7 @@ func NewController(zkSvr string, zroot string, participant cluster.Participant, 
 		panic("strategy not implemented")
 	}
 
-	if len(zroot) > 0 {
-		rootPath = zroot
-	}
+	rootPath = kzk.DbusClusterRoot(clusterName)
 
 	return &controller{
 		kb:           newKeyBuilder(),

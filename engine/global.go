@@ -27,19 +27,17 @@ type GlobalConfig struct {
 	*conf.Conf
 	stopping bool
 
+	Zone    string
+	Cluster string
+
 	StartedAt      time.Time
 	Debug          bool
 	ClusterEnabled bool
-	Zone           string // used to locate kguard
 	RouterTrack    bool
 	WatchdogTick   time.Duration
 
 	RPCPort int
 	APIPort int
-
-	ZrootConf       string
-	ZrootCluster    string
-	ZrootCheckpoint string
 
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
@@ -85,8 +83,5 @@ func DefaultGlobals() *GlobalConfig {
 		WatchdogTick:          time.Minute * 10,
 		StartedAt:             time.Now(),
 		registry:              map[string]interface{}{},
-		ZrootConf:             "/dbus/conf",
-		ZrootCheckpoint:       "/dbus/checkpoint",
-		ZrootCluster:          "/dbus/cluster",
 	}
 }

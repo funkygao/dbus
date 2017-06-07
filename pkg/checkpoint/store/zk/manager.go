@@ -15,7 +15,10 @@ type manager struct {
 	zkzone *zk.ZkZone
 }
 
-func NewManager(zkzone *zk.ZkZone) checkpoint.Manager {
+func NewManager(zkzone *zk.ZkZone, cluster string) checkpoint.Manager {
+	if len(cluster) > 0 {
+		root = zk.DbusCheckpointRoot(cluster)
+	}
 	return &manager{zkzone: zkzone}
 }
 

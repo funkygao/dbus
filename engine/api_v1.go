@@ -45,3 +45,21 @@ func (e *Engine) handleAPIDecisionV1(w http.ResponseWriter, r *http.Request, par
 
 	return m.CurrentDecision(), nil
 }
+
+func (e *Engine) handleQueuesV1(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
+	rs := make(map[string]int)
+
+	globals := Globals()
+	rs["hub.free"] = globals.HubChanSize - rs["hub"]
+	rs["filter.free"] = len(e.filterRecycleChan)
+
+	for name, ch := range e.inputRecycleChans {
+		rs["input."+name+".free"] = len(ch)
+	}
+
+	for _, om := range e.router.outputMatchers {
+		rs["output."+om.runner.Name()+".free"] = globals.PluginChanSize - len(om.InChan())
+	}
+
+	return rs, nil
+}

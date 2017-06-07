@@ -24,9 +24,9 @@ type checkpointZK struct {
 	lastCommitted time.Time
 }
 
-func New(zkzone *zk.ZkZone, state checkpoint.State, zroot string, zpath string, interval time.Duration) checkpoint.Checkpoint {
-	if len(zroot) > 0 {
-		root = zroot
+func New(zkzone *zk.ZkZone, state checkpoint.State, cluster string, zpath string, interval time.Duration) checkpoint.Checkpoint {
+	if len(cluster) > 0 {
+		root = zk.DbusCheckpointRoot(cluster)
 	}
 	zpath = realPath(state, zpath)
 	if err := zkzone.EnsurePathExists(path.Dir(zpath)); err != nil {
