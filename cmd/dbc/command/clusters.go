@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 )
 
@@ -15,12 +16,31 @@ type Clusters struct {
 }
 
 func (this *Clusters) Run(args []string) (exitCode int) {
-	var zone string
+	var (
+		zone       string
+		addCluster string
+	)
 	cmdFlags := flag.NewFlagSet("clusters", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&addCluster, "add", "", "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
+	}
+
+	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
+	switch {
+	case addCluster != "":
+		if err := zkzone.CreateDbusCluster(addCluster); err != nil {
+			this.Ui.Error(err.Error())
+		} else {
+			this.Ui.Infof("%s created", addCluster)
+		}
+
+	default:
+		zkzone.ForSortedDbusClusters(func(name string, data []byte) {
+			this.Ui.Output(name)
+		})
 	}
 
 	return
@@ -39,6 +59,9 @@ Usage: %s clusters [options]
 Options:
 
     -z zone
+
+    -add name
+     Add a new dbus cluster.
 
 `, this.Cmd, this.Synopsis())
 	return strings.TrimSpace(help)

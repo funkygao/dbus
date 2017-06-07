@@ -55,7 +55,7 @@ func (this *MysqlbinlogInput) runClustered(r engine.InputRunner, h engine.Plugin
 		this.mu.Lock()
 		for _, resource := range myResources {
 			dsn := resource.DSN()
-			slave := myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
+			slave := myslave.New(name, dsn, globals.Cluster).LoadConfig(this.cf)
 			this.slaves[dsn] = slave
 
 			wg.Add(1)

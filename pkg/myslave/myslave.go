@@ -32,12 +32,12 @@ type MySlave struct {
 	Predicate func(schema, table string) bool
 	GTID      bool // global tx id
 
-	zrootCheckpoint string
-	dsn             string
-	masterAddr      string
-	host            string
-	port            uint16
-	user, passwd    string
+	cluster      string
+	dsn          string
+	masterAddr   string
+	host         string
+	port         uint16
+	user, passwd string
 
 	dbAllowed  map[string]struct{}
 	dbExcluded map[string]struct{}
@@ -53,7 +53,7 @@ type MySlave struct {
 var setupLogger sync.Once
 
 // New creates a MySlave instance.
-func New(name, dsn string, zrootCheckpoint string) *MySlave {
+func New(name, dsn string, cluster string) *MySlave {
 	setupLogger.Do(func() {
 		// github.com/siddontang/go-mysql is using github.com/ngaut/log
 		mylog.SetLevel(mylog.LOG_LEVEL_ERROR)
@@ -63,12 +63,12 @@ func New(name, dsn string, zrootCheckpoint string) *MySlave {
 	})
 
 	return &MySlave{
-		zrootCheckpoint: zrootCheckpoint,
-		dsn:             dsn,
-		dbExcluded:      map[string]struct{}{},
-		dbAllowed:       map[string]struct{}{},
-		state:           binlog.New(dsn, name),
-		tables:          make(map[string][]string, 16),
+		cluster:    cluster,
+		dsn:        dsn,
+		dbExcluded: map[string]struct{}{},
+		dbAllowed:  map[string]struct{}{},
+		state:      binlog.New(dsn, name),
+		tables:     make(map[string][]string, 16),
 	}
 }
 
@@ -103,10 +103,10 @@ func (m *MySlave) LoadConfig(config *conf.Conf) *MySlave {
 	}
 
 	m.m = newMetrics(m.name)
-	if len(m.zrootCheckpoint) == 0 {
+	if len(m.cluster) == 0 {
 		m.p = discard.New()
 	} else {
-		m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.zrootCheckpoint,
+		m.p = czk.New(engine.Globals().GetOrRegisterZkzone(zone), m.state, m.cluster,
 			m.dsn, m.c.Duration("pos_commit_interval", time.Second))
 	}
 

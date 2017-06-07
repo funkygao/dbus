@@ -21,7 +21,7 @@ func (this *MysqlbinlogInput) runStandalone(dsn string, r engine.InputRunner, h 
 	backoff := time.Second * 5
 	stopper := r.Stopper()
 
-	this.slave = myslave.New(name, dsn, globals.ZrootCheckpoint).LoadConfig(this.cf)
+	this.slave = myslave.New(name, dsn, globals.Cluster).LoadConfig(this.cf)
 	if err := this.slave.AssertValidRowFormat(); err != nil {
 		panic(err)
 	}

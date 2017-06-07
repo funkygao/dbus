@@ -53,19 +53,12 @@ func main() {
 	globals.PluginChanSize = options.pluginPoolSize
 	globals.ClusterEnabled = options.clusterEnable
 	globals.Zone = options.zone
-	if len(options.zrootCheckpoint) > 0 {
-		globals.ZrootCheckpoint = options.zrootCheckpoint
-	}
-	if len(options.zrootCluster) > 0 {
-		globals.ZrootCluster = options.zrootCluster
-	}
-	if len(options.zrootConfig) > 0 {
-		globals.ZrootConf = options.zrootConfig
-	}
+	globals.Cluster = options.cluster
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
-		log4go.Info("dbus[%s@%s] starting", dbus.Revision, dbus.Version)
+		log4go.Info("dbus[%s@%s] starting for {zone:%s cluster:%s}",
+			dbus.Revision, dbus.Version, options.zone, options.cluster)
 
 		agent.HttpAddr = options.pprofAddr
 		log4go.Info("pprof agent ready on %s", agent.Start())

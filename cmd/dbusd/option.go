@@ -12,8 +12,9 @@ import (
 
 var (
 	options struct {
-		debug bool
-		zone  string
+		debug   bool
+		zone    string
+		cluster string
 
 		configPath    string
 		validateConf  bool
@@ -69,6 +70,7 @@ func parseFlags() {
 	flag.IntVar(&options.rpcPort, "rpc", 9877, "rpc server port")
 	flag.IntVar(&options.apiPort, "api", 9876, "api server port")
 	flag.StringVar(&options.zone, "z", ctx.DefaultZone(), "zone")
+	flag.StringVar(&options.cluster, "c", "", "")
 	flag.StringVar(&options.zrootCheckpoint, "rootcheckpoint", "", "checkpoint znode root")
 	flag.StringVar(&options.zrootCluster, "rootcluster", "", "cluster znode root")
 	flag.StringVar(&options.zrootConfig, "rootconfig", "", "config znode root")
@@ -78,6 +80,10 @@ func parseFlags() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if len(options.cluster) == 0 {
+		panic("-c required")
+	}
 }
 
 func showVersionAndExit() {

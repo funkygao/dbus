@@ -14,8 +14,8 @@ import (
 	"github.com/funkygao/gorequest"
 )
 
-func openClusterManager(zone string) cluster.Manager {
-	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), "")
+func openClusterManager(zone, cluster string) cluster.Manager {
+	mgr := czk.NewManager(ctx.ZoneZkAddrs(zone), cluster)
 	swallow(mgr.Open())
 
 	return mgr

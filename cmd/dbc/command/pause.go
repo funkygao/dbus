@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 )
 
@@ -14,6 +15,7 @@ type Pause struct {
 	Cmd string
 
 	zone       string
+	cluster    string
 	inputName  string
 	resumeMode bool
 }
@@ -22,6 +24,7 @@ func (this *Pause) Run(args []string) (exitCode int) {
 	cmdFlags := flag.NewFlagSet("pause", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&this.zone, "z", ctx.DefaultZone(), "")
+	cmdFlags.StringVar(&this.cluster, "c", "", "")
 	cmdFlags.StringVar(&this.inputName, "in", "", "")
 	cmdFlags.BoolVar(&this.resumeMode, "r", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
@@ -33,7 +36,15 @@ func (this *Pause) Run(args []string) (exitCode int) {
 		return 2
 	}
 
-	mgr := openClusterManager(this.zone)
+	zkzone := zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
+	if len(this.cluster) == 0 {
+		if this.cluster = zkzone.DefaultDbusCluster(); this.cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
+
+	mgr := openClusterManager(this.zone, this.cluster)
 	defer mgr.Close()
 
 	var q string
@@ -64,6 +75,8 @@ Usage: %s pause [options]
 Options:
 
     -z zone
+
+    -c cluster
 
     -in input name
 

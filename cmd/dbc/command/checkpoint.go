@@ -22,19 +22,27 @@ type Checkpoint struct {
 func (this *Checkpoint) Run(args []string) (exitCode int) {
 	var (
 		zone    string
+		cluster string
 		topMode bool
 	)
 	cmdFlags := flag.NewFlagSet("checkpoint", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
 	cmdFlags.StringVar(&zone, "z", ctx.ZkDefaultZone(), "")
+	cmdFlags.StringVar(&cluster, "c", "", "")
 	cmdFlags.BoolVar(&topMode, "top", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-	mgr := czk.NewManager(zkzone)
+	if len(cluster) == 0 {
+		if cluster = zkzone.DefaultDbusCluster(); cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
 
+	mgr := czk.NewManager(zkzone, cluster)
 	lastStates := make(map[string]checkpoint.State)
 	for {
 		states, err := mgr.AllStates()
@@ -88,6 +96,8 @@ Usage: %s checkpoint [options]
 Options:
 
     -z zone
+
+    -c cluster
 
     -top
       Run in top mode.
