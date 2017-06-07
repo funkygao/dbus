@@ -174,7 +174,6 @@ dbus uses epoch to solve this issue.
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:281) engine starting...
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:343) [10.9.1.1:9877] participant starting...
   - [06/06/17 15:06:41 CST] [INFO] (     engine.go:349) [10.9.1.1:9877] participant started
-- [ ] multiversion config in zk
 - [ ] debug-ability
 - [ ] alert lags
 - [ ] inc replication recv buffer size
@@ -195,6 +194,7 @@ dbus uses epoch to solve this issue.
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
 - [X] HY000 auto heal
+- [X] multiversion config in zk
 - [X] model.RowsEvent add dbus timestamp
 - [ ] controller
   - [ ] a participant is electing, then shutdown took a long time(blocked by CreateLiveNode)
