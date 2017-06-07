@@ -10,6 +10,7 @@ import (
 
 	"github.com/funkygao/dbus"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 	"github.com/funkygao/log4go"
 )
@@ -39,6 +40,19 @@ func main() {
 						fmt.Println(zone)
 					}
 					return
+
+				case "-c": // cluster
+					zone := ctx.ZkDefaultZone()
+					for i := 0; i < len(args)-1; i++ {
+						if args[i] == "-z" {
+							// happy with panic
+							zone = args[i+1]
+						}
+					}
+					zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
+					zkzone.ForSortedDbusClusters(func(name string, data []byte) {
+						fmt.Println(name)
+					})
 				}
 			}
 
