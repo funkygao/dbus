@@ -3,9 +3,9 @@
 ### TODO
 
 - [ ] inc replication recv buffer size
-- [ ] alert lags
-- [ ] dbc participants -i // show internal buffers
 - [ ] tweak of batcher yield
+- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
+- [ ] metrics isolation by cluster
 - [ ] participant starts slow
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:281) engine starting...
   - [06/06/17 15:06:11 CST] [TRAC] (     engine.go:343) [10.9.1.1:9877] participant starting...
@@ -21,6 +21,8 @@
 - [ ] add Operator for Filter
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
+- [X] alert mysql binlog lags
+- [X] dbc participants -i // show internal buffers
 - [X] model.RowsEvent add dbus timestamp
 - [X] HY000 auto heal
 - [X] multiversion config in zk
@@ -45,7 +47,6 @@
 - [ ] kafka producer qos
 - [ ] batcher only retries after full batch ack, add timer?
 - [ ] KafkaConsumer might not be able to Stop
-- [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [X] kguard integration
 - [X] router finding matcher is slow
 - [X] hot reload on config file changed
