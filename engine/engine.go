@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
 	czk "github.com/funkygao/dbus/pkg/cluster/zk"
 	"github.com/funkygao/gafka/ctx"
@@ -22,6 +21,7 @@ import (
 	"github.com/funkygao/gafka/telemetry/influxdb"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/go-metrics"
+	"github.com/funkygao/golib/version"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
 	"github.com/gorilla/mux"
@@ -120,7 +120,7 @@ func New(globals *GlobalConfig) *Engine {
 			Endpoint: fmt.Sprintf("%s:%d", localIP.String(), globals.RPCPort),
 			Weight:   runtime.NumCPU() * 100,
 			State:    cluster.StateOnline,
-			Revision: dbus.Revision,
+			Revision: version.Revision,
 			APIPort:  globals.APIPort,
 		},
 	}

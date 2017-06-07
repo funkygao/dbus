@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/golib/dag"
+	"github.com/funkygao/golib/version"
 	log "github.com/funkygao/log4go"
 )
 
@@ -107,11 +107,11 @@ func (e *Engine) handleAPIPlugins(w http.ResponseWriter, r *http.Request, params
 
 func (e *Engine) handleAPIStat(w http.ResponseWriter, r *http.Request, params map[string]interface{}) (interface{}, error) {
 	var output = make(map[string]interface{})
-	output["ver"] = dbus.Version
+	output["ver"] = version.Version
 	output["started"] = Globals().StartedAt
 	output["elapsed"] = time.Since(Globals().StartedAt).String()
 	output["pid"] = e.pid
 	output["hostname"] = e.hostname
-	output["revision"] = dbus.Revision
+	output["revision"] = version.Revision
 	return output, nil
 }

@@ -8,10 +8,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/log4go"
 )
 
@@ -65,7 +65,7 @@ func main() {
 		}
 	}
 
-	c := cli.NewCLI(app, fmt.Sprintf("dbc %s (%s)", dbus.Version, dbus.Revision))
+	c := cli.NewCLI(app, fmt.Sprintf("dbc %s (%s/%s)", version.Version, version.Revision, version.Branch))
 	c.Args = os.Args[1:]
 	c.Commands = commands
 	c.HelpFunc = func(m map[string]cli.CommandFactory) string {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/gorequest"
 	log "github.com/funkygao/log4go"
 )
@@ -60,7 +60,7 @@ func (e *Engine) leaderRebalance(epoch int, decision cluster.Decision) {
 func (e *Engine) callRPC(endpoint string, epoch int, phase int, resources []cluster.Resource) int {
 	resp, _, errs := gorequest.New().
 		Post(fmt.Sprintf("http://%s/v1/rebalance?epoch=%d&phase=%d", endpoint, epoch, phase)).
-		Set("User-Agent", fmt.Sprintf("dbus-%s", dbus.Revision)).
+		Set("User-Agent", fmt.Sprintf("dbus-%s", version.Revision)).
 		SendString(string(cluster.Resources(resources).Marshal())).
 		End()
 	if len(errs) > 0 {

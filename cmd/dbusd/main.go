@@ -7,10 +7,10 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/diagnostics/agent"
+	"github.com/funkygao/golib/version"
 	"github.com/funkygao/log4go"
 
 	// bootstrap plugins
@@ -22,10 +22,6 @@ import (
 
 func init() {
 	parseFlags()
-
-	if options.showversion {
-		showVersionAndExit()
-	}
 
 	setupLogging()
 
@@ -58,7 +54,7 @@ func main() {
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode
 		log4go.Info("dbus[%s@%s] starting for {zone:%s cluster:%s}",
-			dbus.Revision, dbus.Version, options.zone, options.cluster)
+			version.Revision, version.Version, options.zone, options.cluster)
 
 		agent.HttpAddr = options.pprofAddr
 		log4go.Info("pprof agent ready on %s", agent.Start())
@@ -88,6 +84,6 @@ func main() {
 		}
 	}
 
-	log4go.Info("dbus[%s@%s] %s, bye!", dbus.Revision, dbus.Version, time.Since(t0))
+	log4go.Info("dbus[%s@%s] %s, bye!", version.Revision, version.Version, time.Since(t0))
 	log4go.Close()
 }
