@@ -15,6 +15,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
+// TODO github.com/yudai/gojsondiff
 type Config struct {
 	Ui  cli.Ui
 	Cmd string
