@@ -35,8 +35,14 @@ func (this *Checkpoint) Run(args []string) (exitCode int) {
 	}
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-	mgr := czk.NewManager(zkzone)
+	if len(cluster) == 0 {
+		if cluster = zkzone.DefaultDbusCluster(); cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
 
+	mgr := czk.NewManager(zkzone, cluster)
 	lastStates := make(map[string]checkpoint.State)
 	for {
 		states, err := mgr.AllStates()

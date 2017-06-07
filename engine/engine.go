@@ -20,6 +20,7 @@ import (
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/telemetry"
 	"github.com/funkygao/gafka/telemetry/influxdb"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/go-metrics"
 	conf "github.com/funkygao/jsconf"
 	log "github.com/funkygao/log4go"
@@ -185,7 +186,7 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 func (e *Engine) LoadFrom(loc string) *Engine {
 	if len(loc) == 0 {
 		// if no location provided, use the default zk
-		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(Globals().Zone), Globals().ZrootConf)
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(Globals().Zone), zk.DbusConfig(Globals().Cluster))
 	}
 
 	zkSvr, realPath := parseConfigPath(loc)
@@ -281,7 +282,7 @@ func (e *Engine) ServeForever() (ret error) {
 	log.Trace("engine starting...")
 
 	if globals.ClusterEnabled {
-		e.controller = czk.NewController(e.zkSvr, globals.ZrootCluster, e.participant, cluster.StrategyRoundRobin, e.leaderRebalance)
+		e.controller = czk.NewController(e.zkSvr, globals.Cluster, e.participant, cluster.StrategyRoundRobin, e.leaderRebalance)
 	}
 
 	// setup signal handler first to avoid race condition

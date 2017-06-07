@@ -19,9 +19,6 @@ import (
 type Config struct {
 	Ui  cli.Ui
 	Cmd string
-
-	configPath  string
-	historyPath string
 }
 
 func (this *Config) Run(args []string) (exitCode int) {
@@ -44,12 +41,16 @@ func (this *Config) Run(args []string) (exitCode int) {
 	}
 
 	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
-	this.configPath = "/dbus/conf"
-	this.historyPath = "/dbus/conf.d/"
+	if len(cluster) == 0 {
+		if cluster = zkzone.DefaultDbusCluster(); cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
 
 	switch {
 	case fromFile != "":
-		this.importFromFile(zkzone, fromFile)
+		this.importFromFile(zkzone, cluster, fromFile)
 
 	case diff != "":
 		tuples := strings.SplitN(diff, ":", 2)
@@ -57,14 +58,14 @@ func (this *Config) Run(args []string) (exitCode int) {
 			this.Ui.Output(this.Help())
 			return
 		}
-		this.compareVers(zkzone, tuples[0], tuples[1])
+		this.compareVers(zkzone, cluster, tuples[0], tuples[1])
 
 	case vers:
-		this.listVers(zkzone)
+		this.listVers(zkzone, cluster)
 
 	default:
 		// display configuration
-		data, _, err := zkzone.Conn().Get(this.configPath)
+		data, _, err := zkzone.Conn().Get(zk.DbusConfig(cluster))
 		if err != nil {
 			this.Ui.Error(err.Error())
 		} else {
@@ -75,32 +76,30 @@ func (this *Config) Run(args []string) (exitCode int) {
 	return
 }
 
-func (this *Config) importFromFile(zkzone *zk.ZkZone, fromFile string) {
+func (this *Config) importFromFile(zkzone *zk.ZkZone, cluster string, fromFile string) {
 	data, err := ioutil.ReadFile(fromFile)
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
 	}
 
-	if zkData, _, err := zkzone.Conn().Get(this.configPath); err == nil {
+	if zkData, _, err := zkzone.Conn().Get(zk.DbusConfig(cluster)); err == nil {
 		if strings.TrimSpace(string(data)) == strings.TrimSpace(string(zkData)) {
 			this.Ui.Warn("config same as inside zk, import gave up")
 			return
 		}
 	}
 
-	if _, err := zkzone.Conn().Set(this.configPath, data, -1); err != nil {
+	if _, err := zkzone.Conn().Set(zk.DbusConfig(cluster), data, -1); err != nil {
 		this.Ui.Error(err.Error())
 	} else {
 		this.Ui.Info("ok")
 	}
 
 	// generate the history version
-	vers, _, err := zkzone.Conn().Children(this.historyPath)
-	if err != nil {
-		zkzone.CreatePermenantZnode(this.historyPath, nil)
-		vers, _, _ = zkzone.Conn().Children(this.historyPath)
-	}
+	vers, _, err := zkzone.Conn().Children(zk.DbusConfigDir(cluster))
+	swallow(err)
+
 	var maxVer int
 	if len(vers) > 0 {
 		sort.Strings(vers)
@@ -111,14 +110,14 @@ func (this *Config) importFromFile(zkzone *zk.ZkZone, fromFile string) {
 		}
 	}
 
-	hisVerPath := path.Join(this.historyPath, string(maxVer+1))
+	hisVerPath := path.Join(zk.DbusConfigDir(cluster), strconv.Itoa(maxVer+1))
 	if err = zkzone.CreatePermenantZnode(hisVerPath, data); err != nil {
 		this.Ui.Error(err.Error())
 	}
 }
 
-func (this *Config) listVers(zkzone *zk.ZkZone) {
-	vers, _, err := zkzone.Conn().Children(this.historyPath)
+func (this *Config) listVers(zkzone *zk.ZkZone, cluster string) {
+	vers, _, err := zkzone.Conn().Children(zk.DbusConfigDir(cluster))
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
@@ -130,14 +129,14 @@ func (this *Config) listVers(zkzone *zk.ZkZone) {
 	}
 }
 
-func (this *Config) compareVers(zkzone *zk.ZkZone, v1, v2 string) {
-	data1, _, err := zkzone.Conn().Get(path.Join(this.historyPath, v1))
+func (this *Config) compareVers(zkzone *zk.ZkZone, cluster, v1, v2 string) {
+	data1, _, err := zkzone.Conn().Get(path.Join(zk.DbusConfigDir(cluster), v1))
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return
 	}
 
-	data2, _, err := zkzone.Conn().Get(path.Join(this.historyPath, v2))
+	data2, _, err := zkzone.Conn().Get(path.Join(zk.DbusConfigDir(cluster), v2))
 	if err != nil {
 		this.Ui.Error(err.Error())
 		return

@@ -8,15 +8,14 @@ import (
 
 	"github.com/funkygao/dbus"
 	"github.com/funkygao/dbus/pkg/cluster"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gorequest"
 	"github.com/funkygao/zkclient"
 )
 
 // NewManager creates a Manager with zookeeper as underlying storage.
-func NewManager(zkSvr string, zroot string) cluster.Manager {
-	if len(zroot) > 0 {
-		rootPath = zroot
-	}
+func NewManager(zkSvr string, clusterName string) cluster.Manager {
+	rootPath = zk.DbusClusterRoot(clusterName)
 
 	return &controller{
 		zc: zkclient.New(zkSvr, zkclient.WithWrapErrorWithPath()),

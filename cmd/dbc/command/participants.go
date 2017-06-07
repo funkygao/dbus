@@ -9,6 +9,7 @@ import (
 	"github.com/funkygao/columnize"
 	"github.com/funkygao/dbus/pkg/cluster"
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 )
 
@@ -29,7 +30,15 @@ func (this *Participants) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	mgr := openClusterManager(this.zone)
+	zkzone := zk.NewZkZone(zk.DefaultConfig(this.zone, ctx.ZoneZkAddrs(this.zone)))
+	if len(this.cluster) == 0 {
+		if this.cluster = zkzone.DefaultDbusCluster(); this.cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
+
+	mgr := openClusterManager(this.zone, this.cluster)
 	defer mgr.Close()
 
 	leader, err := mgr.Leader()

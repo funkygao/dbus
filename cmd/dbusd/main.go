@@ -54,15 +54,6 @@ func main() {
 	globals.ClusterEnabled = options.clusterEnable
 	globals.Zone = options.zone
 	globals.Cluster = options.cluster
-	if len(options.zrootCheckpoint) > 0 {
-		globals.ZrootCheckpoint = options.zrootCheckpoint
-	}
-	if len(options.zrootCluster) > 0 {
-		globals.ZrootCluster = options.zrootCluster
-	}
-	if len(options.zrootConfig) > 0 {
-		globals.ZrootConf = options.zrootConfig
-	}
 
 	if !options.validateConf && len(options.visualizeFile) == 0 {
 		// daemon mode

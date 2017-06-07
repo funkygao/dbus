@@ -39,10 +39,6 @@ type GlobalConfig struct {
 	RPCPort int
 	APIPort int
 
-	ZrootConf       string
-	ZrootCluster    string
-	ZrootCheckpoint string
-
 	InputRecyclePoolSize  int
 	FilterRecyclePoolSize int
 	HubChanSize           int
@@ -87,8 +83,5 @@ func DefaultGlobals() *GlobalConfig {
 		WatchdogTick:          time.Minute * 10,
 		StartedAt:             time.Now(),
 		registry:              map[string]interface{}{},
-		ZrootConf:             "/dbus/conf",
-		ZrootCheckpoint:       "/dbus/checkpoint",
-		ZrootCluster:          "/dbus/cluster",
 	}
 }

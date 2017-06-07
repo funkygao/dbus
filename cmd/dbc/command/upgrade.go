@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 )
 
@@ -27,7 +28,15 @@ func (this *Upgrade) Run(args []string) (exitCode int) {
 		return 1
 	}
 
-	mgr := openClusterManager(zone)
+	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
+	if len(cluster) == 0 {
+		if cluster = zkzone.DefaultDbusCluster(); cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
+
+	mgr := openClusterManager(zone, cluster)
 	defer mgr.Close()
 
 	swallow(mgr.TriggerUpgrade())
