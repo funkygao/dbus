@@ -53,6 +53,7 @@ func main() {
 					zkzone.ForSortedDbusClusters(func(name string, data []byte) {
 						fmt.Println(name)
 					})
+					return
 				}
 			}
 
