@@ -7,6 +7,8 @@ import (
 
 	"github.com/funkygao/columnize"
 	"github.com/funkygao/dbus/engine"
+	"github.com/funkygao/gafka/ctx"
+	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
 
 	// bootstrap plugins
@@ -24,15 +26,30 @@ type Plugins struct {
 }
 
 func (this *Plugins) Run(args []string) (exitCode int) {
+	var zone, cluster string
 	cmdFlags := flag.NewFlagSet("binlog", flag.ContinueOnError)
 	cmdFlags.Usage = func() { this.Ui.Output(this.Help()) }
-	cmdFlags.StringVar(&this.fn, "c", "", "")
+	cmdFlags.StringVar(&this.fn, "cf", "", "")
+	cmdFlags.StringVar(&zone, "z", ctx.DefaultZone(), "")
+	cmdFlags.StringVar(&cluster, "c", "", "")
 	cmdFlags.BoolVar(&this.longFmt, "l", false, "")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	e := engine.New(nil).LoadFrom(this.fn)
+	zkzone := zk.NewZkZone(zk.DefaultConfig(zone, ctx.ZoneZkAddrs(zone)))
+	if len(cluster) == 0 {
+		if cluster = zkzone.DefaultDbusCluster(); cluster == "" {
+			this.Ui.Error("-c required")
+			return
+		}
+	}
+
+	globals := engine.DefaultGlobals()
+	globals.Zone = zone
+	globals.Cluster = cluster
+
+	e := engine.New(globals).LoadFrom(this.fn)
 	if this.longFmt {
 		for _, ir := range e.InputRunners {
 			this.Ui.Infof("%s(%s)", ir.Name(), ir.Class())
@@ -86,7 +103,11 @@ Usage: %s plugins [options]
 
 Options:
 
-    -c config location
+    -z zone
+
+    -c cluster
+
+    -cf config location
       If empty, load from zookeeper
       zk location example:
       localhost:2181/dbus/conf

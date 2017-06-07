@@ -92,8 +92,6 @@ func (this *Config) importFromFile(zkzone *zk.ZkZone, cluster string, fromFile s
 
 	if _, err := zkzone.Conn().Set(zk.DbusConfig(cluster), data, -1); err != nil {
 		this.Ui.Error(err.Error())
-	} else {
-		this.Ui.Info("ok")
 	}
 
 	// generate the history version
@@ -113,7 +111,10 @@ func (this *Config) importFromFile(zkzone *zk.ZkZone, cluster string, fromFile s
 	hisVerPath := path.Join(zk.DbusConfigDir(cluster), strconv.Itoa(maxVer+1))
 	if err = zkzone.CreatePermenantZnode(hisVerPath, data); err != nil {
 		this.Ui.Error(err.Error())
+		return
 	}
+
+	this.Ui.Infof("ok with ver:%d", maxVer+1)
 }
 
 func (this *Config) listVers(zkzone *zk.ZkZone, cluster string) {

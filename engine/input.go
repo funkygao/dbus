@@ -143,9 +143,9 @@ func (ir *iRunner) runMainloop(e *Engine, wg *sync.WaitGroup) {
 	for {
 		log.Trace("Input[%s] started", ir.Name())
 		if err := ir.Input().Run(ir, e); err == nil {
-			log.Trace("Input[%s] stopped", ir.Name())
+			log.Debug("Input[%s] returned", ir.Name())
 		} else {
-			log.Error("Input[%s] stopped: %v", ir.Name(), err)
+			log.Error("Input[%s] returned: %v", ir.Name(), err)
 		}
 
 		if globals.stopping {

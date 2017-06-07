@@ -396,7 +396,7 @@ func (e *Engine) ServeForever() (ret error) {
 
 	for _, inputRunner := range e.InputRunners {
 		inputRunner.Input().End(inputRunner)
-		log.Trace("[%s] ended", inputRunner.Name())
+		log.Trace("Input[%s] stopped", inputRunner.Name())
 	}
 
 	log.Info("all %d plugins fully stopped", len(e.InputRunners)+len(e.FilterRunners)+len(e.OutputRunners))
