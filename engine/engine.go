@@ -185,7 +185,7 @@ func (e *Engine) loadConfig(cf *conf.Conf) *Engine {
 func (e *Engine) LoadFrom(loc string) *Engine {
 	if len(loc) == 0 {
 		// if no location provided, use the default zk
-		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(ctx.DefaultZone()), Globals().ZrootConf)
+		loc = fmt.Sprintf("%s%s", ctx.ZoneZkAddrs(Globals().Zone), Globals().ZrootConf)
 	}
 
 	zkSvr, realPath := parseConfigPath(loc)
