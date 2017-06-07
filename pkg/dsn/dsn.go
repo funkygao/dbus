@@ -11,7 +11,7 @@ var ErrIllegalDSN = errors.New("illegal DSN")
 // Parse extracts a unified DSN string and returns the scheme of the dsn and
 // the scheme specific uri.
 //
-// Samples dsn:
+// dsn examples:
 //    kafka:local://me/foobar
 //    mysql:prod://root@localhost:3306/mysql
 func Parse(dsn string) (scheme string, uri string, err error) {
