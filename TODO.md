@@ -132,3 +132,15 @@
   - mysql packet max payload len = (1<<24 -1)
 - OSC tools will make 'ALTER' very complex, whence dbusd not able to clear table columns cache
   - use SQL comment to solve it 
+
+### Memo
+
+- mysqlbinlog input peak with mock output
+  - 140k event per second
+  - 30k row event per second
+  - 260Mb network bandwidth
+  - KafkaOutput 35K msg per second
+  - it takes 2h25m to zero lag for platform of 2d lag
+
+- dryrun MockInput -> MockOutput
+  - 2.1M packet/s
