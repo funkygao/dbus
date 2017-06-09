@@ -27,7 +27,7 @@ func (this *myslaveLag) Init(ctx monitor.Context) {
 	this.wg = ctx.Inflight()
 
 	this.addr = ctx.InfluxAddr()
-	this.db = ctx.InfluxDB()
+	this.db = "dbus"
 }
 
 func (this *myslaveLag) Run() {
