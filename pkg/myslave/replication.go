@@ -47,6 +47,7 @@ func (m *MySlave) StartReplication(ready chan struct{}) {
 		Port:            m.port,
 		User:            m.user,
 		Password:        m.passwd,
+		RecvBufferSize:  m.c.Int("recv_buffer", 512<<10),
 		SemiSyncEnabled: m.c.Bool("semi_sync", false),
 	})
 

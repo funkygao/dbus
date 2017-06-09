@@ -10,6 +10,7 @@ import (
 	"github.com/funkygao/dbus/engine"
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/diagnostics/agent"
+	"github.com/funkygao/golib/daemon"
 	"github.com/funkygao/golib/version"
 	"github.com/funkygao/log4go"
 
@@ -21,6 +22,8 @@ import (
 )
 
 func init() {
+	daemon.EnsureServerUlimit()
+
 	parseFlags()
 
 	setupLogging()

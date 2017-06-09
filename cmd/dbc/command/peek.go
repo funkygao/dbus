@@ -72,7 +72,7 @@ func (this *Peek) Run(args []string) (exitCode int) {
 }
 
 func (*Peek) Synopsis() string {
-	return "Peek mysql binlog stream"
+	return "Peek mysql binlog stream from head"
 }
 
 func (this *Peek) Help() string {

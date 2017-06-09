@@ -2,7 +2,6 @@
 
 ### TODO
 
-- [ ] inc replication recv buffer size
 - [ ] tweak of batcher yield
 - [ ] pack.Payload reuse memory, json.NewEncoder(os.Stdout)
 - [ ] metrics isolation by cluster
@@ -21,6 +20,7 @@
 - [ ] add Operator for Filter
   - count, filter, regex, sort, split, rename
 - [ ] RowsEvent avro
+- [X] inc binlog replication recv buffer size
 - [X] alert mysql binlog lags
 - [X] dbc participants -i // show internal buffers
 - [X] model.RowsEvent add dbus timestamp
@@ -129,4 +129,18 @@
   - It might exceed max event size: 1MB
     mysql seems to auto-chunk the big event into chunks of small events
   - It might malloc a very big memory in RowsEvent struct
+  - mysql packet max payload len = (1<<24 -1)
 - OSC tools will make 'ALTER' very complex, whence dbusd not able to clear table columns cache
+  - use SQL comment to solve it 
+
+### Memo
+
+- mysqlbinlog input peak with mock output
+  - 140k event per second
+  - 30k row event per second
+  - 260Mb network bandwidth
+  - KafkaOutput 35K msg per second
+  - it takes 2h25m to zero lag for platform of 2d lag
+
+- dryrun MockInput -> MockOutput
+  - 2.1M packet/s

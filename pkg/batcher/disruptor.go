@@ -11,7 +11,7 @@ import (
 // disruptor is a batched lock free queue that borrows design from disruptor.
 // It maintains a queue with the sematics of all succeed and advance or any fails and retry.
 type disruptor struct {
-	_padding0 [sys.CacheLineSize / 8]uint64
+	_padding0 [sys.CacheLineSize / 8]uint64 // avoid false sharing
 	capacity  uint32
 
 	_padding1 [sys.CacheLineSize / 8]uint64

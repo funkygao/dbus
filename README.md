@@ -168,15 +168,3 @@ dbus uses epoch to solve this issue.
 
   dbus continues to work, but Ack will not be able to persist
 
-### Memo
-
-- mysqlbinlog input peak with mock output
-  - 140k event per second
-  - 30k row event per second
-  - 260Mb network bandwidth
-  - KafkaOutput 35K msg per second
-  - it takes 2h25m to zero lag for platform of 2d lag
-
-- dryrun MockInput -> MockOutput
-  - 2.1M packet/s
-

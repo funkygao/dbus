@@ -34,6 +34,9 @@ func (this *MysqlbinlogInput) Init(config *conf.Conf) {
 func (*MysqlbinlogInput) SampleConfig() string {
 	return `
 	max_event_length: 1048476
+	recv_buffer: 524288
+	server_id: 137
+	semi_sync: false
 	`
 }
 
