@@ -3,8 +3,6 @@ package engine
 import (
 	"fmt"
 	"sync/atomic"
-
-	"github.com/funkygao/dbus/pkg/sys"
 )
 
 // Payloader defines the contract of Packet payload.
@@ -31,29 +29,21 @@ type KeyValuer interface {
 //
 // TODO hide it to private.
 type Packet struct {
-	_padding0   [sys.CacheLineSize / 8]uint64 // avoid false sharing
 	recycleChan chan *Packet
 
-	_padding1 [sys.CacheLineSize / 8]uint64
-	refCount  int32
+	refCount int32
+	acker    Acker // the Input it originates from
+	// buf []byte TODO reuse memory
 
-	_padding2 [sys.CacheLineSize / 8]uint64
 	// Ident is used for routing.
 	Ident string
 
-	_padding3 [sys.CacheLineSize / 8]uint64 // TODO [7]uint64 should be enough
 	// Metadata is used to hold arbitrary data you wish to include.
 	// Engine completely ignores this field and is only to be used for
 	// pass-through data.
 	Metadata interface{}
 
-	_padding4 [sys.CacheLineSize / 8]uint64
-	acker     Acker
-
-	_padding5 [sys.CacheLineSize / 8]uint64
-	Payload   Payloader
-
-	//	buf     []byte TODO reuse memory
+	Payload Payloader
 }
 
 func newPacket(recycleChan chan *Packet) *Packet {

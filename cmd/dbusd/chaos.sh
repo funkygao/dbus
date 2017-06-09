@@ -11,7 +11,7 @@
 # term2$ sh chaos.sh
 
 for i in `seq 1000`; do
-    ./dbusd -cluster -pprof :10120 -rpc 9877 -api 9897 &
+    ./dbusd -cluster -c test -pprof :10120 -rpc 9877 -api 9897 &
     pid=$!
     sleep 10
     sleep $[ ( $RANDOM % 10 ) + 10 ]s
