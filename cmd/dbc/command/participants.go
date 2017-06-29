@@ -11,6 +11,7 @@ import (
 	"github.com/funkygao/gafka/ctx"
 	"github.com/funkygao/gafka/zk"
 	"github.com/funkygao/gocli"
+	"github.com/funkygao/golib/gofmt"
 )
 
 type Participants struct {
@@ -84,13 +85,15 @@ func (this *Participants) Run(args []string) (exitCode int) {
 
 	swallow(json.Unmarshal([]byte(decision), &d))
 
-	lines := []string{"Endpoint|State|Weight|Revision|Resources"}
+	lines := []string{"Endpoint|State|Uptime|Weight|Revision|Resources"}
 	for _, p := range ps {
 		if p.Equals(leader) {
-			lines = append(lines, fmt.Sprintf("%s*|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+			lines = append(lines, fmt.Sprintf("%s*|%s|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+				gofmt.PrettySince(p.Uptime),
 				p.Weight, p.Revision, this.getResources(p, d)))
 		} else {
-			lines = append(lines, fmt.Sprintf("%s|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+			lines = append(lines, fmt.Sprintf("%s|%s|%s|%d|%s|%+v", p.Endpoint, p.StateText(),
+				gofmt.PrettySince(p.Uptime),
 				p.Weight, p.Revision, this.getResources(p, d)))
 		}
 	}

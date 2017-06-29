@@ -165,6 +165,10 @@ func (c *controller) LiveParticipants() ([]cluster.Participant, error) {
 		model := cluster.Participant{}
 		model.From(marshalled[i])
 
+		if _, stat, err := c.zc.GetWithStat(c.kb.participant(participants[i])); err == nil {
+			model.Uptime = zk.ZkTimestamp(stat.Mtime).Time()
+		}
+
 		r = append(r, model)
 	}
 

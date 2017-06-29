@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 // State is state of a participant in a cluster.
@@ -29,6 +30,8 @@ type Participant struct {
 	State    State  `json:"state,omitempty"`
 	Revision string `json:"revision,omitempty"`
 	APIPort  int    `json:"api_port,omitempty"`
+
+	Uptime time.Time `json:-`
 }
 
 func (p *Participant) Marshal() []byte {
